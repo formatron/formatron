@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.homepage    =
     'https://github.com/pghalliday/aws_deploy'
   s.license       = 'MIT'
+  s.add_runtime_dependency 'aws-sdk', '~> 2.1'
 end
