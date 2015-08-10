@@ -12,4 +12,5 @@ Gem::Specification.new do |s|
     'https://github.com/pghalliday/aws_deploy'
   s.license       = 'MIT'
   s.add_runtime_dependency 'aws-sdk', '~> 2.1'
+  s.add_runtime_dependency 'deep_merge', '~> 1.0'
 end

@@ -29,10 +29,6 @@ class AwsDeploy
       signature_version: 'v4',
       credentials: @credentials
     )
-    cloudformation = Aws::CloudFormation::Client.new(
-      region: @config.region,
-      credentials: @credentials
-    )
     config_remote = "#{@target}/#{@config.name}/config.json"
     response = s3.put_object(
       bucket: @config.s3_bucket,
@@ -42,6 +38,10 @@ class AwsDeploy
       ssekms_key_id: @config.kms_key(@target)
     )
     if @config._cloudformation
+      cloudformation = Aws::CloudFormation::Client.new(
+        region: @config.region,
+        credentials: @credentials
+      )
       cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
       cloudformation_pathname = Pathname.new cloudformation_dir
       cloudformation_remote_root_relative = "#{@target}/#{@config.name}/cloudformation"
