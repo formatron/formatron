@@ -66,43 +66,49 @@ class AwsDeploy
       main_keys = main['Parameters'].keys
       parameters = main_keys.map do |key|
         case key
-        when 'name'
+        when 'awsDeployName'
           {
             parameter_key: key,
             parameter_value: @config.name,
             use_previous_value: false
           }
-        when 's3Bucket'
+        when 'awsDeployPrefix'
+          {
+            parameter_key: key,
+            parameter_value: @config.prefix,
+            use_previous_value: false
+          }
+        when 'awsDeployS3Bucket'
           {
             parameter_key: key,
             parameter_value: @config.s3_bucket,
             use_previous_value: false
           }
-        when 'region'
+        when 'awsDeployRegion'
           {
             parameter_key: key,
             parameter_value: @config.region,
             use_previous_value: false
           }
-        when 'config'
-          {
-            parameter_key: key,
-            parameter_value: config_remote,
-            use_previous_value: false
-          }
-        when 'kmsKey'
+        when 'awsDeployKmsKey'
           {
             parameter_key: key,
             parameter_value: @config.kms_key,
             use_previous_value: false
           }
-        when 'cloudformationRoot'
+        when 'awsDeployConfig'
+          {
+            parameter_key: key,
+            parameter_value: config_remote,
+            use_previous_value: false
+          }
+        when 'awsDeployCloudformationRoot'
           {
             parameter_key: key,
             parameter_value: cloudformation_remote_root,
             use_previous_value: false
           }
-        when 'opsworksStacksRootRelative'
+        when 'awsDeployOpsworksStacksRootRelative'
           {
             parameter_key: key,
             parameter_value: opsworks_stacks_remote_root_relative,

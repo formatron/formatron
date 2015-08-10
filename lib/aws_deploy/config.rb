@@ -32,7 +32,7 @@ class AwsDeploy
 
     def name (name = nil)
       unless name.nil?
-        config['name'] = name
+        config['awsDeployName'] = name
         init_from_config
       end
       @name
@@ -40,7 +40,7 @@ class AwsDeploy
 
     def s3_bucket (s3_bucket = nil)
       unless s3_bucket.nil?
-        config['s3Bucket'] = s3_bucket
+        config['awsDeployS3Bucket'] = s3_bucket
         init_from_config
       end
       @s3_bucket
@@ -48,7 +48,7 @@ class AwsDeploy
 
     def region (region = nil)
       unless region.nil?
-        config['region'] = region
+        config['awsDeployRegion'] = region
         init_from_config
       end
       @region
@@ -56,7 +56,7 @@ class AwsDeploy
 
     def prefix (prefix = nil)
       unless prefix.nil?
-        config['prefix'] = prefix
+        config['awsDeployPrefix'] = prefix
         init_from_config
       end
       @prefix
@@ -65,7 +65,7 @@ class AwsDeploy
     def kms_key (target = nil, key_id = nil)
       unless key_id.nil?
         if target == @target
-          config['kmsKey'] = key_id
+          config['awsDeployKmsKey'] = key_id
           init_from_config
         end
       end
@@ -111,11 +111,11 @@ class AwsDeploy
     private
 
     def init_from_config
-      @name = config['name']
-      @s3_bucket = config['s3Bucket']
-      @region = config['region']
-      @prefix = config['prefix']
-      @kms_key = config['kmsKey']
+      @name = config['awsDeployName']
+      @s3_bucket = config['awsDeployS3Bucket']
+      @region = config['awsDeployRegion']
+      @prefix = config['awsDeployPrefix']
+      @kms_key = config['awsDeployKmsKey']
     end
 
   end
