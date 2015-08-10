@@ -1,3 +1,14 @@
 #!/usr/bin/env ruby
+
+TARGET = ARGV[0]
+PRODUCTION = 'production'
+
+if TARGET == PRODUCTION
+  puts "Confirm that you wish to deploy to #{PRODUCTION} by typing '#{PRODUCTION}':"
+  confirmation = STDIN.gets.chomp
+  fail 'Confirmation failed' unless confirmation == PRODUCTION
+end
+
 require 'aws_deploy'
-AwsDeploy.new(Dir.pwd, ARGV[0]).deploy
+
+AwsDeploy.new(Dir.pwd, TARGET).deploy

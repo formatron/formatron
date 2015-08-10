@@ -39,10 +39,10 @@ class AwsDeploy
       key: config_remote,
       body: @config.config.to_json,
       server_side_encryption: 'aws:kms',
-      ssekms_key_id: @config.kms_key[@target]
+      ssekms_key_id: @config.kms_key(@target)
     )
-    if @config.cloudformation
-      cloudformation_dir = File.join(dir, CLOUDFORMATION_DIR)
+    if @config._cloudformation
+      cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
       cloudformation_pathname = Pathname.new cloudformation_dir
       cloudformation_remote_root_relative = "#{@target}/#{@config.name}/cloudformation"
       opsworks_stacks_remote_root_relative = "#{@target}/#{@config.name}/opsworks_stacks"
@@ -55,13 +55,13 @@ class AwsDeploy
         response = s3.put_object(
           bucket: @config.s3_bucket,
           key: "#{cloudformation_remote_root_relative}/#{template_pathname.relative_path_from(cloudformation_pathname)}",
-          body: template,
+          body: template_json,
         )
       end
       cloudformation_remote_root = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{cloudformation_remote_root_relative}"
       template_url = "#{cloudformation_remote_root}/#{MAIN_CLOUDFORMATION_JSON}"
       capabilities = ["CAPABILITY_IAM"]
-      cloudformation_parameters = @config.cloudformation.parameters
+      cloudformation_parameters = @config._cloudformation.parameters
       main = JSON.parse File.read(File.join(cloudformation_dir, MAIN_CLOUDFORMATION_JSON))
       main_keys = main['Parameters'].keys
       parameters = main_keys.map do |key|
@@ -93,7 +93,7 @@ class AwsDeploy
         when 'kmsKey'
           {
             parameter_key: key,
-            parameter_value: @config.kms_key[@target],
+            parameter_value: @config.kms_key(@target),
             use_previous_value: false
           }
         when 'cloudformationRoot'
