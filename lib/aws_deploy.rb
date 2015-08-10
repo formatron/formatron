@@ -1,4 +1,4 @@
-relative_require 'aws_deploy/config'
+require_relative 'aws_deploy/config'
 require 'aws-sdk'
 require 'json'
 require 'pathname'
