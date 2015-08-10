@@ -117,18 +117,18 @@ class AwsDeploy
         end
       end
       begin
-        response = cloudformation.update_stack(
-          stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
-          template_url: template_url,
-          capabilities: capabilities,
-          parameters: parameters
-        )
-      rescue Aws::CloudFormation::Errors::ValidationError
         response = cloudformation.create_stack(
           stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
           template_url: template_url,
           capabilities: capabilities,
           on_failure: "DO_NOTHING",
+          parameters: parameters
+        )
+      rescue Aws::CloudFormation::Errors::AlreadyExistsException
+        response = cloudformation.update_stack(
+          stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
+          template_url: template_url,
+          capabilities: capabilities,
           parameters: parameters
         )
       end
