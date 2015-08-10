@@ -20,7 +20,7 @@ class AwsDeploy
       target_config_dir = File.join(dir, CONFIG, target)
       default_config_dir = File.join(dir, DEFAULT_CONFIG_DIR)
       default_config = File.directory?(default_config_dir) ? AwsDeploy::Config::Reader.read(default_config_dir, DEFAULT_JSON) : {}
-      target_config = File.directory(target_config_dir) ? AwsDeploy::Config::Reader.read(target_config_dir, DEFAULT_JSON) : {}
+      target_config = File.directory?(target_config_dir) ? AwsDeploy::Config::Reader.read(target_config_dir, DEFAULT_JSON) : {}
       @config = default_config.merge target_config
       @target = target
       @credentials = credentials
