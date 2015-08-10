@@ -5,8 +5,8 @@ DEFAULT_CONFIG = '_default'
 DEFAULT_CONFIG_DIR = File.join(CONFIG, DEFAULT_CONFIG)
 DEFAULT_JSON = "#{DEFAULT_CONFIG}.json"
 
-require './config/reader'
-require './config/cloudformation'
+relative_require 'config/reader'
+relative_require 'config/cloudformation'
 require 'aws-sdk'
 
 class AwsDeploy::Config
