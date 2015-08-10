@@ -24,39 +24,52 @@ class AwsDeploy
       @config = default_config.deep_merge!(target_config)
       @target = target
       @credentials = credentials
-      @name = nil
-      @s3_bucket = nil
-      @region = nil
-      @prefix = nil
+      init_from_config
       @_cloudformation = nil
       @dependencies = {}
-      @kms_key = {}
       instance_eval(File.read(aws_deploy_file), aws_deploy_file)
     end
 
     def name (name = nil)
-      @name = name unless name.nil?
+      unless name.nil?
+        config['name'] = name
+        init_from_config
+      end
       @name
     end
 
     def s3_bucket (s3_bucket = nil)
-      @s3_bucket = s3_bucket unless s3_bucket.nil?
+      unless s3_bucket.nil?
+        config['s3Bucket'] = s3_bucket
+        init_from_config
+      end
       @s3_bucket
     end
 
     def region (region = nil)
-      @region = region unless region.nil?
+      unless region.nil?
+        config['region'] = region
+        init_from_config
+      end
       @region
     end
 
     def prefix (prefix = nil)
-      @prefix = prefix unless prefix.nil?
+      unless prefix.nil?
+        config['prefix'] = prefix
+        init_from_config
+      end
       @prefix
     end
 
-    def kms_key (target, key_id = nil)
-      @kms_key[target] = key_id unless key_id.nil?
-      @kms_key[target]
+    def kms_key (target = nil, key_id = nil)
+      unless key_id.nil?
+        if target == @target
+          config['kmsKey'] = key_id
+          init_from_config
+        end
+      end
+      @kms_key
     end
 
     def base_config (base_name)
@@ -71,6 +84,7 @@ class AwsDeploy
       )
       base = JSON.parse(response.body.read)
       @config = base.deep_merge!(config)
+      init_from_config
     end
 
     def depends (stack_name)
@@ -92,6 +106,16 @@ class AwsDeploy
 
     def cloudformation (&block)
       @_cloudformation = AwsDeploy::Config::Cloudformation.new(config, dependencies, &block)
+    end
+
+    private
+
+    def init_from_config
+      @name = config['name']
+      @s3_bucket = config['s3Bucket']
+      @region = config['region']
+      @prefix = config['prefix']
+      @kms_key = config['kmsKey']
     end
 
   end

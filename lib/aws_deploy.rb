@@ -35,7 +35,7 @@ class AwsDeploy
       key: config_remote,
       body: @config.config.to_json,
       server_side_encryption: 'aws:kms',
-      ssekms_key_id: @config.kms_key(@target)
+      ssekms_key_id: @config.kms_key
     )
     if @config._cloudformation
       cloudformation = Aws::CloudFormation::Client.new(
@@ -93,7 +93,7 @@ class AwsDeploy
         when 'kmsKey'
           {
             parameter_key: key,
-            parameter_value: @config.kms_key(@target),
+            parameter_value: @config.kms_key,
             use_previous_value: false
           }
         when 'cloudformationRoot'
