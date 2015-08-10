@@ -1,0 +1,29 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "<%= @name %>",
+
+  "Parameters": {
+    "param1": {
+      "Type": "String"
+    },
+    "param2": {
+      "Type": "String"
+    }
+  },
+
+  "Mappings": {
+  },
+
+  "Conditions": {
+  },
+
+  "Resources": {
+  },
+
+  "Outputs": {
+    "output1": {
+      "Value": { "Ref": "param1" }
+    }
+  }
+}
