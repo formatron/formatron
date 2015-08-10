@@ -9,8 +9,8 @@ require 'aws-sdk'
 
 class AwsDeploy::Config
 
-  attr_accessor :s3_bucket, :region
-  attr_reader :config, :cloudformation, :target, :kms_key, :name
+  attr_accessor :s3_bucket, :region, :name, :prefix
+  attr_reader :config, :cloudformation, :target, :kms_key
 
   def initialize (dir, target, credentials)
     aws_deploy_file = File.join(dir, AWS_DEPLOY_FILE)
@@ -27,10 +27,6 @@ class AwsDeploy::Config
     @cloudformation = nil
     @kms_key = {}
     instance_eval(File.read(aws_deploy_file), aws_deploy_file)
-  end
-
-  def name (target, name)
-    @name[target] = name
   end
 
   def kms_key (target, key_id)
