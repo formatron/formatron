@@ -1,13 +1,16 @@
 require_relative 'aws_deploy/config'
+require_relative 'aws_deploy_util/tar'
 require 'aws-sdk'
 require 'json'
 require 'pathname'
 
+VENDOR_DIR = 'vendor'
 CREDENTIALS_FILE = 'credentials.json'
 CLOUDFORMATION_DIR = 'cloudformation'
-OPSWORKS_STACKS_DIR = 'opsworks_stacks'
-COOKBOOKS_DIR = 'cookbooks'
+OPSWORKS_DIR = 'opsworks'
 MAIN_CLOUDFORMATION_JSON = 'main.json'
+
+include AwsDeployUtil::Tar
 
 class AwsDeploy
 
@@ -37,6 +40,26 @@ class AwsDeploy
       server_side_encryption: 'aws:kms',
       ssekms_key_id: @config.kms_key
     )
+    opsworks_stacks_dir = File.join(@dir, OPSWORKS_DIR)
+    opsworks_stacks_remote_root_relative = "#{@target}/#{@config.name}/opsworks"
+    if File.directory?(opsworks_stacks_dir)
+      vendor_dir = File.join(@dir, VENDOR_DIR)
+      FileUtils.rm_rf vendor_dir
+      Dir.glob(File.join(opsworks_stacks_dir, '*')).each do |stack|
+        if File.directory?(stack)
+          stack_name = File.basename(stack)
+          stack_vendor_dir = File.join(vendor_dir, stack_name)
+          FileUtils.mkdir_p stack_vendor_dir
+          %x(berks vendor -b #{File.join(stack, 'Berksfile')} #{stack_vendor_dir})
+          fail "failed to vendor cookbooks for opsworks stack: #{stack_name}" unless $?.success?
+          response = s3.put_object(
+            bucket: @config.s3_bucket,
+            key: "#{opsworks_stacks_remote_root_relative}/#{stack_name}.tar.gz",
+            body: gzip(tar(stack_vendor_dir))
+          )
+        end
+      end
+    end
     if @config._cloudformation
       cloudformation = Aws::CloudFormation::Client.new(
         region: @config.region,
@@ -45,7 +68,6 @@ class AwsDeploy
       cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
       cloudformation_pathname = Pathname.new cloudformation_dir
       cloudformation_remote_root_relative = "#{@target}/#{@config.name}/cloudformation"
-      opsworks_stacks_remote_root_relative = "#{@target}/#{@config.name}/opsworks_stacks"
       Dir.glob(File.join(cloudformation_dir, '**/*.json')) do |template|
         template_pathname = Pathname.new template
         template_json = File.read template
@@ -102,13 +124,13 @@ class AwsDeploy
             parameter_value: config_remote,
             use_previous_value: false
           }
-        when 'awsDeployCloudformationRoot'
+        when 'awsDeployCloudformation'
           {
             parameter_key: key,
             parameter_value: cloudformation_remote_root,
             use_previous_value: false
           }
-        when 'awsDeployOpsworksStacksRootRelative'
+        when 'awsDeployOpsworksStacks'
           {
             parameter_key: key,
             parameter_value: opsworks_stacks_remote_root_relative,
