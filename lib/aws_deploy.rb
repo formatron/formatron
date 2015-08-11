@@ -130,7 +130,7 @@ class AwsDeploy
             parameter_value: cloudformation_remote_root,
             use_previous_value: false
           }
-        when 'awsDeployOpsworksStacks'
+        when 'awsDeployOpsworks'
           {
             parameter_key: key,
             parameter_value: opsworks_stacks_remote_root_relative,
