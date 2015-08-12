@@ -1,11 +1,10 @@
-class AwsDeploy
+class Formatron
   class Config
     class Cloudformation
-      attr_reader :config, :parameters, :dependencies
+      attr_reader :config, :parameters
 
-      def initialize (config, dependencies, &block)
+      def initialize (config, &block)
         @config = config
-        @dependencies = dependencies
         @parameters = {}
         if block_given?
           instance_eval(&block)

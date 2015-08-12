@@ -2,7 +2,7 @@ require 'rubygems'
 require 'rubygems/package'
 require 'zlib'
 
-module AwsDeployUtil
+module FormatronUtil
   module Tar
 
     def tar(path)

@@ -4,23 +4,17 @@ require 'fileutils'
 TEMPLATE_DIR = File.expand_path('../../template', File.dirname(__FILE__))
 ERB_TEMPLATES = %w(
   cloudformation/main.json
-  AwsDeployFile
+  Formatronfile
   README.md
 )
 
-class AwsDeploy
+class Formatron
   class Init
 
-    def initialize (dir = nil, name = nil)
+    def initialize (dir = nil)
       dir = Dir.pwd if dir.nil?
       @dest = File.expand_path dir
-      fail "Not a directory: #{@dest}" unless File.directory?(@dest)
-      @name = name
-      if @name.nil?
-        @name = File.basename(@dest)
-      else
-        @dest = File.join(@dest, @name)
-      end
+      @name = File.basename(@dest)
     end
 
     def write

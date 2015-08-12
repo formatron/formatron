@@ -1,6 +1,7 @@
 require 'json'
+require 'deep_merge'
 
-class AwsDeploy
+class Formatron
   class Config
     class Reader
 
@@ -11,7 +12,8 @@ class AwsDeploy
         entries.each do |entry|
           path = File.join(dir, entry)
           next if ['.', '..', default_file].include?(entry)
-          config[entry] = read(path, default_file) if File.directory?(path)
+          config[entry] = {} if config[entry].nil?
+          config[entry].deep_merge!(read(path, default_file)) if File.directory?(path)
           config[entry] = File.read(path) if File.file?(path)
         end
         config

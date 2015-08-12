@@ -1,3 +1,3 @@
 source "https://rubygems.org"
 
-gem "aws_deploy", git: "https://github.com/pghalliday/aws_deploy.git"
+gem "formatron", git: "https://github.com/pghalliday/formatron.git"

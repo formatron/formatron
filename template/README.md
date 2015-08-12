@@ -19,7 +19,7 @@ The <%= @name %> stack.
 
 ## Requirements and Configuration
 
-Top level configuration is in `AwsDeployFile`
+Top level configuration is in `Formatronfile`
 
 The configuration is set per environment and stored encrypted with the appropriate KMS key in the s3 bucket.
 
@@ -39,11 +39,11 @@ To deploy the stack, create a `credentials.json` file in the root of this projec
 then call
 
 ```
-bundle exec aws-deploy test
+bundle exec formatron deploy test
 ```
 
 or
 
 ```
-bundle exec aws-deploy production
+bundle exec formatron deploy production
 ```

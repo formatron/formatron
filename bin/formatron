@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+COMMAND = ARGV[0]
+
+if COMMAND == 'deploy'
+
+  TARGET = ARGV[1]
+  PRODUCTION = 'production'
+  if TARGET == PRODUCTION
+    puts "Confirm that you wish to deploy to #{PRODUCTION} by typing '#{PRODUCTION}':"
+    confirmation = STDIN.gets.chomp
+    fail 'Confirmation failed' unless confirmation == PRODUCTION
+  end
+  require 'formatron'
+  Formatron.new(Dir.pwd, TARGET).deploy
+
+elsif COMMAND == 'init'
+
+  DIRECTORY = ARGV[1]
+  require 'formatron/init'
+  Formatron::Init.new(DIRECTORY).write
+
+end

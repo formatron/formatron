@@ -1,0 +1,16 @@
+name '<%= @name %>'
+
+prefix 'my-prefix'
+s3_bucket 'my-s3-bucket'
+region 'eu-west-1'
+
+kms_key 'production', 'my-production-kms-key-id'
+kms_key 'test', 'my-test-kms-key-id'
+
+depends 'global-stack'
+
+cloudformation do
+  parameter 'param1', config['<%= @name %>']['subKey']
+  parameter 'param2', config['global-stack']['someConfig']
+  parameter 'param3', config['global-stack']['formatronOutputs']['someOutput']
+end
