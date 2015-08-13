@@ -163,6 +163,7 @@ class Formatron
         rescue Aws::CloudFormation::Errors::ValidationError => error
           raise error unless error.message.eql?('No updates are to be performed.')
         end
+        # TODO: wait for the update to finish and then update the opsworks stacks
       end
     end
   end
