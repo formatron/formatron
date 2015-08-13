@@ -153,12 +153,16 @@ class Formatron
           parameters: parameters
         )
       rescue Aws::CloudFormation::Errors::AlreadyExistsException
-        response = cloudformation.update_stack(
-          stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
-          template_url: template_url,
-          capabilities: capabilities,
-          parameters: parameters
-        )
+        begin
+          response = cloudformation.update_stack(
+            stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
+            template_url: template_url,
+            capabilities: capabilities,
+            parameters: parameters
+          )
+        rescue Aws::CloudFormation::Errors::ValidationError => error
+          fail error unless error.message.eql?('No updates are to be performed.')
+        end
       end
     end
   end
