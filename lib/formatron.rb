@@ -32,10 +32,10 @@ class Formatron
       signature_version: 'v4',
       credentials: @credentials
     )
-    config_remote = "#{@target}/#{@config.name}/config.json"
+    config_s3_key = "#{@target}/#{@config.name}/config.json"
     response = s3.put_object(
       bucket: @config.s3_bucket,
-      key: config_remote,
+      key: config_s3_key,
       body: @config.config.to_json,
       server_side_encryption: 'aws:kms',
       ssekms_key_id: @config.kms_key
@@ -118,13 +118,13 @@ class Formatron
             parameter_value: @config.kms_key,
             use_previous_value: false
           }
-        when 'formatronConfig'
+        when 'formatronConfigS3Key'
           {
             parameter_key: key,
-            parameter_value: config_remote,
+            parameter_value: config_s3_key,
             use_previous_value: false
           }
-        when 'formatronCloudformationS3key'
+        when 'formatronCloudformationS3Key'
           {
             parameter_key: key,
             parameter_value: cloudformation_s3_key,
@@ -139,7 +139,7 @@ class Formatron
         else
           {
             parameter_key: key,
-            parameter_value: cloudformation_parameters[key],
+            parameter_value: cloudformation_parameters[key].to_s,
             use_previous_value: false
           }
         end
