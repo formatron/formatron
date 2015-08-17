@@ -23,7 +23,7 @@ Top level configuration is in `Formatronfile`
 
 The configuration is set per environment and stored encrypted with the appropriate KMS key in the s3 bucket.
 
-- `./config/common/` - contains the shared configuration
+- `./config/_default/` - contains the shared configuration
 - `./config/production/` - contains the production configuration
 - `./config/test/` - contains the test configuration
 
