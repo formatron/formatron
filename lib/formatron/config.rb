@@ -27,6 +27,7 @@ class Formatron
     def name (name = nil)
       unless name.nil?
         @config = {}
+        @config['formatronOutputs'] = {} if File.directory?(File.join(@dir, 'cloudformation'))
         config['formatronName'] = name
         target_config_dir = File.join(@dir, CONFIG, target)
         default_config_dir = File.join(@dir, DEFAULT_CONFIG_DIR)
@@ -104,7 +105,6 @@ class Formatron
     end
 
     def cloudformation (&block)
-      config[name]['formatronOutputs'] = {}
       @_cloudformation = Formatron::Config::Cloudformation.new(config, &block)
     end
 
