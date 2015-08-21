@@ -13,12 +13,15 @@ require 'deep_merge'
 class Formatron
   class Config
 
+    CLOUDFORMATION_DIR = 'cloudformation'
+
     attr_reader :config, :target, :_cloudformation, :dependencies
 
     def initialize (dir, target, credentials)
       @dir = dir
       @target = target
       @credentials = credentials
+      @config = {}
       @_cloudformation = nil
       formatron_file = File.join(@dir, FORMATRON_FILE)
       instance_eval(File.read(formatron_file), formatron_file)
@@ -26,14 +29,13 @@ class Formatron
 
     def name (name = nil)
       unless name.nil?
-        @config = {}
-        @config['formatronOutputs'] = {} if File.directory?(File.join(@dir, 'cloudformation'))
         config['formatronName'] = name
         target_config_dir = File.join(@dir, CONFIG, target)
         default_config_dir = File.join(@dir, DEFAULT_CONFIG_DIR)
         default_config = File.directory?(default_config_dir) ? Formatron::Config::Reader.read(default_config_dir, DEFAULT_JSON) : {}
         target_config = File.directory?(target_config_dir) ? Formatron::Config::Reader.read(target_config_dir, DEFAULT_JSON) : {}
         config[name] = default_config.deep_merge!(target_config)
+        config[name]['formatronOutputs'] = {} if File.directory?(File.join(@dir, CLOUDFORMATION_DIR))
         init_from_config
       end
       @name
@@ -86,7 +88,7 @@ class Formatron
       base = JSON.parse(response.body.read)
       @config = base.deep_merge!(config)
       init_from_config
-      unless @config[stack_name]['formatronOutputs'].nil?
+      unless config[stack_name]['formatronOutputs'].nil?
         full_stack_name = "#{prefix}-#{stack_name}-#{target}"
         cloudformation = Aws::CloudFormation::Client.new(
           region: region,
@@ -97,7 +99,7 @@ class Formatron
         )
         stack = response.stacks[0]
         fail "Stack dependency not ready: #{full_stack_name}" unless ['CREATE_COMPLETE', 'ROLLBACK_COMPLETE', 'UPDATE_COMPLETE', 'UPDATE_ROLLBACK_COMPLETE'].include? stack.stack_status
-        outputs = @config[stack_name]['formatronOutputs'] 
+        outputs = config[stack_name]['formatronOutputs'] 
         stack.outputs.each do |output|
           outputs[output.output_key] = output.output_value
         end
