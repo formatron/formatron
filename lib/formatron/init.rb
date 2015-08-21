@@ -3,7 +3,7 @@ require 'fileutils'
 
 TEMPLATE_DIR = File.expand_path('../../template', File.dirname(__FILE__))
 ERB_TEMPLATES = %w(
-  cloudformation/main.json
+  cloudformation/main.json.erb
   Formatronfile
   README.md
 )

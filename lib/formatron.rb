@@ -3,6 +3,7 @@ require_relative 'formatron_util/tar'
 require 'aws-sdk'
 require 'json'
 require 'pathname'
+require 'erb'
 
 VENDOR_DIR = 'vendor'
 CREDENTIALS_FILE = 'credentials.json'
@@ -13,6 +14,12 @@ MAIN_CLOUDFORMATION_JSON = 'main.json'
 include FormatronUtil::Tar
 
 class Formatron
+
+  class TemplateParams
+    def initialize(config)
+      @config = config
+    end
+  end
 
   def initialize (dir, target)
     @dir = dir
@@ -60,31 +67,51 @@ class Formatron
         end
       end
     end
-    if @config._cloudformation
+    cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
+    if File.directory?(cloudformation_dir)
       cloudformation = Aws::CloudFormation::Client.new(
         region: @config.region,
         credentials: @credentials
       )
-      cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
       cloudformation_pathname = Pathname.new cloudformation_dir
       cloudformation_s3_key= "#{@target}/#{@config.name}/cloudformation"
+      main = nil
+      # upload plain json templates
       Dir.glob(File.join(cloudformation_dir, '**/*.json')) do |template|
         template_pathname = Pathname.new template
         template_json = File.read template
         response = cloudformation.validate_template(
           template_body: template_json
         )
+        relative_path = template_pathname.relative_path_from(cloudformation_pathname)
         response = s3.put_object(
           bucket: @config.s3_bucket,
-          key: "#{cloudformation_s3_key}/#{template_pathname.relative_path_from(cloudformation_pathname)}",
+          key: "#{cloudformation_s3_key}/#{relative_path}",
           body: template_json,
         )
+        main = JSON.parse(template_json) if relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
+      end
+      # process and upload erb templates
+      Dir.glob(File.join(cloudformation_dir, '**/*.json.erb')) do |template|
+        template_pathname = Pathname.new File.join(File.dirname(template), File.basename(template, '.erb'))
+        erb = ERB.new(File.read(template))
+        erb.filename = template
+        erbTemplate = erb.def_class(TemplateParams, 'render()')
+        template_json = erbTemplate.new(@config.config).render()
+        response = cloudformation.validate_template(
+          template_body: template_json
+        )
+        relative_path = template_pathname.relative_path_from(cloudformation_pathname)
+        response = s3.put_object(
+          bucket: @config.s3_bucket,
+          key: "#{cloudformation_s3_key}/#{relative_path}",
+          body: template_json,
+        )
+        main = JSON.parse(template_json) if relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
       end
       cloudformation_s3_root_url = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{cloudformation_s3_key}"
       template_url = "#{cloudformation_s3_root_url}/#{MAIN_CLOUDFORMATION_JSON}"
       capabilities = ["CAPABILITY_IAM"]
-      cloudformation_parameters = @config._cloudformation.parameters
-      main = JSON.parse File.read(File.join(cloudformation_dir, MAIN_CLOUDFORMATION_JSON))
       main_keys = main['Parameters'].keys
       parameters = main_keys.map do |key|
         case key
@@ -137,9 +164,10 @@ class Formatron
             use_previous_value: false
           }
         else
+          fail "No value specified for parameter: #{key}" if @config._cloudformation.nil? || @config._cloudformation.parameters[key].nil?
           {
             parameter_key: key,
-            parameter_value: cloudformation_parameters[key].to_s,
+            parameter_value: @config._cloudformation.parameters[key].to_s,
             use_previous_value: false
           }
         end
