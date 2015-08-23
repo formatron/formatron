@@ -22,6 +22,7 @@ class Formatron
       @target = target
       @credentials = credentials
       @config = {}
+      config['formatronTarget'] = target
       @_cloudformation = nil
       formatron_file = File.join(@dir, FORMATRON_FILE)
       instance_eval(File.read(formatron_file), formatron_file)

@@ -121,6 +121,12 @@ class Formatron
             parameter_value: @config.name,
             use_previous_value: false
           }
+        when 'formatronTarget'
+          {
+            parameter_key: key,
+            parameter_value: @config.target,
+            use_previous_value: false
+          }
         when 'formatronPrefix'
           {
             parameter_key: key,
