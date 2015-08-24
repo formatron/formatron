@@ -59,15 +59,6 @@ class Formatron
       tmp_user_key = Tempfile.new('formatron_chef_user_key')
       tmp_user_key.write(response.body.read)
       tmp_user_key.close
-      puts File.read(tmp_user_key.path)
-      organization_key = "#{@target}/#{@config._opscode._organization_key}"
-      response = s3.get_object(
-        bucket: @config.s3_bucket,
-        key: organization_key
-      )
-      tmp_organization_key = Tempfile.new('formatron_chef_organization_key')
-      tmp_organization_key.write(response.body.read)
-      tmp_organization_key.close
       tmp_knife_rb = Tempfile.new('formatron_knife_rb')
       tmp_knife_rb.write <<-EOH
         chef_server_url '#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}'
@@ -76,7 +67,6 @@ class Formatron
         ssl_verify_mode #{@config._opscode._ssl_self_signed_cert ? ':verify_none': ':verify_peer'}
       EOH
       tmp_knife_rb.close
-      puts File.read(tmp_knife_rb.path)
       tmp_berkshelf_config = Tempfile.new('formatron_berkshelf_config')
       tmp_berkshelf_config.write <<-EOH
         {
@@ -91,27 +81,24 @@ class Formatron
         }
       EOH
       tmp_berkshelf_config.close
-      puts File.read(tmp_berkshelf_config.path)
       begin
         Dir.glob(File.join(opscode_dir, '*')).each do |server|
           if File.directory?(server)
             server_name = File.basename(server)
             environment_name = "#{@config.name}__#{server_name}"
-            puts %x(knife environment show #{environment_name} -c #{tmp_knife_rb.path})
-            puts %x(knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron') unless $?.success?
+            %x(knife environment show #{environment_name} -c #{tmp_knife_rb.path})
+            %x(knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron') unless $?.success?
             fail "failed to create opscode environment: #{environment_name}" unless $?.success?
-            puts %x(berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
+            %x(berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
             fail "failed to download cookbooks for opscode server: #{server_name}" unless $?.success?
-            puts "berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')}"
-            puts %x(berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
+            %x(berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
             fail "failed to upload cookbooks for opscode server: #{server_name}" unless $?.success?
-            puts %x(berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
+            %x(berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile.lock')})
             fail "failed to apply cookbooks to opscode environment: #{environment_name}" unless $?.success?
           end
         end
       ensure
         tmp_user_key.unlink
-        tmp_organization_key.unlink
         tmp_knife_rb.unlink
         tmp_berkshelf_config.unlink
       end
