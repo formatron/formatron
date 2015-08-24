@@ -14,4 +14,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'aws-sdk', '~> 2.1'
   s.add_runtime_dependency 'deep_merge', '~> 1.0'
   s.add_runtime_dependency 'berkshelf', '~> 3.3'
+  s.add_runtime_dependency 'chef', '~> 12.4'
 end

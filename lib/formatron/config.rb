@@ -7,6 +7,7 @@ DEFAULT_JSON = "#{DEFAULT_CONFIG}.json"
 
 require_relative 'config/reader'
 require_relative 'config/cloudformation'
+require_relative 'config/opscode'
 require 'aws-sdk'
 require 'deep_merge'
 
@@ -15,7 +16,7 @@ class Formatron
 
     CLOUDFORMATION_DIR = 'cloudformation'
 
-    attr_reader :config, :target, :_cloudformation, :dependencies
+    attr_reader :config, :target, :_cloudformation, :_opscode, :dependencies
 
     def initialize (dir, target, credentials)
       @dir = dir
@@ -24,6 +25,7 @@ class Formatron
       @config = {}
       config['formatronTarget'] = target
       @_cloudformation = nil
+      @_opscode = nil
       formatron_file = File.join(@dir, FORMATRON_FILE)
       instance_eval(File.read(formatron_file), formatron_file)
     end
@@ -109,6 +111,10 @@ class Formatron
 
     def cloudformation (&block)
       @_cloudformation = Formatron::Config::Cloudformation.new(config, &block)
+    end
+
+    def opscode (&block)
+      @_opscode = Formatron::Config::Opscode.new(config, &block)
     end
 
     private
