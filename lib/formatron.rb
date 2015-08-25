@@ -41,70 +41,107 @@ class Formatron
       signature_version: 'v4',
       credentials: @credentials
     )
-    config_s3_key = "#{@target}/#{@config.name}/config.json"
+    cloudformation = Aws::CloudFormation::Client.new(
+      region: @config.region,
+      credentials: @credentials
+    )
     response = s3.put_object(
       bucket: @config.s3_bucket,
-      key: config_s3_key,
+      key: @config.config_s3_key,
       body: @config.config.to_json,
       server_side_encryption: 'aws:kms',
       ssekms_key_id: @config.kms_key
     )
     opscode_dir = File.join(@dir, OPSCODE_DIR)
     if File.directory?(opscode_dir)
-      user_key = "#{@target}/#{@config._opscode._user_key}"
-      response = s3.get_object(
-        bucket: @config.s3_bucket,
-        key: user_key
-      )
-      tmp_user_key = Tempfile.new('formatron_chef_user_key')
-      tmp_user_key.write(response.body.read)
-      tmp_user_key.close
-      tmp_knife_rb = Tempfile.new('formatron_knife_rb')
-      tmp_knife_rb.write <<-EOH
-        chef_server_url '#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}'
-        node_name '#{@config._opscode._user}'
-        client_key '#{tmp_user_key.path}'
-        ssl_verify_mode #{@config._opscode._ssl_self_signed_cert ? ':verify_none': ':verify_peer'}
-      EOH
-      tmp_knife_rb.close
-      tmp_berkshelf_config = Tempfile.new('formatron_berkshelf_config')
-      tmp_berkshelf_config.write <<-EOH
-        {
-          "chef": {
-            "chef_server_url": "#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}",
-            "node_name": "#{@config._opscode._user}",
-            "client_key": "#{tmp_user_key.path}"
-          },
-          "ssl": {
-            "verify": #{@config._opscode._ssl_self_signed_cert ? 'false' : 'true'}
-          }
-        }
-      EOH
-      tmp_berkshelf_config.close
-      begin
+      need_to_deploy_first = false
+      if @config._opscode._deploys_chef_server
+        # first check if the stack is already deployed and ready
+        begin
+          response = cloudformation.describe_stacks(
+            stack_name: "#{@config.prefix}-#{@config.name}-#{@target}"
+          )
+          status = response.stacks[0].stack_status
+          fail "Chef server cloudformation stack is in an invalid state: #{status}" unless ['ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE', 'UPDATE_ROLLBACK_COMPLETE'].include?(status)
+        rescue Aws::CloudFormation::Errors::ValidationError => error
+          fail error.class, error.message unless error.message.eql?("Stack with id #{@config.prefix}-#{@config.name}-#{@target} does not exist")
+          need_to_deploy_first = true
+        end
+      end
+      if need_to_deploy_first
+        vendor_dir = File.join(@dir, VENDOR_DIR)
+        FileUtils.rm_rf vendor_dir
         Dir.glob(File.join(opscode_dir, '*')).each do |server|
           if File.directory?(server)
             server_name = File.basename(server)
-            environment_name = "#{@config.name}__#{server_name}"
-            %x(knife environment show #{environment_name} -c #{tmp_knife_rb.path})
-            %x(knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron') unless $?.success?
-            fail "failed to create opscode environment: #{environment_name}" unless $?.success?
-            %x(berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
-            fail "failed to download cookbooks for opscode server: #{server_name}" unless $?.success?
-            %x(berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
-            fail "failed to upload cookbooks for opscode server: #{server_name}" unless $?.success?
-            %x(berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile.lock')})
-            fail "failed to apply cookbooks to opscode environment: #{environment_name}" unless $?.success?
+            server_vendor_dir = File.join(vendor_dir, server_name)
+            server_cookbooks_dir = File.join(server_vendor_dir, 'cookbooks')
+            FileUtils.mkdir_p server_vendor_dir
+            %x(berks vendor -b #{File.join(server, 'Berksfile')} #{server_cookbooks_dir})
+            fail "failed to vendor cookbooks for opscode server: #{server_name}" unless $?.success?
+            %x(cp #{File.join(server, 'Berksfile.lock')} #{server_vendor_dir})
+            response = s3.put_object(
+              bucket: @config.s3_bucket,
+              key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
+              body: gzip(tar(server_vendor_dir))
+            )
           end
         end
-      ensure
-        tmp_user_key.unlink
-        tmp_knife_rb.unlink
-        tmp_berkshelf_config.unlink
+      else
+        user_key = "#{@target}/#{@config._opscode._user_key}"
+        response = s3.get_object(
+          bucket: @config.s3_bucket,
+          key: user_key
+        )
+        tmp_user_key = Tempfile.new('formatron_chef_user_key')
+        tmp_user_key.write(response.body.read)
+        tmp_user_key.close
+        tmp_knife_rb = Tempfile.new('formatron_knife_rb')
+        tmp_knife_rb.write <<-EOH
+          chef_server_url '#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}'
+          node_name '#{@config._opscode._user}'
+          client_key '#{tmp_user_key.path}'
+          ssl_verify_mode #{@config._opscode._ssl_self_signed_cert ? ':verify_none': ':verify_peer'}
+        EOH
+        tmp_knife_rb.close
+        tmp_berkshelf_config = Tempfile.new('formatron_berkshelf_config')
+        tmp_berkshelf_config.write <<-EOH
+          {
+            "chef": {
+              "chef_server_url": "#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}",
+              "node_name": "#{@config._opscode._user}",
+              "client_key": "#{tmp_user_key.path}"
+            },
+            "ssl": {
+              "verify": #{@config._opscode._ssl_self_signed_cert ? 'false' : 'true'}
+            }
+          }
+        EOH
+        tmp_berkshelf_config.close
+        begin
+          Dir.glob(File.join(opscode_dir, '*')).each do |server|
+            if File.directory?(server)
+              server_name = File.basename(server)
+              environment_name = "#{@config.name}__#{server_name}"
+              %x(knife environment show #{environment_name} -c #{tmp_knife_rb.path})
+              %x(knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron') unless $?.success?
+              fail "failed to create opscode environment: #{environment_name}" unless $?.success?
+              %x(berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
+              fail "failed to download cookbooks for opscode server: #{server_name}" unless $?.success?
+              %x(berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
+              fail "failed to upload cookbooks for opscode server: #{server_name}" unless $?.success?
+              %x(berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile.lock')})
+              fail "failed to apply cookbooks to opscode environment: #{environment_name}" unless $?.success?
+            end
+          end
+        ensure
+          tmp_user_key.unlink
+          tmp_knife_rb.unlink
+          tmp_berkshelf_config.unlink
+        end
       end
     end
     opsworks_dir = File.join(@dir, OPSWORKS_DIR)
-    opsworks_s3_key = "#{@target}/#{@config.name}/opsworks"
     if File.directory?(opsworks_dir)
       vendor_dir = File.join(@dir, VENDOR_DIR)
       FileUtils.rm_rf vendor_dir
@@ -117,7 +154,7 @@ class Formatron
           fail "failed to vendor cookbooks for opsworks stack: #{stack_name}" unless $?.success?
           response = s3.put_object(
             bucket: @config.s3_bucket,
-            key: "#{opsworks_s3_key}/#{stack_name}.tar.gz",
+            key: "#{@config.opsworks_s3_key}/#{stack_name}.tar.gz",
             body: gzip(tar(stack_vendor_dir))
           )
         end
@@ -125,12 +162,7 @@ class Formatron
     end
     cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
     if File.directory?(cloudformation_dir)
-      cloudformation = Aws::CloudFormation::Client.new(
-        region: @config.region,
-        credentials: @credentials
-      )
       cloudformation_pathname = Pathname.new cloudformation_dir
-      cloudformation_s3_key= "#{@target}/#{@config.name}/cloudformation"
       main = nil
       # upload plain json templates
       Dir.glob(File.join(cloudformation_dir, '**/*.json')) do |template|
@@ -142,7 +174,7 @@ class Formatron
         relative_path = template_pathname.relative_path_from(cloudformation_pathname)
         response = s3.put_object(
           bucket: @config.s3_bucket,
-          key: "#{cloudformation_s3_key}/#{relative_path}",
+          key: "#{@config.cloudformation_s3_key}/#{relative_path}",
           body: template_json,
         )
         main = JSON.parse(template_json) if relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
@@ -160,12 +192,12 @@ class Formatron
         relative_path = template_pathname.relative_path_from(cloudformation_pathname)
         response = s3.put_object(
           bucket: @config.s3_bucket,
-          key: "#{cloudformation_s3_key}/#{relative_path}",
+          key: "#{@config.cloudformation_s3_key}/#{relative_path}",
           body: template_json,
         )
         main = JSON.parse(template_json) if relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
       end
-      cloudformation_s3_root_url = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{cloudformation_s3_key}"
+      cloudformation_s3_root_url = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{@config.cloudformation_s3_key}"
       template_url = "#{cloudformation_s3_root_url}/#{MAIN_CLOUDFORMATION_JSON}"
       capabilities = ["CAPABILITY_IAM"]
       main_keys = main['Parameters'].keys
@@ -210,19 +242,25 @@ class Formatron
         when 'formatronConfigS3Key'
           {
             parameter_key: key,
-            parameter_value: config_s3_key,
+            parameter_value: @config.config_s3_key,
             use_previous_value: false
           }
         when 'formatronCloudformationS3Key'
           {
             parameter_key: key,
-            parameter_value: cloudformation_s3_key,
+            parameter_value: @config.cloudformation_s3_key,
             use_previous_value: false
           }
         when 'formatronOpsworksS3Key'
           {
             parameter_key: key,
-            parameter_value: opsworks_s3_key,
+            parameter_value: @config.opsworks_s3_key,
+            use_previous_value: false
+          }
+        when 'formatronOpscodeS3Key'
+          {
+            parameter_key: key,
+            parameter_value: @config.opscode_s3_key,
             use_previous_value: false
           }
         else

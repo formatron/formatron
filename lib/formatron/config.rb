@@ -16,14 +16,14 @@ class Formatron
 
     CLOUDFORMATION_DIR = 'cloudformation'
 
-    attr_reader :config, :target, :_cloudformation, :_opscode, :dependencies
+    attr_reader :config, :target, :config_s3_key, :opscode_s3_key, :opsworks_s3_key, :cloudformation_s3_key, :_cloudformation, :_opscode, :dependencies
 
     def initialize (dir, target, credentials)
       @dir = dir
-      @target = target
       @credentials = credentials
       @config = {}
       config['formatronTarget'] = target
+      init_from_config
       @_cloudformation = nil
       @_opscode = nil
       formatron_file = File.join(@dir, FORMATRON_FILE)
@@ -33,6 +33,10 @@ class Formatron
     def name (name = nil)
       unless name.nil?
         config['formatronName'] = name
+        config['formatronConfigS3Key'] = "#{target}/#{name}/config.json"
+        config['formatronCloudformationS3Key'] = "#{target}/#{name}/cloudformation"
+        config['formatronOpsworksS3Key'] = "#{target}/#{name}/opsworks"
+        config['formatronOpscodeS3Key'] = "#{target}/#{name}/opscode"
         target_config_dir = File.join(@dir, CONFIG, target)
         default_config_dir = File.join(@dir, DEFAULT_CONFIG_DIR)
         default_config = File.directory?(default_config_dir) ? Formatron::Config::Reader.read(default_config_dir, DEFAULT_JSON) : {}
@@ -120,11 +124,16 @@ class Formatron
     private
 
     def init_from_config
+      @target = config['formatronTarget']
       @name = config['formatronName']
       @s3_bucket = config['formatronS3Bucket']
       @region = config['formatronRegion']
       @prefix = config['formatronPrefix']
       @kms_key = config['formatronKmsKey']
+      @config_s3_key = config['formatronConfigS3Key']
+      @cloudformation_s3_key = config['formatronCloudformationS3Key']
+      @opsworks_s3_key = config['formatronOpsworksS3Key']
+      @opscode_s3_key = config['formatronOpscodeS3Key']
     end
 
   end

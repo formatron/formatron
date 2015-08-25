@@ -1,7 +1,7 @@
 class Formatron
   class Config
     class Opscode
-      attr_reader :config, :_server_url, :_user, :_user_key, :_organization, :_ssl_self_signed_cert
+      attr_reader :config, :_server_url, :_user, :_user_key, :_organization, :_ssl_self_signed_cert, :_deploys_chef_server
 
       def initialize (config, &block)
         @config = config
@@ -9,7 +9,8 @@ class Formatron
         @_user = nil
         @_user_key = nil
         @_organization = nil
-        @_ssl_self_signed_cert = nil
+        @_ssl_self_signed_cert = false
+        @_is_chef_server = false
         if block_given?
           instance_eval(&block)
         end
@@ -33,6 +34,10 @@ class Formatron
 
       def ssl_self_signed_cert (value)
         @_ssl_self_signed_cert = value
+      end
+
+      def deploys_chef_server (value)
+        @_deploys_chef_server = value
       end
 
     end
