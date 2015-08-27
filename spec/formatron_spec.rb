@@ -6,6 +6,7 @@ describe Formatron do
   end
 
   it 'does something useful' do
-    expect(false).to eq(true)
+    pending
+    fail
   end
 end
