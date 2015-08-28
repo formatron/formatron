@@ -7,7 +7,9 @@ if COMMAND == 'deploy'
   TARGET = ARGV[1]
   PRODUCTION = 'production'
   if TARGET == PRODUCTION
+    # rubocop:disable Metrics/LineLength
     puts "Confirm that you wish to deploy to #{PRODUCTION} by typing '#{PRODUCTION}':"
+    # rubocop:enable Metrics/LineLength
     confirmation = STDIN.gets.chomp
     fail 'Confirmation failed' unless confirmation == PRODUCTION
   end

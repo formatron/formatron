@@ -9,9 +9,9 @@ ERB_TEMPLATES = %w(
 )
 
 class Formatron
+  # Initialise a new Formatron project
   class Init
-
-    def initialize (dir = nil)
+    def initialize(dir = nil)
       dir = Dir.pwd if dir.nil?
       @dest = File.expand_path dir
       @name = File.basename(@dest)
@@ -20,22 +20,32 @@ class Formatron
     def write
       FileUtils.mkdir_p @dest
       files = Dir.glob(File.join(TEMPLATE_DIR, '*'), File::FNM_DOTMATCH)
-      files = files.select {|file| file unless [File.join(TEMPLATE_DIR, '.'), File.join(TEMPLATE_DIR, '..')].include?(file)}
+      ignore_files = [
+        File.join(TEMPLATE_DIR, '.'),
+        File.join(TEMPLATE_DIR, '..')
+      ]
+      files = files.select do |file|
+        file unless ignore_files.include?(file)
+      end
       FileUtils.cp_r files, @dest
+      write_templates
+    end
+
+    def write_templates
       ERB_TEMPLATES.each do |template|
         filename = File.join(@dest, template)
         erb = ERB.new(File.read(filename))
         erb.filename = filename
         template = erb.def_class(TemplateParams, 'render()')
-        File.write filename, template.new(@name).render()
+        File.write filename, template.new(@name).render
       end
     end
 
+    # Internal class for holding parameters to expose to template
     class TemplateParams
       def initialize(name)
         @name = name
       end
     end
-
   end
 end

@@ -16,14 +16,13 @@ MAIN_CLOUDFORMATION_JSON = 'main.json'
 include FormatronUtil::Tar
 
 class Formatron
-
   class TemplateParams
     def initialize(config)
       @config = config
     end
   end
 
-  def initialize (dir, target)
+  def initialize(dir, target)
     @dir = dir
     @target = target
     credentials_file = File.join(@dir, CREDENTIALS_FILE)
@@ -55,16 +54,25 @@ class Formatron
     opscode_dir = File.join(@dir, OPSCODE_DIR)
     if File.directory?(opscode_dir)
       need_to_deploy_first = false
-      if @config._opscode._deploys_chef_server
+      if @config.opscode._deploys_chef_server
         # first check if the stack is already deployed and ready
         begin
           response = cloudformation.describe_stacks(
             stack_name: "#{@config.prefix}-#{@config.name}-#{@target}"
           )
           status = response.stacks[0].stack_status
-          fail "Chef server cloudformation stack is in an invalid state: #{status}" unless ['ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE', 'UPDATE_ROLLBACK_COMPLETE'].include?(status)
+          # rubocop:disable Metrics/LineLength
+          fail "Chef server cloudformation stack is in an invalid state: #{status}" unless %w(
+            ROLLBACK_COMPLETE
+            CREATE_COMPLETE
+            UPDATE_COMPLETE
+            UPDATE_ROLLBACK_COMPLETE
+          ).include?(status)
+          # rubocop:enable Metrics/LineLength
         rescue Aws::CloudFormation::Errors::ValidationError => error
-          fail error.class, error.message unless error.message.eql?("Stack with id #{@config.prefix}-#{@config.name}-#{@target} does not exist")
+          # rubocop:disable Metrics/LineLength
+          raise error.class, error.message unless error.message.eql?("Stack with id #{@config.prefix}-#{@config.name}-#{@target} does not exist")
+          # rubocop:enable Metrics/LineLength
           need_to_deploy_first = true
         end
       end
@@ -72,23 +80,24 @@ class Formatron
         vendor_dir = File.join(@dir, VENDOR_DIR)
         FileUtils.rm_rf vendor_dir
         Dir.glob(File.join(opscode_dir, '*')).each do |server|
-          if File.directory?(server)
-            server_name = File.basename(server)
-            server_vendor_dir = File.join(vendor_dir, server_name)
-            server_cookbooks_dir = File.join(server_vendor_dir, 'cookbooks')
-            FileUtils.mkdir_p server_vendor_dir
-            %x(berks vendor -b #{File.join(server, 'Berksfile')} #{server_cookbooks_dir})
-            fail "failed to vendor cookbooks for opscode server: #{server_name}" unless $?.success?
-            %x(cp #{File.join(server, 'Berksfile.lock')} #{server_vendor_dir})
-            response = s3.put_object(
-              bucket: @config.s3_bucket,
-              key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
-              body: gzip(tar(server_vendor_dir))
-            )
-          end
+          next unless File.directory?(server)
+          server_name = File.basename(server)
+          server_vendor_dir = File.join(vendor_dir, server_name)
+          server_cookbooks_dir = File.join(server_vendor_dir, 'cookbooks')
+          FileUtils.mkdir_p server_vendor_dir
+          # rubocop:disable Metrics/LineLength
+          `berks vendor -b #{File.join(server, 'Berksfile')} #{server_cookbooks_dir}`
+          fail "failed to vendor cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
+          `cp #{File.join(server, 'Berksfile.lock')} #{server_vendor_dir}`
+          # rubocop:enable Metrics/LineLength
+          response = s3.put_object(
+            bucket: @config.s3_bucket,
+            key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
+            body: gzip(tar(server_vendor_dir))
+          )
         end
       else
-        user_key = "#{@target}/#{@config._opscode._user_key}"
+        user_key = "#{@target}/#{@config.opscode._user_key}"
         response = s3.get_object(
           bucket: @config.s3_bucket,
           key: user_key
@@ -97,42 +106,47 @@ class Formatron
         tmp_user_key.write(response.body.read)
         tmp_user_key.close
         tmp_knife_rb = Tempfile.new('formatron_knife_rb')
+        # rubocop:disable Metrics/LineLength
         tmp_knife_rb.write <<-EOH
-          chef_server_url '#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}'
-          node_name '#{@config._opscode._user}'
+          chef_server_url '#{@config.opscode._server_url}/organizations/#{@config.opscode._organization}'
+          node_name '#{@config.opscode._user}'
           client_key '#{tmp_user_key.path}'
-          ssl_verify_mode #{@config._opscode._ssl_self_signed_cert ? ':verify_none': ':verify_peer'}
+          ssl_verify_mode #{@config.opscode._ssl_self_signed_cert ? ':verify_none' : ':verify_peer'}
         EOH
+        # rubocop:enable Metrics/LineLength
         tmp_knife_rb.close
         tmp_berkshelf_config = Tempfile.new('formatron_berkshelf_config')
+        # rubocop:disable Metrics/LineLength
         tmp_berkshelf_config.write <<-EOH
           {
             "chef": {
-              "chef_server_url": "#{@config._opscode._server_url}/organizations/#{@config._opscode._organization}",
-              "node_name": "#{@config._opscode._user}",
+              "chef_server_url": "#{@config.opscode._server_url}/organizations/#{@config.opscode._organization}",
+              "node_name": "#{@config.opscode._user}",
               "client_key": "#{tmp_user_key.path}"
             },
             "ssl": {
-              "verify": #{@config._opscode._ssl_self_signed_cert ? 'false' : 'true'}
+              "verify": #{@config.opscode._ssl_self_signed_cert ? 'false' : 'true'}
             }
           }
         EOH
+        # rubocop:enable Metrics/LineLength
         tmp_berkshelf_config.close
         begin
           Dir.glob(File.join(opscode_dir, '*')).each do |server|
-            if File.directory?(server)
-              server_name = File.basename(server)
-              environment_name = "#{@config.name}__#{server_name}"
-              %x(knife environment show #{environment_name} -c #{tmp_knife_rb.path})
-              %x(knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron') unless $?.success?
-              fail "failed to create opscode environment: #{environment_name}" unless $?.success?
-              %x(berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
-              fail "failed to download cookbooks for opscode server: #{server_name}" unless $?.success?
-              %x(berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')})
-              fail "failed to upload cookbooks for opscode server: #{server_name}" unless $?.success?
-              %x(berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile.lock')})
-              fail "failed to apply cookbooks to opscode environment: #{environment_name}" unless $?.success?
-            end
+            next unless File.directory?(server)
+            server_name = File.basename(server)
+            environment_name = "#{@config.name}__#{server_name}"
+            # rubocop:disable Metrics/LineLength
+            `knife environment show #{environment_name} -c #{tmp_knife_rb.path}`
+            `knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron'` unless $CHILD_STATUS.success?
+            fail "failed to create opscode environment: #{environment_name}" unless $CHILD_STATUS.success?
+            `berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')}`
+            fail "failed to download cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
+            `berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')}`
+            fail "failed to upload cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
+            `berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile.lock')}`
+            fail "failed to apply cookbooks to opscode environment: #{environment_name}" unless $CHILD_STATUS.success?
+            # rubocop:enable Metrics/LineLength
           end
         ensure
           tmp_user_key.unlink
@@ -146,18 +160,19 @@ class Formatron
       vendor_dir = File.join(@dir, VENDOR_DIR)
       FileUtils.rm_rf vendor_dir
       Dir.glob(File.join(opsworks_dir, '*')).each do |stack|
-        if File.directory?(stack)
-          stack_name = File.basename(stack)
-          stack_vendor_dir = File.join(vendor_dir, stack_name)
-          FileUtils.mkdir_p stack_vendor_dir
-          %x(berks vendor -b #{File.join(stack, 'Berksfile')} #{stack_vendor_dir})
-          fail "failed to vendor cookbooks for opsworks stack: #{stack_name}" unless $?.success?
-          response = s3.put_object(
-            bucket: @config.s3_bucket,
-            key: "#{@config.opsworks_s3_key}/#{stack_name}.tar.gz",
-            body: gzip(tar(stack_vendor_dir))
-          )
-        end
+        next unless File.directory?(stack)
+        stack_name = File.basename(stack)
+        stack_vendor_dir = File.join(vendor_dir, stack_name)
+        FileUtils.mkdir_p stack_vendor_dir
+        `berks vendor -b #{File.join(stack, 'Berksfile')} #{stack_vendor_dir}`
+        fail(
+          "failed to vendor cookbooks for opsworks stack: #{stack_name}"
+        ) unless $CHILD_STATUS.success?
+        response = s3.put_object(
+          bucket: @config.s3_bucket,
+          key: "#{@config.opsworks_s3_key}/#{stack_name}.tar.gz",
+          body: gzip(tar(stack_vendor_dir))
+        )
       end
     end
     cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
@@ -171,103 +186,74 @@ class Formatron
         response = cloudformation.validate_template(
           template_body: template_json
         )
-        relative_path = template_pathname.relative_path_from(cloudformation_pathname)
+        relative_path = template_pathname.relative_path_from(
+          cloudformation_pathname
+        )
         response = s3.put_object(
           bucket: @config.s3_bucket,
           key: "#{@config.cloudformation_s3_key}/#{relative_path}",
-          body: template_json,
+          body: template_json
         )
-        main = JSON.parse(template_json) if relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
+        main = JSON.parse(template_json) if
+          relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
       end
       # process and upload erb templates
       Dir.glob(File.join(cloudformation_dir, '**/*.json.erb')) do |template|
-        template_pathname = Pathname.new File.join(File.dirname(template), File.basename(template, '.erb'))
+        template_pathname = Pathname.new File.join(
+          File.dirname(template),
+          File.basename(template, '.erb')
+        )
         erb = ERB.new(File.read(template))
         erb.filename = template
-        erbTemplate = erb.def_class(TemplateParams, 'render()')
-        template_json = erbTemplate.new(@config.config).render()
+        erb_template = erb.def_class(TemplateParams, 'render()')
+        template_json = erb_template.new(@config.config).render
         response = cloudformation.validate_template(
           template_body: template_json
         )
-        relative_path = template_pathname.relative_path_from(cloudformation_pathname)
+        relative_path = template_pathname.relative_path_from(
+          cloudformation_pathname
+        )
         response = s3.put_object(
           bucket: @config.s3_bucket,
           key: "#{@config.cloudformation_s3_key}/#{relative_path}",
-          body: template_json,
+          body: template_json
         )
-        main = JSON.parse(template_json) if relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
+        main = JSON.parse(template_json) if
+          relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
       end
+      # rubocop:disable Metrics/LineLength
       cloudformation_s3_root_url = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{@config.cloudformation_s3_key}"
+      # rubocop:enable Metrics/LineLength
       template_url = "#{cloudformation_s3_root_url}/#{MAIN_CLOUDFORMATION_JSON}"
-      capabilities = ["CAPABILITY_IAM"]
+      capabilities = ['CAPABILITY_IAM']
       main_keys = main['Parameters'].keys
       parameters = main_keys.map do |key|
-        case key
-        when 'formatronName'
+        if %w(
+          formatronName
+          formatronTarget
+          formatronPrefix
+          formatronS3Bucket
+          formatronRegion
+          formatronKmsKey
+          formatronConfigS3Key
+          formatronCloudformationS3Key
+          formatronOpsworksS3Key
+          formatronOpscodeS3Key
+        ).include?(key)
           {
             parameter_key: key,
-            parameter_value: @config.name,
-            use_previous_value: false
-          }
-        when 'formatronTarget'
-          {
-            parameter_key: key,
-            parameter_value: @config.target,
-            use_previous_value: false
-          }
-        when 'formatronPrefix'
-          {
-            parameter_key: key,
-            parameter_value: @config.prefix,
-            use_previous_value: false
-          }
-        when 'formatronS3Bucket'
-          {
-            parameter_key: key,
-            parameter_value: @config.s3_bucket,
-            use_previous_value: false
-          }
-        when 'formatronRegion'
-          {
-            parameter_key: key,
-            parameter_value: @config.region,
-            use_previous_value: false
-          }
-        when 'formatronKmsKey'
-          {
-            parameter_key: key,
-            parameter_value: @config.kms_key,
-            use_previous_value: false
-          }
-        when 'formatronConfigS3Key'
-          {
-            parameter_key: key,
-            parameter_value: @config.config_s3_key,
-            use_previous_value: false
-          }
-        when 'formatronCloudformationS3Key'
-          {
-            parameter_key: key,
-            parameter_value: @config.cloudformation_s3_key,
-            use_previous_value: false
-          }
-        when 'formatronOpsworksS3Key'
-          {
-            parameter_key: key,
-            parameter_value: @config.opsworks_s3_key,
-            use_previous_value: false
-          }
-        when 'formatronOpscodeS3Key'
-          {
-            parameter_key: key,
-            parameter_value: @config.opscode_s3_key,
+            parameter_value: @config.config[key],
             use_previous_value: false
           }
         else
-          fail "No value specified for parameter: #{key}" if @config._cloudformation.nil? || @config._cloudformation.parameters[key].nil?
+          fail(
+            "No value specified for parameter: #{key}"
+          ) if
+            @config.cloudformation.nil? ||
+            @config.cloudformation.parameters[key].nil?
           {
             parameter_key: key,
-            parameter_value: @config._cloudformation.parameters[key].to_s,
+            parameter_value: @config.cloudformation.parameters[key].to_s,
             use_previous_value: false
           }
         end
@@ -277,7 +263,7 @@ class Formatron
           stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
           template_url: template_url,
           capabilities: capabilities,
-          on_failure: "DO_NOTHING",
+          on_failure: 'DO_NOTHING',
           parameters: parameters
         )
       rescue Aws::CloudFormation::Errors::AlreadyExistsException
@@ -289,11 +275,13 @@ class Formatron
             parameters: parameters
           )
         rescue Aws::CloudFormation::Errors::ValidationError => error
-          raise error unless error.message.eql?('No updates are to be performed.')
+          raise error unless error.message.eql?(
+            'No updates are to be performed.'
+          )
         end
-        # TODO: wait for the update to finish and then update the opsworks stacks
+        # TODO: wait for the update to finish and
+        # then update the opsworks stacks
       end
     end
   end
-
 end

@@ -3,18 +3,15 @@ class Formatron
     class Cloudformation
       attr_reader :config, :parameters
 
-      def initialize (config, &block)
+      def initialize(config, &block)
         @config = config
         @parameters = {}
-        if block_given?
-          instance_eval(&block)
-        end
+        instance_eval(&block) if block_given?
       end
 
-      def parameter (key, value)
+      def parameter(key, value)
         @parameters[key] = value
       end
-
     end
   end
 end

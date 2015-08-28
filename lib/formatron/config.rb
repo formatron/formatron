@@ -13,128 +13,96 @@ require 'deep_merge'
 
 class Formatron
   class Config
-
     CLOUDFORMATION_DIR = 'cloudformation'
 
-    attr_reader :config, :target, :config_s3_key, :opscode_s3_key, :opsworks_s3_key, :cloudformation_s3_key, :_cloudformation, :_opscode, :dependencies
+    attr_reader :config
 
-    def initialize (dir, target, credentials)
+    def initialize(dir, target, credentials)
       @dir = dir
       @credentials = credentials
       @config = {}
       config['formatronTarget'] = target
-      init_from_config
-      @_cloudformation = nil
-      @_opscode = nil
+      @cloudformation = nil
+      @opscode = nil
       formatron_file = File.join(@dir, FORMATRON_FILE)
       instance_eval(File.read(formatron_file), formatron_file)
     end
 
-    def name (name = nil)
+    def name(name = nil)
       unless name.nil?
         config['formatronName'] = name
-        config['formatronConfigS3Key'] = "#{target}/#{name}/config.json"
-        config['formatronCloudformationS3Key'] = "#{target}/#{name}/cloudformation"
-        config['formatronOpsworksS3Key'] = "#{target}/#{name}/opsworks"
-        config['formatronOpscodeS3Key'] = "#{target}/#{name}/opscode"
-        target_config_dir = File.join(@dir, CONFIG, target)
+        # rubocop:disable Metrics/LineLength
+        config['formatronConfigS3Key'] = "#{config['formatronTarget']}/#{config['formatronName']}/config.json"
+        config['formatronCloudformationS3Key'] =
+          "#{config['formatronTarget']}/#{config['formatronName']}/cloudformation"
+        config['formatronOpsworksS3Key'] = "#{config['formatronTarget']}/#{config['formatronName']}/opsworks"
+        config['formatronOpscodeS3Key'] = "#{config['formatronTarget']}/#{config['formatronName']}/opscode"
+        # rubocop:enable Metrics/LineLength
+        target_config_dir = File.join(@dir, CONFIG, config['formatronTarget'])
         default_config_dir = File.join(@dir, DEFAULT_CONFIG_DIR)
-        default_config = File.directory?(default_config_dir) ? Formatron::Config::Reader.read(default_config_dir, DEFAULT_JSON) : {}
-        target_config = File.directory?(target_config_dir) ? Formatron::Config::Reader.read(target_config_dir, DEFAULT_JSON) : {}
-        config[name] = default_config.deep_merge!(target_config)
-        config[name]['formatronOutputs'] = {} if File.directory?(File.join(@dir, CLOUDFORMATION_DIR))
-        init_from_config
+        default_config =
+          if File.directory?(default_config_dir)
+            Formatron::Config::Reader.read(default_config_dir, DEFAULT_JSON)
+          else
+            {}
+          end
+        target_config =
+          if File.directory?(target_config_dir)
+            Formatron::Config::Reader.read(target_config_dir, DEFAULT_JSON)
+          else
+            {}
+          end
+        config[config['formatronName']] =
+          default_config.deep_merge!(target_config)
+        config[config['formatronName']]['formatronOutputs'] =
+          {} if File.directory?(File.join(@dir, CLOUDFORMATION_DIR))
       end
-      @name
+      config['formatronName']
     end
 
-    def s3_bucket (s3_bucket = nil)
-      unless s3_bucket.nil?
-        config['formatronS3Bucket'] = s3_bucket
-        init_from_config
-      end
-      @s3_bucket
+    def s3_bucket(s3_bucket = nil)
+      config['formatronS3Bucket'] = s3_bucket unless s3_bucket.nil?
+      config['formatronS3Bucket']
     end
 
-    def region (region = nil)
-      unless region.nil?
-        config['formatronRegion'] = region
-        init_from_config
-      end
-      @region
+    def region(region = nil)
+      config['formatronRegion'] = region unless region.nil?
+      config['formatronRegion']
     end
 
-    def prefix (prefix = nil)
-      unless prefix.nil?
-        config['formatronPrefix'] = prefix
-        init_from_config
-      end
-      @prefix
+    def prefix(prefix = nil)
+      config['formatronPrefix'] = prefix unless prefix.nil?
+      config['formatronPrefix']
     end
 
-    def kms_key (target = nil, key_id = nil)
+    def kms_key(target = nil, key_id = nil)
       unless key_id.nil?
-        if target == @target
+        if target == config['formatronTarget']
           config['formatronKmsKey'] = key_id
-          init_from_config
         end
       end
-      @kms_key
+      config['formatronKmsKey']
     end
 
-    def depends (stack_name)
-      s3 = Aws::S3::Client.new(
-        region: region,
-        signature_version: 'v4',
-        credentials: @credentials
-      )
-      response = s3.get_object(
-        bucket: s3_bucket,
-        key: "#{target}/#{stack_name}/config.json"
-      )
-      base = JSON.parse(response.body.read)
-      @config = base.deep_merge!(config)
-      init_from_config
-      unless config[stack_name]['formatronOutputs'].nil?
-        full_stack_name = "#{prefix}-#{stack_name}-#{target}"
-        cloudformation = Aws::CloudFormation::Client.new(
-          region: region,
-          credentials: @credentials
-        )
-        response = cloudformation.describe_stacks(
-          stack_name: full_stack_name
-        )
-        stack = response.stacks[0]
-        fail "Stack dependency not ready: #{full_stack_name}" unless ['CREATE_COMPLETE', 'ROLLBACK_COMPLETE', 'UPDATE_COMPLETE', 'UPDATE_ROLLBACK_COMPLETE'].include? stack.stack_status
-        outputs = config[stack_name]['formatronOutputs'] 
-        stack.outputs.each do |output|
-          outputs[output.output_key] = output.output_value
-        end
-      end
+    def depends(stack_name)
+      dep = Formatron::Config::Depends.new(@credentials)
+      @config = dep.load prefix, stack_name, config['formatronTarget'], config
     end
 
-    def cloudformation (&block)
-      @_cloudformation = Formatron::Config::Cloudformation.new(config, &block)
+    def cloudformation(&block)
+      @cloudformation = Formatron::Config::Cloudformation.new(
+        config,
+        &block
+      ) if block_given?
+      @cloudformation
     end
 
-    def opscode (&block)
-      @_opscode = Formatron::Config::Opscode.new(config, &block)
+    def opscode(&block)
+      @opscode = Formatron::Config::Opscode.new(
+        config,
+        &block
+      ) if block_given?
+      @opscode
     end
-
-    private
-
-    def init_from_config
-      @target = config['formatronTarget']
-      @name = config['formatronName']
-      @s3_bucket = config['formatronS3Bucket']
-      @region = config['formatronRegion']
-      @prefix = config['formatronPrefix']
-      @kms_key = config['formatronKmsKey']
-      @config_s3_key = config['formatronConfigS3Key']
-      @cloudformation_s3_key = config['formatronCloudformationS3Key']
-      @opsworks_s3_key = config['formatronOpsworksS3Key']
-      @opscode_s3_key = config['formatronOpscodeS3Key']
-    end
-
   end
 end
