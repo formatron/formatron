@@ -1,5 +1,8 @@
 # Formatron
 
+[![Build Status](https://travis-ci.org/pghalliday/formatron.svg?branch=refactor)](https://travis-ci.org/pghalliday/formatron)
+[![Coverage Status](https://coveralls.io/repos/pghalliday/formatron/badge.svg?branch=master&service=github)](https://coveralls.io/github/pghalliday/formatron?branch=master)
+
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/formatron`. To experiment with that code, run `bin/console` for an interactive prompt.
 
 TODO: Delete this and the text above, and describe your gem
