@@ -46,10 +46,10 @@ class Formatron
     )
     response = s3.put_object(
       bucket: @config.s3_bucket,
-      key: @config.config_s3_key,
-      body: @config.config.to_json,
+      key: @config.config['formatronConfigS3Key'],
+      body: JSON.pretty_generate(@config.config),
       server_side_encryption: 'aws:kms',
-      ssekms_key_id: @config.kms_key
+      ssekms_key_id: @config.config['formatronKmsKey']
     )
     opscode_dir = File.join(@dir, OPSCODE_DIR)
     if File.directory?(opscode_dir)
@@ -191,7 +191,7 @@ class Formatron
         )
         response = s3.put_object(
           bucket: @config.s3_bucket,
-          key: "#{@config.cloudformation_s3_key}/#{relative_path}",
+          key: "#{@config.config['formatronCloudformationS3Key']}/#{relative_path}",
           body: template_json
         )
         main = JSON.parse(template_json) if
@@ -222,7 +222,7 @@ class Formatron
           relative_path.to_s.eql?(MAIN_CLOUDFORMATION_JSON)
       end
       # rubocop:disable Metrics/LineLength
-      cloudformation_s3_root_url = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{@config.cloudformation_s3_key}"
+      cloudformation_s3_root_url = "https://s3.amazonaws.com/#{@config.s3_bucket}/#{@config.config['formatronCloudformationS3Key']}"
       # rubocop:enable Metrics/LineLength
       template_url = "#{cloudformation_s3_root_url}/#{MAIN_CLOUDFORMATION_JSON}"
       capabilities = ['CAPABILITY_IAM']

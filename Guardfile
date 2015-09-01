@@ -45,6 +45,7 @@ group :test, halt_on_fail: true do
   end
 
   guard 'cucumber' do
+    watch(%r{^lib/.+$}) { 'features' }
     watch(%r{^features/.+\.feature$})
     watch(%r{^features/support/.+$}) { 'features' }
 
