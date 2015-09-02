@@ -46,7 +46,7 @@ EOH
   spec.add_development_dependency 'yard'
   # yard-cucumber is currently installed from the Gemfile as I need to
   # load it from git until it is made compatible with Cucumber 2.0 and released
-  #spec.add_development_dependency 'yard-cucumber'
+  # spec.add_development_dependency 'yard-cucumber'
   spec.add_development_dependency 'yard-rspec'
   spec.add_development_dependency 'guard-livereload'
   spec.add_development_dependency 'guard-yard'

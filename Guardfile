@@ -1,7 +1,12 @@
 group :test, halt_on_fail: true do
   guard :rubocop do
     watch(/.+\.rb$/)
+    watch(/.+\.gemspec$/)
+    watch(/^Rakefile$/)
+    watch(/^Gemfile$/)
+    watch(/^Guardfile$/)
     watch(%r{(?:.+/)?\.rubocop\.yml$}) { |m| File.dirname(m[0]) }
+    watch(%r{(?:.+/)?\.rubocop_todo\.yml$}) { |m| File.dirname(m[0]) }
   end
 
   guard :rspec, cmd: 'bundle exec rspec' do

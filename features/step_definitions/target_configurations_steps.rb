@@ -15,13 +15,18 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   @cloudformation = double
   allow(@cloudformation).to receive(:validate_template)
   allow(@cloudformation).to receive(:create_stack)
-  allow(Aws::Credentials).to receive(:new) {@credentials}
-  allow(Aws::S3::Client).to receive(:new) {@s3_client}
-  allow(Aws::CloudFormation::Client).to receive(:new) {@cloudformation}
+  allow(Aws::Credentials).to receive(:new) { @credentials }
+  allow(Aws::S3::Client).to receive(:new) { @s3_client }
+  allow(Aws::CloudFormation::Client).to receive(:new) { @cloudformation }
   @fp.deploy target
 end
 
-Then(/^the region (\w+), AWS access key ID (\w+) and AWS secret access key (\w+) should be used when communicating with AWS$/) do |region, access_key_id, secret_access_key|
+Then(/^
+  the[ ]region[ ](\w+),[ ]
+  AWS[ ]access[ ]key[ ]ID[ ](\w+)[ ]
+  and[ ]AWS[ ]secret[ ]access[ ]key[ ](\w+)[ ]
+  should[ ]be[ ]used[ ]when[ ]communicating[ ]with[ ]AWS
+$/x) do |region, access_key_id, secret_access_key|
   expect(Aws::Credentials).to have_received(:new).once.with(
     access_key_id,
     secret_access_key
@@ -40,7 +45,12 @@ Then(/^the region (\w+), AWS access key ID (\w+) and AWS secret access key (\w+)
   expect(@cloudformation).to have_received(:create_stack).once
 end
 
-Then(/^the config should be uploaded to S3 bucket (\w+) with key ([^\s,]+), KMS key (\w+) and content$/) do |bucket, key, kms_key, content|
+Then(/
+  ^the config should be uploaded to S3 bucket (\w+)
+  with key ([^\s,]+),
+  KMS key (\w+)
+  and content$
+/x) do |bucket, key, kms_key, content|
   expect(@s3_client).to have_received(:put_object).once.with(
     bucket: bucket,
     key: key,
@@ -50,13 +60,21 @@ Then(/^the config should be uploaded to S3 bucket (\w+) with key ([^\s,]+), KMS 
   )
 end
 
-Then(/^the cloudformation template should be validated with content matching ([^\s]+)$/) do |relative_path|
+Then(/
+  ^the cloudformation template should be
+  validated with content matching ([^\s]+)$
+/x) do |relative_path|
   expect(@cloudformation).to have_received(:validate_template).once.with(
     template_body: @fp.files[relative_path]
   )
 end
 
-Then(/^the cloudformation template should be uploaded to S3 bucket (\w+) with key ([^\s]+) and content matching ([^\s]+)$/) do |bucket, key, relative_path|
+Then(/
+  ^the cloudformation template should be
+  uploaded to S3 bucket (\w+)
+  with key ([^\s]+)
+  and content matching ([^\s]+)$
+/x) do |bucket, key, relative_path|
   expect(@s3_client).to have_received(:put_object).once.with(
     bucket: bucket,
     key: key,
@@ -64,7 +82,12 @@ Then(/^the cloudformation template should be uploaded to S3 bucket (\w+) with ke
   )
 end
 
-Then(/^the cloudformation stack should be created with name ([^\s,]+), template url ([^\s]+) and parameter (\w+)/) do |name, url, param|
+Then(/
+  ^the cloudformation stack should be
+  created with name ([^\s,]+),
+  template url ([^\s]+)
+  and parameter (\w+)
+/x) do |name, url, param|
   expect(@cloudformation).to have_received(:create_stack).once.with(
     stack_name: name,
     template_url: url,

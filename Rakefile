@@ -4,9 +4,7 @@ require 'rubocop/rake_task'
 require 'cucumber'
 require 'cucumber/rake/task'
 
-RSpec::Core::RakeTask.new(:spec) do |task|
-  task.rspec_opts = ['--color', '--format', 'documentation']
-end
+RSpec::Core::RakeTask.new(:spec)
 
 Cucumber::Rake::Task.new(:features) do |t|
   t.cucumber_opts = 'features'
