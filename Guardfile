@@ -1,4 +1,9 @@
 group :test, halt_on_fail: true do
+  guard :rubocop do
+    watch(/.+\.rb$/)
+    watch(%r{(?:.+/)?\.rubocop\.yml$}) { |m| File.dirname(m[0]) }
+  end
+
   guard :rspec, cmd: 'bundle exec rspec' do
     require 'guard/rspec/dsl'
     dsl = Guard::RSpec::Dsl.new(self)
@@ -44,7 +49,7 @@ group :test, halt_on_fail: true do
     end
   end
 
-  guard 'cucumber' do
+  guard 'cucumber', cli: '--profile default' do
     watch(%r{^lib/.+$}) { 'features' }
     watch(%r{^features/.+\.feature$})
     watch(%r{^features/support/.+$}) { 'features' }
@@ -53,9 +58,15 @@ group :test, halt_on_fail: true do
       Dir[File.join("**/#{m[1]}.feature")][0] || 'features'
     end
   end
+end
 
-  guard :rubocop do
-    watch(/.+\.rb$/)
-    watch(%r{(?:.+/)?\.rubocop\.yml$}) { |m| File.dirname(m[0]) }
-  end
+guard 'livereload' do
+  watch(%r{.yardoc/.+$})
+end
+
+guard 'yard' do
+  watch(%r{lib/.+\.rb})
+  watch(%r{features/.+\.rb})
+  watch(%r{features/.+\.feature})
+  watch(%r{[^/]+.md})
 end

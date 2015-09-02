@@ -1,0 +1,4 @@
+# config/cucumber.yml
+##YAML Template
+---
+default: --format progress --format html --out=features_report.html
