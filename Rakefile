@@ -9,7 +9,7 @@ RSpec::Core::RakeTask.new(:spec) do |task|
 end
 
 Cucumber::Rake::Task.new(:features) do |t|
-  t.cucumber_opts = 'features --format pretty'
+  t.cucumber_opts = 'features'
 end
 
 RuboCop::RakeTask.new(:rubocop)
