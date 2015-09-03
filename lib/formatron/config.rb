@@ -75,12 +75,8 @@ class Formatron
       config['formatronPrefix']
     end
 
-    def kms_key(target = nil, key_id = nil)
-      unless key_id.nil?
-        if target == config['formatronTarget']
-          config['formatronKmsKey'] = key_id
-        end
-      end
+    def kms_key(key_id = nil)
+      config['formatronKmsKey'] = key_id unless key_id.nil?
       config['formatronKmsKey']
     end
 

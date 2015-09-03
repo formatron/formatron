@@ -22,27 +22,69 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
 end
 
 Then(/^
-  the[ ]region[ ](\w+),[ ]
   AWS[ ]access[ ]key[ ]ID[ ](\w+)[ ]
   and[ ]AWS[ ]secret[ ]access[ ]key[ ](\w+)[ ]
   should[ ]be[ ]used[ ]when[ ]communicating[ ]with[ ]AWS
-$/x) do |region, access_key_id, secret_access_key|
+$/x) do |access_key_id, secret_access_key|
   expect(Aws::Credentials).to have_received(:new).once.with(
     access_key_id,
     secret_access_key
   )
+end
+
+Then(/^
+  the[ ]region[ ](\w+),[ ]
+  AWS[ ]access[ ]key[ ]ID[ ](\w+)[ ]
+  and[ ]AWS[ ]secret[ ]access[ ]key[ ](\w+)[ ]
+  should[ ]be[ ]used[ ]when[ ]communicating[ ]with[ ]S3
+$/x) do |region, access_key_id, secret_access_key|
+  step([
+    "AWS access key ID #{access_key_id}",
+    "and AWS secret access key #{secret_access_key}",
+    'should be used when communicating with AWS'
+  ].join(' '))
   expect(Aws::S3::Client).to have_received(:new).once.with(
     region: region,
     signature_version: 'v4',
     credentials: @credentials
   )
+end
+
+Then(/^
+  the[ ]region[ ](\w+),[ ]
+  AWS[ ]access[ ]key[ ]ID[ ](\w+)[ ]
+  and[ ]AWS[ ]secret[ ]access[ ]key[ ](\w+)[ ]
+  should[ ]be[ ]used[ ]when[ ]communicating[ ]with[ ]CloudFormation
+$/x) do |region, access_key_id, secret_access_key|
+  step([
+    "AWS access key ID #{access_key_id}",
+    "and AWS secret access key #{secret_access_key}",
+    'should be used when communicating with AWS'
+  ].join(' '))
   expect(Aws::CloudFormation::Client).to have_received(:new).once.with(
     region: region,
     credentials: @credentials
   )
-  expect(@s3_client).to have_received(:put_object).twice
-  expect(@cloudformation).to have_received(:validate_template).once
-  expect(@cloudformation).to have_received(:create_stack).once
+end
+
+Then(/^
+  the[ ]region[ ](\w+),[ ]
+  AWS[ ]access[ ]key[ ]ID[ ](\w+)[ ]
+  and[ ]AWS[ ]secret[ ]access[ ]key[ ](\w+)[ ]
+  should[ ]be[ ]used[ ]when[ ]communicating[ ]with[ ]AWS
+$/x) do |region, access_key_id, secret_access_key|
+  step([
+    "the region #{region},",
+    "AWS access key ID #{access_key_id}",
+    "and AWS secret access key #{secret_access_key}",
+    'should be used when communicating with S3'
+  ].join(' '))
+  step([
+    "the region #{region},",
+    "AWS access key ID #{access_key_id}",
+    "and AWS secret access key #{secret_access_key}",
+    'should be used when communicating with CloudFormation'
+  ].join(' '))
 end
 
 Then(/^
@@ -85,18 +127,35 @@ end
 Then(/^
   the[ ]cloudformation[ ]stack[ ]should[ ]be[ ]
   created[ ]with[ ]name[ ]([^\s,]+),[ ]
-  template[ ]url[ ]([^\s]+)[ ]
-  and[ ]parameter[ ](\w+)
-$/x) do |name, url, param|
+  template[ ]url[ ]([^\s]+)
+$/x) do |name, url|
   expect(@cloudformation).to have_received(:create_stack).once.with(
     stack_name: name,
     template_url: url,
     capabilities: ['CAPABILITY_IAM'],
     on_failure: 'DO_NOTHING',
-    parameters: [{
-      parameter_key: 'param',
-      parameter_value: param,
-      use_previous_value: false
-    }]
+    parameters: [
+    ]
+  )
+end
+
+Then(/^
+  the[ ]cloudformation[ ]stack[ ]should[ ]be[ ]
+  created[ ]with[ ]name[ ]([^\s,]+),[ ]
+  template[ ]url[ ]([^\s]+)[ ]
+  and[ ]parameters
+$/x) do |name, url, params|
+  expect(@cloudformation).to have_received(:create_stack).once.with(
+    stack_name: name,
+    template_url: url,
+    capabilities: ['CAPABILITY_IAM'],
+    on_failure: 'DO_NOTHING',
+    parameters: params.hashes.map do |param|
+      {
+        parameter_key: param[:parameter],
+        parameter_value: param[:value],
+        use_previous_value: false
+      }
+    end
   )
 end
