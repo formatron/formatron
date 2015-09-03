@@ -1,3 +1,14 @@
+guard 'livereload' do
+  watch(%r{.yardoc/.+$})
+end
+
+guard 'yard', stdout: 'yard.stdout.log', stderr: 'yard.stderr.log' do
+  watch(%r{lib/.+\.rb})
+  watch(%r{features/.+\.rb})
+  watch(%r{features/.+\.feature})
+  watch(%r{[^/]+.md})
+end
+
 group :test, halt_on_fail: true do
   guard :rubocop do
     watch(/.+\.rb$/)
@@ -29,15 +40,4 @@ group :test, halt_on_fail: true do
     watch(%r{^features/.+\.rb$}) { 'features' }
     watch(%r{^features/.+\.feature$})
   end
-end
-
-guard 'livereload' do
-  watch(%r{.yardoc/.+$})
-end
-
-guard 'yard' do
-  watch(%r{lib/.+\.rb})
-  watch(%r{features/.+\.rb})
-  watch(%r{features/.+\.feature})
-  watch(%r{[^/]+.md})
 end
