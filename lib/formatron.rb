@@ -1,5 +1,6 @@
 require_relative 'formatron/config'
 require_relative 'formatron_util/tar'
+require_relative 'formatron_util/berks'
 require 'aws-sdk'
 require 'json'
 require 'pathname'
@@ -12,8 +13,6 @@ CLOUDFORMATION_DIR = 'cloudformation'
 OPSWORKS_DIR = 'opsworks'
 OPSCODE_DIR = 'opscode'
 MAIN_CLOUDFORMATION_JSON = 'main.json'
-
-include FormatronUtil::Tar
 
 class Formatron
   class TemplateParams
@@ -93,7 +92,9 @@ class Formatron
           response = s3.put_object(
             bucket: @config.s3_bucket,
             key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
-            body: gzip(tar(server_vendor_dir))
+            body: FormatronUtil::Tar.gzip(
+              FormatronUtil::Tar.tar(server_vendor_dir)
+            )
           )
         end
       else
@@ -164,14 +165,17 @@ class Formatron
         stack_name = File.basename(stack)
         stack_vendor_dir = File.join(vendor_dir, stack_name)
         FileUtils.mkdir_p stack_vendor_dir
-        `berks vendor -b #{File.join(stack, 'Berksfile')} #{stack_vendor_dir}`
-        fail(
-          "failed to vendor cookbooks for opsworks stack: #{stack_name}"
-        ) unless $CHILD_STATUS.success?
+        FormatronUtil::Berks.vendor(
+          File.join(stack, 'Berksfile'),
+          stack_vendor_dir
+        )
+        s3_key = @config.config['formatronOpsworksS3Key']
         response = s3.put_object(
           bucket: @config.s3_bucket,
-          key: "#{@config.opsworks_s3_key}/#{stack_name}.tar.gz",
-          body: gzip(tar(stack_vendor_dir))
+          key: "#{s3_key}/#{stack_name}.tar.gz",
+          body: FormatronUtil::Tar.gzip(
+            FormatronUtil::Tar.tar(stack_vendor_dir)
+          )
         )
       end
     end

@@ -3,7 +3,7 @@ class Formatron
     module Support
       # Generates a Formatron project directory tree with the given files
       class FormatronProject
-        attr_reader :files
+        attr_reader :files, :dir
 
         def initialize
           @files = {}
@@ -15,6 +15,7 @@ class Formatron
 
         def deploy(target)
           Dir.mktmpdir do |dir|
+            @dir = dir
             @files.each do |relative_path, content|
               path = File.join dir, relative_path
               FileUtils.mkdir_p File.dirname(path)

@@ -4,7 +4,7 @@ require 'zlib'
 
 module FormatronUtil
   module Tar
-    def tar(path)
+    def self.tar(path)
       tarfile = StringIO.new('')
       Gem::Package::TarWriter.new(tarfile) do |tar|
         Dir.glob(File.join(path, '**/*'), File::FNM_DOTMATCH).each do |file|
@@ -25,7 +25,7 @@ module FormatronUtil
       tarfile
     end
 
-    def gzip(tarfile)
+    def self.gzip(tarfile)
       gz = StringIO.new('')
       z = Zlib::GzipWriter.new(gz)
       z.write tarfile.string

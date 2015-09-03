@@ -39,8 +39,7 @@ Feature: CloudFormation stack support
       }
       """
     When  I deploy the formatron stack with target <target>
-    Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
-    Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with CloudFormation
+    Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with AWS
     And the cloudformation template should be validated with content matching cloudformation/main.json
     And the cloudformation template should be uploaded to S3 bucket <bucket> with key <target>/<name>/cloudformation/main.json and content matching cloudformation/main.json
     And the cloudformation stack should be created with name <prefix>-<name>-<target>, template url https://s3.amazonaws.com/<bucket>/<target>/<name>/cloudformation/main.json
