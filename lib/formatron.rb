@@ -218,9 +218,10 @@ class Formatron
       relative_path = template_pathname.relative_path_from(
         cloudformation_pathname
       )
+      s3_key = @config.config['formatronCloudformationS3Key']
       response = s3.put_object(
         bucket: @config.s3_bucket,
-        key: "#{@config.cloudformation_s3_key}/#{relative_path}",
+        key: "#{s3_key}/#{relative_path}",
         body: template_json
       )
       main = JSON.parse(template_json) if

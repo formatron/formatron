@@ -118,6 +118,15 @@ end
 
 Then(/^
   the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
+  validated[ ]with[ ]content[ ]matching
+$/x) do |content|
+  expect(@cloudformation).to have_received(:validate_template).once.with(
+    template_body: content
+  )
+end
+
+Then(/^
+  the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
   uploaded[ ]to[ ]S3[ ]bucket[ ](\w+)[ ]
   with[ ]key[ ]([^\s]+)[ ]
   and[ ]content[ ]matching[ ]([^\s]+)
@@ -126,6 +135,19 @@ $/x) do |bucket, key, relative_path|
     bucket: bucket,
     key: key,
     body: @fp.files[relative_path]
+  )
+end
+
+Then(/^
+  the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
+  uploaded[ ]to[ ]S3[ ]bucket[ ](\w+)[ ]
+  with[ ]key[ ]([^\s]+)[ ]
+  and[ ]content[ ]matching
+$/x) do |bucket, key, content|
+  expect(@s3_client).to have_received(:put_object).once.with(
+    bucket: bucket,
+    key: key,
+    body: content
   )
 end
 
