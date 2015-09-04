@@ -3,6 +3,7 @@ require 'bundler/gem_tasks'
 require 'rubocop/rake_task'
 require 'cucumber'
 require 'cucumber/rake/task'
+require 'coveralls/rake/task'
 
 RSpec::Core::RakeTask.new(:spec)
 
@@ -12,4 +13,6 @@ end
 
 RuboCop::RakeTask.new(:rubocop)
 
-task default: [:rubocop, :spec, :features]
+Coveralls::RakeTask.new
+
+task default: [:rubocop, :spec, :features, 'coveralls:push']

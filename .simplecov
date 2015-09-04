@@ -1,6 +1,5 @@
 require 'coveralls'
-SimpleCov.formatter = Coveralls::SimpleCov::Formatter
 SimpleCov.start do
-  minimum_coverage 20
+  add_filter '/spec/'
+  add_filter '/features/'
 end
-Coveralls.wear_merged!

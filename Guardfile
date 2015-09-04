@@ -16,6 +16,7 @@ group :test, halt_on_fail: true do
     watch(/^Rakefile$/)
     watch(/^Gemfile$/)
     watch(/^Guardfile$/)
+    watch(/^.simplecov$/)
     watch(%r{(?:.+/)?\.rubocop\.yml$}) { |m| File.dirname(m[0]) }
     watch(%r{(?:.+/)?\.rubocop_todo\.yml$}) { |m| File.dirname(m[0]) }
   end

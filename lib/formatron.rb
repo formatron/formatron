@@ -1,6 +1,6 @@
 require_relative 'formatron/config'
-require_relative 'formatron_util/tar'
-require_relative 'formatron_util/berks'
+require_relative 'formatron/util/tar'
+require_relative 'formatron/util/berks'
 require 'aws-sdk'
 require 'json'
 require 'pathname'
@@ -99,8 +99,8 @@ class Formatron
           response = @s3.put_object(
             bucket: @config.s3_bucket,
             key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
-            body: FormatronUtil::Tar.gzip(
-              FormatronUtil::Tar.tar(server_vendor_dir)
+            body: Formatron::Util::Tar.gzip(
+              Formatron::Util::Tar.tar(server_vendor_dir)
             )
           )
         end
@@ -172,7 +172,7 @@ class Formatron
         stack_name = File.basename(stack)
         stack_vendor_dir = File.join(vendor_dir, stack_name)
         FileUtils.mkdir_p stack_vendor_dir
-        FormatronUtil::Berks.vendor(
+        Formatron::Util::Berks.vendor(
           File.join(stack, 'Berksfile'),
           stack_vendor_dir
         )
@@ -180,8 +180,8 @@ class Formatron
         response = @s3.put_object(
           bucket: @config.s3_bucket,
           key: "#{s3_key}/#{stack_name}.tar.gz",
-          body: FormatronUtil::Tar.gzip(
-            FormatronUtil::Tar.tar(stack_vendor_dir)
+          body: Formatron::Util::Tar.gzip(
+            Formatron::Util::Tar.tar(stack_vendor_dir)
           )
         )
       end

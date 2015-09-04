@@ -58,9 +58,9 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   allow(Aws::Credentials).to receive(:new) { @credentials }
   allow(Aws::S3::Client).to receive(:new) { @s3_client }
   allow(Aws::CloudFormation::Client).to receive(:new) { @cloudformation }
-  @berks = class_double('FormatronUtil::Berks').as_stubbed_const
+  @berks = class_double('Formatron::Util::Berks').as_stubbed_const
   allow(@berks).to receive(:vendor)
-  tar = class_double('FormatronUtil::Tar').as_stubbed_const
+  tar = class_double('Formatron::Util::Tar').as_stubbed_const
   allow(tar).to receive(:tar) { |dir| "tar #{dir}" }
   allow(tar).to receive(:gzip) { |tarfile| "gzip #{tarfile}" }
   @fp.deploy target

@@ -1,5 +1,5 @@
 Feature: Formatron stacks can depend on other Formatron stacks
-  In order to create infrastructure using multple stacks that share configuration data and still folow the DRY principle
+  In order to create infrastructure using multple stacks that share configuration data and still follow the DRY principle
   As a maintainer of formatron stacks
   I want to be able to depend on other stacks merging their configuration and outputs
 
