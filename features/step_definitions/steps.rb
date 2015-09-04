@@ -8,13 +8,26 @@ Given(/^an? ([^\s]+) file with content$/) do |relative_path, content|
   @fp.add_file relative_path, content
 end
 
+Given(/^the CloudFormation stack already exists$/) do
+  @fp.cloudformation_stack_exists = true
+end
+
 When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   @credentials = double
   @s3_client = double
   allow(@s3_client).to receive(:put_object)
   @cloudformation = double
   allow(@cloudformation).to receive(:validate_template)
-  allow(@cloudformation).to receive(:create_stack)
+  allow(@cloudformation).to receive(:create_stack) do
+    puts Aws::CloudFormation::Errors::AlreadyExistsException
+    fail(
+      Aws::CloudFormation::Errors::AlreadyExistsException.new(
+        'context',
+        'stack exists'
+      )
+    ) if @fp.cloudformation_stack_exists
+  end
+  allow(@cloudformation).to receive(:update_stack)
   allow(Aws::Credentials).to receive(:new) { @credentials }
   allow(Aws::S3::Client).to receive(:new) { @s3_client }
   allow(Aws::CloudFormation::Client).to receive(:new) { @cloudformation }
@@ -108,7 +121,7 @@ $/x) do |bucket, key, kms_key, content|
 end
 
 Then(/^
-  the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
+  (?:the|a)[ ]cloudformation[ ]template[ ]should[ ]be[ ]
   validated[ ]with[ ]content[ ]matching[ ]([^\s]+)
 $/x) do |relative_path|
   expect(@cloudformation).to have_received(:validate_template).once.with(
@@ -117,7 +130,7 @@ $/x) do |relative_path|
 end
 
 Then(/^
-  the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
+  (?:the|a)[ ]cloudformation[ ]template[ ]should[ ]be[ ]
   validated[ ]with[ ]content[ ]matching
 $/x) do |content|
   expect(@cloudformation).to have_received(:validate_template).once.with(
@@ -126,7 +139,7 @@ $/x) do |content|
 end
 
 Then(/^
-  the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
+  (?:the|a)[ ]cloudformation[ ]template[ ]should[ ]be[ ]
   uploaded[ ]to[ ]S3[ ]bucket[ ](\w+)[ ]
   with[ ]key[ ]([^\s]+)[ ]
   and[ ]content[ ]matching[ ]([^\s]+)
@@ -139,7 +152,7 @@ $/x) do |bucket, key, relative_path|
 end
 
 Then(/^
-  the[ ]cloudformation[ ]template[ ]should[ ]be[ ]
+  (?:the|a)[ ]cloudformation[ ]template[ ]should[ ]be[ ]
   uploaded[ ]to[ ]S3[ ]bucket[ ](\w+)[ ]
   with[ ]key[ ]([^\s]+)[ ]
   and[ ]content[ ]matching
@@ -161,6 +174,20 @@ $/x) do |name, url|
     template_url: url,
     capabilities: ['CAPABILITY_IAM'],
     on_failure: 'DO_NOTHING',
+    parameters: [
+    ]
+  )
+end
+
+Then(/^
+  the[ ]cloudformation[ ]stack[ ]should[ ]be[ ]
+  updated[ ]with[ ]name[ ]([^\s,]+),[ ]
+  template[ ]url[ ]([^\s]+)
+$/x) do |name, url|
+  expect(@cloudformation).to have_received(:update_stack).once.with(
+    stack_name: name,
+    template_url: url,
+    capabilities: ['CAPABILITY_IAM'],
     parameters: [
     ]
   )

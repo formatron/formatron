@@ -4,8 +4,10 @@ class Formatron
       # Generates a Formatron project directory tree with the given files
       class FormatronProject
         attr_reader :files, :dir
+        attr_accessor :cloudformation_stack_exists
 
         def initialize
+          @cloudformation_stack_exists = false
           @files = {}
         end
 
