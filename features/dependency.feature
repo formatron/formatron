@@ -96,7 +96,7 @@ Feature: Formatron stacks can depend on other Formatron stacks
     And dependency configuration should be downloaded from S3 bucket <bucket> with key <target>/<dependency 1>/config.json
     And dependency configuration should be downloaded from S3 bucket <bucket> with key <target>/<dependency 2>/config.json
     And dependency CloudFormation outputs should be loaded from CloudFormation stack <prefix>-<dependency 2>-<target>
-    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
+    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and JSON
       """
       {
         "formatronRegion": "<region>",

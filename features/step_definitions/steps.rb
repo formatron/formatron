@@ -3,6 +3,7 @@ include Formatron::Cucumber::Support
 Given(/^a Formatron project$/) do
   @fp = FormatronProject.new
   @deps = {}
+  @s3_puts = {}
 end
 
 Given(/^an? ([^\s]+) file with content$/) do |relative_path, content|
@@ -34,7 +35,9 @@ end
 When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   @credentials = double
   @s3_client = double
-  allow(@s3_client).to receive(:put_object)
+  allow(@s3_client).to receive(:put_object) do |params|
+    @s3_puts[params[:key]] = params[:body]
+  end
   allow(@s3_client).to receive(:get_object) do |params|
     dependency = %r{^#{target}/([^/]+)/config.json$}.match(params[:key])[1]
     S3GetObjectResponse.new @deps[dependency].configuration
@@ -46,7 +49,6 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
     CloudformationDescribeStacksResponse.new @deps[dependency].outputs
   end
   allow(@cloudformation).to receive(:create_stack) do
-    puts Aws::CloudFormation::Errors::AlreadyExistsException
     fail(
       Aws::CloudFormation::Errors::AlreadyExistsException.new(
         'context',
@@ -136,15 +138,18 @@ Then(/^
   the[ ]config[ ]should[ ]be[ ]uploaded[ ]to[ ]S3[ ]bucket[ ](\w+)[ ]
   with[ ]key[ ]([^\s,]+),[ ]
   KMS[ ]key[ ](\w+)[ ]
-  and[ ]content
-$/x) do |bucket, key, kms_key, content|
-  expect(@s3_client).to have_received(:put_object).once.with(
-    bucket: bucket,
-    key: key,
-    body: content.to_s,
-    server_side_encryption: 'aws:kms',
-    ssekms_key_id: kms_key
+  and[ ]JSON
+$/x) do |bucket, key, kms_key, json|
+  @s3_client.should have_received(:put_object).once.with(
+    hash_including(
+      bucket: bucket,
+      key: key,
+      server_side_encryption: 'aws:kms',
+      ssekms_key_id: kms_key
+    )
   )
+  config = JSON.parse(json)
+  JSON.parse(@s3_puts[key]).should eq(config)
 end
 
 Then(/^

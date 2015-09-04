@@ -28,7 +28,7 @@ Feature: JSON configuration data
       """
     When  I deploy the formatron stack with target <target>
     Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
-    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
+    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and JSON
       """
       {
         "formatronRegion": "<region>",
@@ -75,7 +75,7 @@ Feature: JSON configuration data
       """
     When  I deploy the formatron stack with target <target>
     Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
-    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
+    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and JSON
       """
       {
         "formatronRegion": "<region>",
@@ -133,7 +133,7 @@ Feature: JSON configuration data
       """
     When  I deploy the formatron stack with target <target>
     Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
-    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
+    And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and JSON
       """
       {
         "formatronRegion": "<region>",
@@ -145,10 +145,10 @@ Feature: JSON configuration data
         "formatronOpscodeS3Key": "<target>/<name>/opscode",
         "<name>": {
           "param1": "<parameter 1>",
-          "param3": "<parameter 3>",
           "subParams": {
             "param2": "<parameter 2>"
-          }
+          },
+          "param3": "<parameter 3>"
         },
         "formatronPrefix": "<prefix>",
         "formatronS3Bucket": "<bucket>",
@@ -200,7 +200,7 @@ Feature: JSON configuration data
       """
     When  I deploy the formatron stack with target <test target>
     Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
-    And the config should be uploaded to S3 bucket <bucket> with key <test target>/<name>/config.json, KMS key <KMS key> and content
+    And the config should be uploaded to S3 bucket <bucket> with key <test target>/<name>/config.json, KMS key <KMS key> and JSON
       """
       {
         "formatronRegion": "<region>",
