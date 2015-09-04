@@ -8,6 +8,7 @@ DEFAULT_JSON = "#{DEFAULT_CONFIG}.json"
 require_relative 'config/reader'
 require_relative 'config/cloudformation'
 require_relative 'config/opscode'
+require_relative 'config/depends'
 require 'aws-sdk'
 require 'deep_merge'
 
@@ -17,10 +18,12 @@ class Formatron
 
     attr_reader :config
 
-    def initialize(dir, target, credentials)
+    def initialize(dir, target, region, s3_client, cloudformation_client)
       @dir = dir
-      @credentials = credentials
+      @s3_client = s3_client
+      @cloudformation_client = cloudformation_client
       @config = {}
+      config['formatronRegion'] = region
       config['formatronTarget'] = target
       @cloudformation = nil
       @opscode = nil
@@ -65,11 +68,6 @@ class Formatron
       config['formatronS3Bucket']
     end
 
-    def region(region = nil)
-      config['formatronRegion'] = region unless region.nil?
-      config['formatronRegion']
-    end
-
     def prefix(prefix = nil)
       config['formatronPrefix'] = prefix unless prefix.nil?
       config['formatronPrefix']
@@ -81,8 +79,14 @@ class Formatron
     end
 
     def depends(stack_name)
-      dep = Formatron::Config::Depends.new(@credentials)
-      @config = dep.load prefix, stack_name, config['formatronTarget'], config
+      dep = Formatron::Config::Depends.new(@s3_client, @cloudformation_client)
+      @config = dep.load(
+        config['formatronS3Bucket'],
+        prefix,
+        stack_name,
+        config['formatronTarget'],
+        config
+      )
     end
 
     def cloudformation(&block)

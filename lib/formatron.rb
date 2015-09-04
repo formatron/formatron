@@ -26,24 +26,31 @@ class Formatron
     @target = target
     credentials_file = File.join(@dir, CREDENTIALS_FILE)
     credentials = JSON.parse(File.read(credentials_file))
-    @credentials = Aws::Credentials.new(
+    region = credentials['region']
+    aws_credentials = Aws::Credentials.new(
       credentials['accessKeyId'],
       credentials['secretAccessKey']
     )
-    @config = Formatron::Config.new @dir, @target, @credentials
+    @s3 = Aws::S3::Client.new(
+      region: region,
+      signature_version: 'v4',
+      credentials: aws_credentials
+    )
+    @cloudformation = Aws::CloudFormation::Client.new(
+      region: region,
+      credentials: aws_credentials
+    )
+    @config = Formatron::Config.new(
+      @dir,
+      @target,
+      credentials['region'],
+      @s3,
+      @cloudformation
+    )
   end
 
   def deploy
-    s3 = Aws::S3::Client.new(
-      region: @config.region,
-      signature_version: 'v4',
-      credentials: @credentials
-    )
-    cloudformation = Aws::CloudFormation::Client.new(
-      region: @config.region,
-      credentials: @credentials
-    )
-    response = s3.put_object(
+    response = @s3.put_object(
       bucket: @config.s3_bucket,
       key: @config.config['formatronConfigS3Key'],
       body: JSON.pretty_generate(@config.config),
@@ -56,7 +63,7 @@ class Formatron
       if @config.opscode._deploys_chef_server
         # first check if the stack is already deployed and ready
         begin
-          response = cloudformation.describe_stacks(
+          response = @cloudformation.describe_stacks(
             stack_name: "#{@config.prefix}-#{@config.name}-#{@target}"
           )
           status = response.stacks[0].stack_status
@@ -89,7 +96,7 @@ class Formatron
           fail "failed to vendor cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
           `cp #{File.join(server, 'Berksfile.lock')} #{server_vendor_dir}`
           # rubocop:enable Metrics/LineLength
-          response = s3.put_object(
+          response = @s3.put_object(
             bucket: @config.s3_bucket,
             key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
             body: FormatronUtil::Tar.gzip(
@@ -99,7 +106,7 @@ class Formatron
         end
       else
         user_key = "#{@target}/#{@config.opscode._user_key}"
-        response = s3.get_object(
+        response = @s3.get_object(
           bucket: @config.s3_bucket,
           key: user_key
         )
@@ -170,7 +177,7 @@ class Formatron
           stack_vendor_dir
         )
         s3_key = @config.config['formatronOpsworksS3Key']
-        response = s3.put_object(
+        response = @s3.put_object(
           bucket: @config.s3_bucket,
           key: "#{s3_key}/#{stack_name}.tar.gz",
           body: FormatronUtil::Tar.gzip(
@@ -187,14 +194,14 @@ class Formatron
     Dir.glob(File.join(cloudformation_dir, '**/*.json')) do |template|
       template_pathname = Pathname.new template
       template_json = File.read template
-      response = cloudformation.validate_template(
+      response = @cloudformation.validate_template(
         template_body: template_json
       )
       relative_path = template_pathname.relative_path_from(
         cloudformation_pathname
       )
       s3_key = @config.config['formatronCloudformationS3Key']
-      response = s3.put_object(
+      response = @s3.put_object(
         bucket: @config.s3_bucket,
         key: "#{s3_key}/#{relative_path}",
         body: template_json
@@ -212,14 +219,14 @@ class Formatron
       erb.filename = template
       erb_template = erb.def_class(TemplateParams, 'render()')
       template_json = erb_template.new(@config.config).render
-      response = cloudformation.validate_template(
+      response = @cloudformation.validate_template(
         template_body: template_json
       )
       relative_path = template_pathname.relative_path_from(
         cloudformation_pathname
       )
       s3_key = @config.config['formatronCloudformationS3Key']
-      response = s3.put_object(
+      response = @s3.put_object(
         bucket: @config.s3_bucket,
         key: "#{s3_key}/#{relative_path}",
         body: template_json
@@ -265,7 +272,7 @@ class Formatron
       end
     end
     begin
-      response = cloudformation.create_stack(
+      response = @cloudformation.create_stack(
         stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
         template_url: template_url,
         capabilities: capabilities,
@@ -274,7 +281,7 @@ class Formatron
       )
     rescue Aws::CloudFormation::Errors::AlreadyExistsException
       begin
-        response = cloudformation.update_stack(
+        response = @cloudformation.update_stack(
           stack_name: "#{@config.prefix}-#{@config.name}-#{@target}",
           template_url: template_url,
           capabilities: capabilities,

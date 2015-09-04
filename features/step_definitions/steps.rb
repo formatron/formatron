@@ -2,6 +2,7 @@ include Formatron::Cucumber::Support
 
 Given(/^a Formatron project$/) do
   @fp = FormatronProject.new
+  @deps = {}
 end
 
 Given(/^an? ([^\s]+) file with content$/) do |relative_path, content|
@@ -12,12 +13,38 @@ Given(/^the CloudFormation stack already exists$/) do
   @fp.cloudformation_stack_exists = true
 end
 
+Given(/^
+  an[ ]already[ ]deployed[ ]Formatron[ ]stack[ ]called[ ](\w+)
+$/x) do |dependency|
+  @deps[dependency] = FormatronStack.new
+end
+
+Given(/^
+  the[ ]Formatron[ ]stack[ ]called[ ](\w+)[ ]has[ ]configuration
+$/x) do |dependency, configuration|
+  @deps[dependency].configuration = configuration
+end
+
+Given(/^
+  the[ ]Formatron[ ]stack[ ]called[ ](\w+)[ ]has[ ]CloudFormation[ ]outputs
+$/x) do |dependency, outputs|
+  @deps[dependency].outputs = outputs.hashes
+end
+
 When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   @credentials = double
   @s3_client = double
   allow(@s3_client).to receive(:put_object)
+  allow(@s3_client).to receive(:get_object) do |params|
+    dependency = %r{^#{target}/([^/]+)/config.json$}.match(params[:key])[1]
+    S3GetObjectResponse.new @deps[dependency].configuration
+  end
   @cloudformation = double
   allow(@cloudformation).to receive(:validate_template)
+  allow(@cloudformation).to receive(:describe_stacks) do |params|
+    dependency = /^[^-]+-([^-]+)-#{target}$/.match(params[:stack_name])[1]
+    CloudformationDescribeStacksResponse.new @deps[dependency].outputs
+  end
   allow(@cloudformation).to receive(:create_stack) do
     puts Aws::CloudFormation::Errors::AlreadyExistsException
     fail(
@@ -239,4 +266,24 @@ $/x) do |bucket, vendored_cookbooks|
       body: "gzip tar #{path}"
     )
   end
+end
+
+Then(/^
+  dependency[ ]configuration[ ]should[ ]be[ ]downloaded[ ]
+  from[ ]S3[ ]bucket[ ](\w+)[ ]
+  with[ ]key[ ]([^\s]+)
+$/x) do |bucket, key|
+  expect(@s3_client).to have_received(:get_object).once.with(
+    bucket: bucket,
+    key: key
+  )
+end
+
+Then(/^
+  dependency[ ]CloudFormation[ ]outputs[ ]should[ ]be[ ]
+  loaded[ ]from[ ]CloudFormation[ ]stack[ ]([^\s]+)
+$/x) do |name|
+  expect(@cloudformation).to have_received(:describe_stacks).once.with(
+    stack_name: name
+  )
 end

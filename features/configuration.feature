@@ -6,12 +6,15 @@ Feature: JSON configuration data
   Rules:
   - Target specific S3 keys should be properly namespaced
   - Configuration uploaded to S3 should be encrypted
+  - Configuration key values loaded from files/directories should override JSON specified keys
+  - Target specific configuration should override default configuration
 
   Scenario Outline: deploy a configuration only stack with only Formatron automatic values
     Given a Formatron project
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -21,7 +24,6 @@ Feature: JSON configuration data
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     When  I deploy the formatron stack with target <target>
@@ -29,6 +31,7 @@ Feature: JSON configuration data
     And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
       """
       {
+        "formatronRegion": "<region>",
         "formatronTarget": "<target>",
         "formatronName": "<name>",
         "formatronConfigS3Key": "<target>/<name>/config.json",
@@ -39,7 +42,6 @@ Feature: JSON configuration data
         },
         "formatronPrefix": "<prefix>",
         "formatronS3Bucket": "<bucket>",
-        "formatronRegion": "<region>",
         "formatronKmsKey": "<KMS key>"
       }
       """
@@ -53,6 +55,7 @@ Feature: JSON configuration data
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -62,7 +65,6 @@ Feature: JSON configuration data
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a config/_default/_default.json file with content
@@ -76,6 +78,7 @@ Feature: JSON configuration data
     And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
       """
       {
+        "formatronRegion": "<region>",
         "formatronTarget": "<target>",
         "formatronName": "<name>",
         "formatronConfigS3Key": "<target>/<name>/config.json",
@@ -87,7 +90,6 @@ Feature: JSON configuration data
         },
         "formatronPrefix": "<prefix>",
         "formatronS3Bucket": "<bucket>",
-        "formatronRegion": "<region>",
         "formatronKmsKey": "<KMS key>"
       }
       """
@@ -101,6 +103,7 @@ Feature: JSON configuration data
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -110,7 +113,6 @@ Feature: JSON configuration data
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a config/_default/_default.json file with content
@@ -134,6 +136,7 @@ Feature: JSON configuration data
     And the config should be uploaded to S3 bucket <bucket> with key <target>/<name>/config.json, KMS key <KMS key> and content
       """
       {
+        "formatronRegion": "<region>",
         "formatronTarget": "<target>",
         "formatronName": "<name>",
         "formatronConfigS3Key": "<target>/<name>/config.json",
@@ -149,7 +152,6 @@ Feature: JSON configuration data
         },
         "formatronPrefix": "<prefix>",
         "formatronS3Bucket": "<bucket>",
-        "formatronRegion": "<region>",
         "formatronKmsKey": "<KMS key>"
       }
       """
@@ -163,6 +165,7 @@ Feature: JSON configuration data
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -172,7 +175,6 @@ Feature: JSON configuration data
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a config/_default/_default.json file with content
@@ -201,6 +203,7 @@ Feature: JSON configuration data
     And the config should be uploaded to S3 bucket <bucket> with key <test target>/<name>/config.json, KMS key <KMS key> and content
       """
       {
+        "formatronRegion": "<region>",
         "formatronTarget": "<test target>",
         "formatronName": "<name>",
         "formatronConfigS3Key": "<test target>/<name>/config.json",
@@ -214,7 +217,6 @@ Feature: JSON configuration data
         },
         "formatronPrefix": "<prefix>",
         "formatronS3Bucket": "<bucket>",
-        "formatronRegion": "<region>",
         "formatronKmsKey": "<KMS key>"
       }
       """

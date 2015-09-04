@@ -12,6 +12,7 @@ Feature: OpsWorks stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -21,7 +22,6 @@ Feature: OpsWorks stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And an opsworks/first_stack/metadata.rb file with content

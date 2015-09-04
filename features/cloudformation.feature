@@ -17,6 +17,7 @@ Feature: CloudFormation stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -26,7 +27,6 @@ Feature: CloudFormation stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a cloudformation/main.json file with content
@@ -57,6 +57,7 @@ Feature: CloudFormation stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -66,7 +67,6 @@ Feature: CloudFormation stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a cloudformation/main.json file with content
@@ -138,6 +138,7 @@ Feature: CloudFormation stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -147,7 +148,6 @@ Feature: CloudFormation stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       cloudformation do
         parameter 'param', config['<name>']['param']
@@ -198,6 +198,7 @@ Feature: CloudFormation stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -207,7 +208,6 @@ Feature: CloudFormation stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a config/<test target>/_default.json file with content
@@ -277,6 +277,7 @@ Feature: CloudFormation stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -286,7 +287,6 @@ Feature: CloudFormation stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a cloudformation/main.json file with content
@@ -318,6 +318,7 @@ Feature: CloudFormation stack support
     And a credentials.json file with content
       """
       {
+        "region": "<region>",
         "accessKeyId": "<AWS access key ID>",
         "secretAccessKey": "<AWS secret access key>"
       }
@@ -327,7 +328,6 @@ Feature: CloudFormation stack support
       name '<name>'
       prefix '<prefix>'
       s3_bucket '<bucket>'
-      region '<region>'
       kms_key '<KMS key>'
       """
     And a cloudformation/main.json file with content
