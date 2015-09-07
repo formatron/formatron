@@ -129,7 +129,7 @@ Feature: Opscode Chef Server support
     Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
     And the url <chef server url>, user <user>, user key <user key>, organization <organization> and the ssl verify flag <ssl verify> should be used to communicate with the Chef Server
     And an environment called <name>__chef_server_node should be created on the Chef Server
-    And the cookbooks for the <name>__chef_server_node should be pinned from the opscode/chef_server_node cookbook
+    And the cookbooks for the <name>__chef_server_node environment should be pinned from the opscode/chef_server_node cookbook
     Examples:
       | prefix | name | target | bucket | region | KMS key | AWS access key ID | AWS secret access key | chef server url | ssl verify | user | user key | organization |
       | my_prefix_1 | my_stack_1 | test_1 | my_bucket_1 | my_region_1 | my_test_kms_key_1 | access_key_id_1 | secret_access_key_1 | https://chef1.server.com | true | user_1 | user_key_1 | organization_1 |
@@ -198,8 +198,8 @@ Feature: Opscode Chef Server support
     And the url <chef server url>, user <user>, user key <user key>, organization <organization> and the ssl verify flag <ssl verify> should be used to communicate with the Chef Server
     And an environment called <name>__node_1 should be created on the Chef Server
     And an environment called <name>__node_2 should be created on the Chef Server
-    And the cookbooks for the <name>__node_1 should be pinned from the opscode/node_1 cookbook
-    And the cookbooks for the <name>__node_2 should be pinned from the opscode/node_2 cookbook
+    And the cookbooks for the <name>__node_1 environment should be pinned from the opscode/node_1 cookbook
+    And the cookbooks for the <name>__node_2 environment should be pinned from the opscode/node_2 cookbook
     Examples:
       | prefix | name | target | bucket | region | KMS key | AWS access key ID | AWS secret access key | chef server url | ssl verify | user | user key | organization |
       | my_prefix_1 | my_stack_1 | test_1 | my_bucket_1 | my_region_1 | my_test_kms_key_1 | access_key_id_1 | secret_access_key_1 | https://chef1.server.com | true | user_1 | user_key_1 | organization_1 |

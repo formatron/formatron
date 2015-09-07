@@ -353,7 +353,7 @@ $/x) do |environment|
 end
 
 Then(/^
-  the[ ]cookbooks[ ]for[ ]the[ ](\w+)[ ]
+  the[ ]cookbooks[ ]for[ ]the[ ](\w+)[ ]environment[ ]
   should[ ]be[ ]pinned[ ]from[ ]the[ ]([^\s]+)[ ]cookbook
 $/x) do |environment, cookbook|
   expect(@berks_instance).to have_received(:upload_environment).with(
