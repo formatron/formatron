@@ -1,49 +1,41 @@
 class Formatron
   class Config
     class Opscode
-      attr_reader(
-        :config,
-        :_server_url,
-        :_user,
-        :_user_key,
-        :_organization,
-        :_ssl_self_signed_cert,
-        :_deploys_chef_server
-      )
+      attr_reader :config
 
       def initialize(config, &block)
         @config = config
-        @_server_url = nil
-        @_user = nil
-        @_user_key = nil
-        @_organization = nil
-        @_ssl_self_signed_cert = false
-        @_is_chef_server = false
+        @server_url = nil
+        @user = nil
+        @organization = nil
+        @ssl_verify = true
+        @is_chef_server = false
         instance_eval(&block) if block_given?
       end
 
-      def server_url(value)
-        @_server_url = value
+      def server_url(value = nil)
+        @server_url = value unless value.nil?
+        @server_url
       end
 
-      def user(value)
-        @_user = value
+      def user(value = nil)
+        @user = value unless value.nil?
+        @user
       end
 
-      def user_key(value)
-        @_user_key = value
+      def organization(value = nil)
+        @organization = value unless value.nil?
+        @organization
       end
 
-      def organization(value)
-        @_organization = value
+      def ssl_verify(value = nil)
+        @ssl_verify = value unless value.nil?
+        @ssl_verify
       end
 
-      def ssl_self_signed_cert(value)
-        @_ssl_self_signed_cert = value
-      end
-
-      def deploys_chef_server(value)
-        @_deploys_chef_server = value
+      def deploys_chef_server(value = nil)
+        @deploys_chef_server = value unless value.nil?
+        @deploys_chef_server
       end
     end
   end

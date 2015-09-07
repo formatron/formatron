@@ -1,6 +1,7 @@
 require_relative 'formatron/config'
 require_relative 'formatron/util/tar'
 require_relative 'formatron/util/berks'
+require_relative 'formatron/util/knife'
 require 'aws-sdk'
 require 'json'
 require 'pathname'
@@ -60,7 +61,7 @@ class Formatron
     opscode_dir = File.join(@dir, OPSCODE_DIR)
     if File.directory?(opscode_dir)
       need_to_deploy_first = false
-      if @config.opscode._deploys_chef_server
+      if @config.opscode.deploys_chef_server
         # first check if the stack is already deployed and ready
         begin
           response = @cloudformation.describe_stacks(
@@ -105,61 +106,38 @@ class Formatron
           )
         end
       else
-        user_key = "#{@target}/#{@config.opscode._user_key}"
+        opscode_s3_key = @config.config['formatronOpscodeS3Key']
+        s3_key = "#{opscode_s3_key}/keys/#{@config.opscode.user}.pem"
         response = @s3.get_object(
           bucket: @config.s3_bucket,
-          key: user_key
+          key: s3_key
         )
-        tmp_user_key = Tempfile.new('formatron_chef_user_key')
-        tmp_user_key.write(response.body.read)
-        tmp_user_key.close
-        tmp_knife_rb = Tempfile.new('formatron_knife_rb')
-        # rubocop:disable Metrics/LineLength
-        tmp_knife_rb.write <<-EOH
-          chef_server_url '#{@config.opscode._server_url}/organizations/#{@config.opscode._organization}'
-          node_name '#{@config.opscode._user}'
-          client_key '#{tmp_user_key.path}'
-          ssl_verify_mode #{@config.opscode._ssl_self_signed_cert ? ':verify_none' : ':verify_peer'}
-        EOH
-        # rubocop:enable Metrics/LineLength
-        tmp_knife_rb.close
-        tmp_berkshelf_config = Tempfile.new('formatron_berkshelf_config')
-        # rubocop:disable Metrics/LineLength
-        tmp_berkshelf_config.write <<-EOH
-          {
-            "chef": {
-              "chef_server_url": "#{@config.opscode._server_url}/organizations/#{@config.opscode._organization}",
-              "node_name": "#{@config.opscode._user}",
-              "client_key": "#{tmp_user_key.path}"
-            },
-            "ssl": {
-              "verify": #{@config.opscode._ssl_self_signed_cert ? 'false' : 'true'}
-            }
-          }
-        EOH
-        # rubocop:enable Metrics/LineLength
-        tmp_berkshelf_config.close
+        user_key = response.body.read
+        knife = Formatron::Util::Knife.new(
+          @config.opscode.server_url,
+          @config.opscode.user,
+          user_key,
+          @config.opscode.organization,
+          @config.opscode.ssl_verify
+        )
+        berks = Formatron::Util::Berks.new(
+          @config.opscode.server_url,
+          @config.opscode.user,
+          user_key,
+          @config.opscode.organization,
+          @config.opscode.ssl_verify
+        )
         begin
           Dir.glob(File.join(opscode_dir, '*')).each do |server|
             next unless File.directory?(server)
             server_name = File.basename(server)
             environment_name = "#{@config.name}__#{server_name}"
-            # rubocop:disable Metrics/LineLength
-            `knife environment show #{environment_name} -c #{tmp_knife_rb.path}`
-            `knife environment create #{environment_name} -c #{tmp_knife_rb.path} -d '#{environment_name} environment created by formatron'` unless $CHILD_STATUS.success?
-            fail "failed to create opscode environment: #{environment_name}" unless $CHILD_STATUS.success?
-            `berks install -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')}`
-            fail "failed to download cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
-            `berks upload -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile')}`
-            fail "failed to upload cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
-            `berks apply #{environment_name} -c #{tmp_berkshelf_config.path} -b #{File.join(server, 'Berksfile.lock')}`
-            fail "failed to apply cookbooks to opscode environment: #{environment_name}" unless $CHILD_STATUS.success?
-            # rubocop:enable Metrics/LineLength
+            knife.create_environment environment_name
+            berks.upload_environment server, environment_name
           end
         ensure
-          tmp_user_key.unlink
-          tmp_knife_rb.unlink
-          tmp_berkshelf_config.unlink
+          berks.unlink
+          knife.unlink
         end
       end
     end

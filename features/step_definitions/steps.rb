@@ -4,10 +4,15 @@ Given(/^a Formatron project$/) do
   @fp = FormatronProject.new
   @stacks = {}
   @s3_puts = {}
+  @s3_keys = {}
 end
 
 Given(/^an? ([^\s]+) file with content$/) do |relative_path, content|
   @fp.add_file relative_path, content
+end
+
+Given(/^an? ([^\s]+) S3 key with content$/) do |key, content|
+  @s3_keys[key] = content
 end
 
 Given(/^the CloudFormation stack already exists$/) do
@@ -39,8 +44,12 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
     @s3_puts[params[:key]] = params[:body]
   end
   allow(@s3_client).to receive(:get_object) do |params|
-    stack = %r{^#{target}/([^/]+)/config.json$}.match(params[:key])[1]
-    S3GetObjectResponse.new @stacks[stack].configuration
+    stack = params[:key][%r{^#{target}/([^/]+)/config.json$}, 1]
+    if stack
+      S3GetObjectResponse.new @stacks[stack].configuration
+    else
+      S3GetObjectResponse.new(@s3_keys[params[:key]] || '')
+    end
   end
   @cloudformation = double
   allow(@cloudformation).to receive(:validate_template)
@@ -66,6 +75,14 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   allow(Aws::CloudFormation::Client).to receive(:new) { @cloudformation }
   @berks = class_double('Formatron::Util::Berks').as_stubbed_const
   allow(@berks).to receive(:vendor)
+  @berks_instance = double
+  allow(@berks_instance).to receive(:upload_environment)
+  allow(@berks_instance).to receive(:unlink)
+  allow(@berks).to receive(:new) { @berks_instance }
+  @knife_instance = double
+  allow(@knife_instance).to receive(:create_environment)
+  allow(@knife_instance).to receive(:unlink)
+  allow(Formatron::Util::Knife).to receive(:new) { @knife_instance }
   tar = class_double('Formatron::Util::Tar').as_stubbed_const
   allow(tar).to receive(:tar) { |dir| "tar #{dir}" }
   allow(tar).to receive(:gzip) { |tarfile| "gzip #{tarfile}" }
@@ -144,7 +161,7 @@ Then(/^
   KMS[ ]key[ ](\w+)[ ]
   and[ ]JSON
 $/x) do |bucket, key, kms_key, json|
-  @s3_client.should have_received(:put_object).once.with(
+  expect(@s3_client).to have_received(:put_object).once.with(
     hash_including(
       bucket: bucket,
       key: key,
@@ -153,7 +170,7 @@ $/x) do |bucket, key, kms_key, json|
     )
   )
   config = JSON.parse(json)
-  JSON.parse(@s3_puts[key]).should eq(config)
+  expect(JSON.parse(@s3_puts[key])).to eq(config)
 end
 
 Then(/^
@@ -280,7 +297,7 @@ $/x) do |bucket, vendored_cookbooks|
 end
 
 Then(/^
-  dependency[ ]configuration[ ]should[ ]be[ ]downloaded[ ]
+  .+[ ]should[ ]be[ ]downloaded[ ]
   from[ ]S3[ ]bucket[ ](\w+)[ ]
   with[ ]key[ ]([^\s]+)
 $/x) do |bucket, key|
@@ -296,5 +313,51 @@ Then(/^
 $/x) do |name|
   expect(@cloudformation).to have_received(:describe_stacks).once.with(
     stack_name: name
+  )
+end
+
+Then(/^
+  the[ ]url[ ]([^\s,]+),[ ]
+  user[ ](\w+),[ ]
+  user[ ]key[ ](\w+),[ ]
+  organization[ ](\w+)[ ]and[ ]
+  the[ ]ssl[ ]verify[ ]flag[ ](\w+)[ ]
+  should[ ]be[ ]used[ ]to[ ]communicate[ ]
+  with[ ]the[ ]Chef[ ]Server
+$/x) do |url, user, user_key, organization, ssl_verify|
+  expect(@berks).to have_received(:new).with(
+    url,
+    user,
+    user_key,
+    organization,
+    ssl_verify == 'true'
+  )
+  expect(Formatron::Util::Knife).to have_received(:new).with(
+    url,
+    user,
+    user_key,
+    organization,
+    ssl_verify == 'true'
+  )
+  expect(@berks_instance).to have_received(:unlink).with(no_args)
+  expect(@knife_instance).to have_received(:unlink).with(no_args)
+end
+
+Then(/^
+  an[ ]environment[ ]called[ ](\w+)[ ]
+  should[ ]be[ ]created[ ]on[ ]the[ ]Chef[ ]Server
+$/x) do |environment|
+  expect(@knife_instance).to have_received(:create_environment).with(
+    environment
+  )
+end
+
+Then(/^
+  the[ ]cookbooks[ ]for[ ]the[ ](\w+)[ ]
+  should[ ]be[ ]pinned[ ]from[ ]the[ ]([^\s]+)[ ]cookbook
+$/x) do |environment, cookbook|
+  expect(@berks_instance).to have_received(:upload_environment).with(
+    File.join(@fp.dir, cookbook),
+    environment
   )
 end

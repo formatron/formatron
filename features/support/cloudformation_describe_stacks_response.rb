@@ -23,7 +23,7 @@ class Formatron
             @stack_status = stack_status
             @outputs = outputs.map do |output|
               Output.new output[:name], output[:value]
-            end
+            end unless outputs.nil?
           end
         end
 
