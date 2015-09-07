@@ -9,7 +9,7 @@ class Formatron
         @user = nil
         @organization = nil
         @ssl_verify = true
-        @is_chef_server = false
+        @server_stack = nil
         instance_eval(&block) if block_given?
       end
 
@@ -33,9 +33,9 @@ class Formatron
         @ssl_verify
       end
 
-      def deploys_chef_server(value = nil)
-        @deploys_chef_server = value unless value.nil?
-        @deploys_chef_server
+      def server_stack(value = nil)
+        @server_stack = value unless value.nil?
+        @server_stack
       end
     end
   end

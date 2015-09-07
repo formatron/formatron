@@ -61,7 +61,9 @@ class Formatron
     opscode_dir = File.join(@dir, OPSCODE_DIR)
     if File.directory?(opscode_dir)
       need_to_deploy_first = false
-      if @config.opscode.deploys_chef_server
+      name = @config.name
+      server_stack = @config.opscode.server_stack || name
+      if server_stack.eql?(name)
         # first check if the stack is already deployed and ready
         begin
           response = @cloudformation.describe_stacks(
@@ -106,7 +108,7 @@ class Formatron
           )
         end
       else
-        opscode_s3_key = @config.config['formatronOpscodeS3Key']
+        opscode_s3_key = "#{@target}/#{server_stack}/opscode"
         s3_key = "#{opscode_s3_key}/keys/#{@config.opscode.user}.pem"
         response = @s3.get_object(
           bucket: @config.s3_bucket,
