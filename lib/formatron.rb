@@ -77,7 +77,7 @@ class Formatron
           # rubocop:enable Metrics/LineLength
         rescue Aws::CloudFormation::Errors::ValidationError => error
           # rubocop:disable Metrics/LineLength
-          raise error.class, error.message unless error.message.eql?("Stack with id #{@config.prefix}-#{@config.name}-#{@target} does not exist")
+          raise unless error.message.eql?("Stack with id #{@config.prefix}-#{@config.name}-#{@target} does not exist")
           # rubocop:enable Metrics/LineLength
           need_to_deploy_first = true
         end
@@ -89,16 +89,16 @@ class Formatron
           next unless File.directory?(server)
           server_name = File.basename(server)
           server_vendor_dir = File.join(vendor_dir, server_name)
-          server_cookbooks_dir = File.join(server_vendor_dir, 'cookbooks')
-          FileUtils.mkdir_p server_vendor_dir
-          # rubocop:disable Metrics/LineLength
-          `berks vendor -b #{File.join(server, 'Berksfile')} #{server_cookbooks_dir}`
-          fail "failed to vendor cookbooks for opscode server: #{server_name}" unless $CHILD_STATUS.success?
-          `cp #{File.join(server, 'Berksfile.lock')} #{server_vendor_dir}`
-          # rubocop:enable Metrics/LineLength
+          Formatron::Util::Berks.vendor(
+            server,
+            server_vendor_dir,
+            true
+          )
+          opscode_s3_key = @config.config['formatronOpscodeS3Key']
+          s3_key = "#{opscode_s3_key}/cookbooks/#{server_name}.tar.gz"
           response = @s3.put_object(
             bucket: @config.s3_bucket,
-            key: "#{@config.opscode_s3_key}/#{server_name}.tar.gz",
+            key: s3_key,
             body: Formatron::Util::Tar.gzip(
               Formatron::Util::Tar.tar(server_vendor_dir)
             )
@@ -171,9 +171,8 @@ class Formatron
         next unless File.directory?(stack)
         stack_name = File.basename(stack)
         stack_vendor_dir = File.join(vendor_dir, stack_name)
-        FileUtils.mkdir_p stack_vendor_dir
         Formatron::Util::Berks.vendor(
-          File.join(stack, 'Berksfile'),
+          stack,
           stack_vendor_dir
         )
         s3_key = @config.config['formatronOpsworksS3Key']

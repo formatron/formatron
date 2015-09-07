@@ -10,12 +10,19 @@ class Formatron
       class VendorError < Error
       end
 
-      def self.vendor(berksfile, dir)
-        `berks vendor -b #{berksfile} #{dir}`
+      def self.vendor(cookbook, dir, with_lockfile = false)
+        berksfile = File.join(cookbook, 'Berksfile')
+        cookbooks_dir = with_lockfile ? File.join(dir, 'cookbooks') : dir
+        FileUtils.mkdir_p cookbooks_dir
+        `berks vendor -b #{berksfile} #{cookbooks_dir}`
         fail(
           VendorError,
           "failed to vendor cookbooks for Berksfile #{berksfile} to #{dir}"
         ) unless $CHILD_STATUS.success?
+        if with_lockfile
+          lockfile = File.join(cookbook, 'Berksfile.lock')
+          FileUtils.cp lockfile, dir
+        end
       end
     end
   end

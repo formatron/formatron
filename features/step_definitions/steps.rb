@@ -2,7 +2,7 @@ include Formatron::Cucumber::Support
 
 Given(/^a Formatron project$/) do
   @fp = FormatronProject.new
-  @deps = {}
+  @stacks = {}
   @s3_puts = {}
 end
 
@@ -16,20 +16,20 @@ end
 
 Given(/^
   an[ ]already[ ]deployed[ ]Formatron[ ]stack[ ]called[ ](\w+)
-$/x) do |dependency|
-  @deps[dependency] = FormatronStack.new
+$/x) do |stack|
+  @stacks[stack] = FormatronStack.new
 end
 
 Given(/^
   the[ ]Formatron[ ]stack[ ]called[ ](\w+)[ ]has[ ]configuration
-$/x) do |dependency, configuration|
-  @deps[dependency].configuration = configuration
+$/x) do |stack, configuration|
+  @stacks[stack].configuration = configuration
 end
 
 Given(/^
   the[ ]Formatron[ ]stack[ ]called[ ](\w+)[ ]has[ ]CloudFormation[ ]outputs
-$/x) do |dependency, outputs|
-  @deps[dependency].outputs = outputs.hashes
+$/x) do |stack, outputs|
+  @stacks[stack].outputs = outputs.hashes
 end
 
 When(/^I deploy the formatron stack with target (\w+)$/) do |target|
@@ -39,14 +39,18 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
     @s3_puts[params[:key]] = params[:body]
   end
   allow(@s3_client).to receive(:get_object) do |params|
-    dependency = %r{^#{target}/([^/]+)/config.json$}.match(params[:key])[1]
-    S3GetObjectResponse.new @deps[dependency].configuration
+    stack = %r{^#{target}/([^/]+)/config.json$}.match(params[:key])[1]
+    S3GetObjectResponse.new @stacks[stack].configuration
   end
   @cloudformation = double
   allow(@cloudformation).to receive(:validate_template)
   allow(@cloudformation).to receive(:describe_stacks) do |params|
-    dependency = /^[^-]+-([^-]+)-#{target}$/.match(params[:stack_name])[1]
-    CloudformationDescribeStacksResponse.new @deps[dependency].outputs
+    stack = /^[^-]+-([^-]+)-#{target}$/.match(params[:stack_name])[1]
+    fail Aws::CloudFormation::Errors::ValidationError.new(
+      'context',
+      "Stack with id #{params[:stack_name]} does not exist"
+    ) if @stacks[stack].nil?
+    CloudformationDescribeStacksResponse.new @stacks[stack].outputs
   end
   allow(@cloudformation).to receive(:create_stack) do
     fail(
@@ -251,10 +255,12 @@ Then(/^
   been[ ]vendored[ ]to[ ]the[ ]given[ ]directories
 $/x) do |vendor_calls|
   vendor_calls.hashes.each do |vendor_call|
-    expect(@berks).to have_received(:vendor).once.with(
-      File.join(@fp.dir, vendor_call[:cookbook], 'Berksfile'),
+    args = [
+      File.join(@fp.dir, vendor_call[:cookbook]),
       File.join(@fp.dir, vendor_call[:directory])
-    )
+    ]
+    args.push true if vendor_call['with lockfile'] == 'true'
+    expect(@berks).to have_received(:vendor).once.with(*args)
   end
 end
 

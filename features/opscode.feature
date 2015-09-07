@@ -4,12 +4,12 @@ Feature: Opscode Chef Server support
   I want to be able to deploy a Chef Server and Chef Nodes as part of a CloudFormation stack
 
   Rules:
-  - A special case should be supported to deploy a Chef Server and add it as a node to itself
+  - A special case should be supported to deploy a Chef Server where the cookbooks are vendored to S3 so that they can be used during cloudformation init and the server added as a node to itself on first run
   - The initial users Chef Server keys should be securely made available for use by other stacks
   - Node cookbooks should be uploaded to the Chef Server using environments to pin the versions
   - Nodes should be bootstrapped from the chef server on CloudFormation stack deployment
 
-  Scenario Outline: deploy a CloudFormation stack containing only a Chef Server
+  Scenario Outline: initially deploy a Chef Server
     Given a Formatron project
     And a credentials.json file with content
       """
@@ -25,25 +25,48 @@ Feature: Opscode Chef Server support
       prefix '<prefix>'
       s3_bucket '<bucket>'
       kms_key '<KMS key>'
+      opscode do
+        server_url config['<name>']['url']
+        ssl_self_signed_cert config['<name>']['sslSelfSignedCert']
+        user config['<name>']['user']
+        organization config['<name>']['organization']
+        deploys_chef_server true
+      end
       """
-    And an opsworks/first_stack/metadata.rb file with content
+    And a config/_default/_default.json file with content
       """
-      name 'first_stack'
+      {
+        "url": "https://my.chef.server",
+        "sslSelfSignedCert": true,
+        "user": "administrator",
+        "organization": "my_organization"
+      }
       """
-    And an opsworks/second_stack/metadata.rb file with content
+    And a cloudformation/main.json file with content
       """
-      name 'second_stack'
+      {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "chef server",
+        "Parameters": {
+        },
+        "Resources": {
+        },
+        "Outputs": {
+        }
+      }
+      """
+    And an opscode/chef_server_node/metadata.rb file with content
+      """
+      name 'chef_server_node'
       """
     When I deploy the formatron stack with target <target>
     Then the region <region>, AWS access key ID <AWS access key ID> and AWS secret access key <AWS secret access key> should be used when communicating with S3
     And the following cookbooks should have been vendored to the given directories
-      | cookbook | directory |
-      | opsworks/first_stack | vendor/first_stack |
-      | opsworks/second_stack | vendor/second_stack |
+      | cookbook | directory | with lockfile |
+      | opscode/chef_server_node | vendor/chef_server_node | true |
     And the following vendored cookbooks should be tarballed and uploaded to S3 bucket <bucket> with the given keys
       | vendored cookbook | S3 key |
-      | vendor/first_stack | <target>/<name>/opsworks/first_stack.tar.gz |
-      | vendor/second_stack | <target>/<name>/opsworks/second_stack.tar.gz |
+      | vendor/chef_server_node | <target>/<name>/opscode/cookbooks/chef_server_node.tar.gz |
     Examples:
       | prefix | name | target | bucket | region | KMS key | AWS access key ID | AWS secret access key |
       | my_prefix_1 | my_stack_1 | test_1 | my_bucket_1 | my_region_1 | my_test_kms_key_1 | access_key_id_1 | secret_access_key_1 |
