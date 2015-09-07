@@ -39,7 +39,7 @@ EOH
   spec.add_development_dependency 'pry-remote'
   spec.add_development_dependency 'pry-nav'
   spec.add_development_dependency 'coveralls'
-  spec.add_development_dependency 'rubocop'
+  spec.add_development_dependency 'rubocop', '0.33.0'
   spec.add_development_dependency 'guard-rubocop'
   spec.add_development_dependency 'cucumber'
   spec.add_development_dependency 'guard-cucumber'
