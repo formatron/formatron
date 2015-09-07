@@ -267,7 +267,7 @@ class Formatron
           parameters: parameters
         )
       rescue Aws::CloudFormation::Errors::ValidationError => error
-        raise error unless error.message.eql?(
+        raise unless error.message.eql?(
           'No updates are to be performed.'
         )
       end
