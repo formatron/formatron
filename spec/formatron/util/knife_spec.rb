@@ -1,9 +1,11 @@
 require 'spec_helper'
 
-ENVIRONMENT_CHECK_COMMAND = 'knife environment show environment -c knife_file'
-ENVIRONMENT_CREATE_COMMAND = 'knife environment create environment -c ' \
-                             "knife_file -d 'environment environment created " \
-                             "by formatron'"
+ENVIRONMENT = 'env'
+ENVIRONMENT_CHECK_COMMAND = "knife environment show #{ENVIRONMENT} " \
+                            '-c knife_file'
+ENVIRONMENT_CREATE_COMMAND = "knife environment create #{ENVIRONMENT} -c " \
+                             "knife_file -d '#{ENVIRONMENT} environment " \
+                             "created by formatron'"
 
 describe Formatron::Util::Knife do
   before(:each) do
@@ -147,7 +149,7 @@ describe Formatron::Util::Knife do
       end
 
       it 'should do nothing' do
-        @knife.create_environment('environment')
+        @knife.create_environment(ENVIRONMENT)
         expect(@kernel_helper_class).to have_received(:shell).once
         expect(@kernel_helper_class).to have_received(:shell).with(
           ENVIRONMENT_CHECK_COMMAND
@@ -173,7 +175,7 @@ describe Formatron::Util::Knife do
       end
 
       it 'should create the environment' do
-        @knife.create_environment('environment')
+        @knife.create_environment(ENVIRONMENT)
         expect(@kernel_helper_class).to have_received(:shell).twice
         expect(@kernel_helper_class).to have_received(:shell).with(
           ENVIRONMENT_CHECK_COMMAND
@@ -202,7 +204,7 @@ describe Formatron::Util::Knife do
       end
 
       it 'should fail' do
-        expect { @knife.create_environment('environment') }.to raise_error(
+        expect { @knife.create_environment(ENVIRONMENT) }.to raise_error(
           Formatron::Util::Knife::CreateEnvironmentError
         )
       end
