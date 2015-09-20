@@ -2,6 +2,7 @@ require 'rubygems'
 require 'rubygems/package'
 require 'zlib'
 
+# :nocov:
 class Formatron
   module Util
     # Tar and Gzip in memory implementations
@@ -39,3 +40,4 @@ class Formatron
     end
   end
 end
+# :nocov:

@@ -1,3 +1,4 @@
+require_relative 'kernel_helper'
 require 'English'
 
 class Formatron
@@ -31,9 +32,9 @@ class Formatron
 
       def create_environment(environment)
         # rubocop:disable Metrics/LineLength
-        Formatron::Util::KernelHelper.shell "knife environment show #{environment} -c #{@knife_file.path}"
-        Formatron::Util::KernelHelper.shell "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless Formatron::Util::KernelHelper.success?
-        fail CreateEnvironmentError, "failed to create opscode environment: #{environment}" unless Formatron::Util::KernelHelper.success?
+        KernelHelper.shell "knife environment show #{environment} -c #{@knife_file.path}"
+        KernelHelper.shell "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless KernelHelper.success?
+        fail CreateEnvironmentError, "failed to create opscode environment: #{environment}" unless KernelHelper.success?
         # rubocop:enable Metrics/LineLength
       end
     end

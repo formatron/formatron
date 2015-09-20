@@ -45,8 +45,8 @@ describe Formatron::Util::Knife do
       )
     end
 
-    it 'should create a temporary file for the knife
-    config setting the verify more to :verify_peer' do
+    it 'should create a temporary file for the knife ' \
+       'config setting the verify mode to :verify_peer' do
       expect(@tempfile_class).to have_received(:new).with('knife').once
       expect(@knife_tempfile).to have_received(:write).with(
         <<-EOH.gsub(/^\s{8}/, '')
@@ -71,8 +71,8 @@ describe Formatron::Util::Knife do
       )
     end
 
-    it 'should create a temporary file for the knife
-    config setting the verify more to :verify_none' do
+    it 'should create a temporary file for the knife ' \
+       'config setting the verify mode to :verify_none' do
       expect(@tempfile_class).to have_received(:new).with('knife').once
       expect(@knife_tempfile).to have_received(:write).with(
         <<-EOH.gsub(/^\s{8}/, '')
