@@ -9,36 +9,17 @@ guard 'yard', stdout: 'yard.stdout.log', stderr: 'yard.stderr.log' do
   watch(%r{[^/]+.md})
 end
 
-group :test, halt_on_fail: true do
-  guard :rubocop do
-    watch(/.+\.rb$/)
-    watch(/.+\.gemspec$/)
-    watch(/^Rakefile$/)
-    watch(/^Gemfile$/)
-    watch(/^Guardfile$/)
-    watch(/^.simplecov$/)
-    watch(%r{(?:.+/)?\.rubocop\.yml$}) { |m| File.dirname(m[0]) }
-    watch(%r{(?:.+/)?\.rubocop_todo\.yml$}) { |m| File.dirname(m[0]) }
-  end
-
-  guard :rspec, cmd: 'bundle exec rspec' do
-    require 'guard/rspec/dsl'
-    dsl = Guard::RSpec::Dsl.new(self)
-
-    # RSpec files
-    rspec = dsl.rspec
-    watch(rspec.spec_helper) { rspec.spec_dir }
-    watch(rspec.spec_support) { rspec.spec_dir }
-    watch(rspec.spec_files)
-
-    # Ruby files
-    ruby = dsl.ruby
-    dsl.watch_spec_files_for(ruby.lib_files)
-  end
-
-  guard 'cucumber', cli: '--profile default' do
-    watch(%r{^lib/.+$}) { 'features' }
-    watch(%r{^features/.+\.rb$}) { 'features' }
-    watch(%r{^features/.+\.feature$})
-  end
+guard :rake, task: 'default' do
+  watch(/.+\.rb$/)
+  watch(/.+\.gemspec$/)
+  watch(/^Rakefile$/)
+  watch(/^Gemfile$/)
+  watch(/^Guardfile$/)
+  watch(/^.simplecov$/)
+  watch(%r{(?:.+/)?\.rubocop\.yml$})
+  watch(%r{(?:.+/)?\.rubocop_todo\.yml$})
+  watch(%r{^lib/.+$})
+  watch(%r{^spec/.+$})
+  watch(%r{^features/.+\.rb$})
+  watch(%r{^features/.+\.feature$})
 end

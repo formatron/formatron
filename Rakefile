@@ -15,4 +15,8 @@ RuboCop::RakeTask.new(:rubocop)
 
 Coveralls::RakeTask.new
 
-task default: [:rubocop, :spec, :features, 'coveralls:push']
+task :clean do
+  rm_rf 'coverage'
+end
+
+task default: [:clean, :rubocop, :spec, :features, 'coveralls:push']
