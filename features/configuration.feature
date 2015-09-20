@@ -158,7 +158,7 @@ Feature: JSON configuration data
     Examples:
       | prefix | name | target | parameter 1 | parameter 2 | parameter 3 | bucket | region | KMS key | AWS access key ID | AWS secret access key |
       | my_prefix_1 | my_stack_1 | test_1 | test_param_1_1 | test_param_1_2 | test_param_1_3 | my_bucket_1 | my_region_1 | my_test_kms_key_1 | access_key_id_1 | secret_access_key_1 |
-      | my_prefix_2 | my_stack_2 | test_2 | test_param_2_1 | test_param_2_2 | test_param_2_3 | production_2 | production_param_2 | my_bucket_2 | my_region_2 | my_test_kms_key_2 | my_prod_kms_key_2 | access_key_id_2 | secret_access_key_2 |
+      | my_prefix_2 | my_stack_2 | test_2 | test_param_2_1 | test_param_2_2 | test_param_2_3 | my_bucket_2 | my_region_2 | my_test_kms_key_2 | access_key_id_2 | secret_access_key_2 |
 
   Scenario Outline: deploy a configuration only stack with default and target specific JSON values
     Given a Formatron project
