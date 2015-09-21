@@ -48,6 +48,7 @@ EOH
   spec.add_development_dependency 'guard-livereload'
   spec.add_development_dependency 'guard-yard'
   spec.add_development_dependency 'guard-rake'
+  spec.add_development_dependency 'fakefs'
 
   spec.add_runtime_dependency 'aws-sdk', '~> 2.1'
   spec.add_runtime_dependency 'deep_merge', '~> 1.0'

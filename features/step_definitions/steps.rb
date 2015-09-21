@@ -1,4 +1,4 @@
-include Formatron::Cucumber::Support
+include Formatron::Support
 
 Given(/^a Formatron project$/) do
   @fp = FormatronProject.new

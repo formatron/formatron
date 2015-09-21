@@ -2,11 +2,11 @@ require 'rubygems'
 require 'rubygems/package'
 require 'zlib'
 
-# :nocov:
 class Formatron
   module Util
     # Tar and Gzip in memory implementations
     module Tar
+      # :nocov:
       def self.tar(path)
         tarfile = StringIO.new('')
         Gem::Package::TarWriter.new(tarfile) do |tar|
@@ -37,7 +37,7 @@ class Formatron
         # now we need a new StringIO
         StringIO.new gz.string
       end
+      # :nocov:
     end
   end
 end
-# :nocov:

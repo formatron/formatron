@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'yard-cucumber', git: 'https://github.com/pghalliday/yard-cucumber.git'
+gem 'fakefs', require: 'fakefs/safe'

@@ -11,7 +11,7 @@ class Formatron
         entries.each do |entry|
           path = File.join(dir, entry)
           next if ['.', '..', default_file].include?(entry)
-          config[entry] = {} if config[entry].nil?
+          config[entry] = {} unless config[entry].is_a? Hash
           config[entry].deep_merge!(
             read(path, default_file)
           ) if File.directory?(path)
