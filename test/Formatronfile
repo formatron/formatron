@@ -1,0 +1,6 @@
+name 'test_name'
+s3_bucket 'test_bucket'
+prefix 'test_prefix'
+cloudformation do
+  'test'
+end

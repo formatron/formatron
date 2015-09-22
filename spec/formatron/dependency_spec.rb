@@ -1,17 +1,17 @@
 require 'spec_helper'
 
-require 'aws-sdk'
-require 'formatron/config/depends'
+require 'formatron/dependency'
+require 'formatron/aws'
 
 include Formatron::Support
 
-describe Formatron::Config::Depends do
+describe Formatron::Dependency do
   before(:each) do
     @s3_client = instance_double('Aws::S3::Client')
     @cloudformation_client = instance_double('Aws::CloudFormation::Client')
-    @depends = Formatron::Config::Depends.new(
-      @s3_client, @cloudformation_client
-    )
+    @aws = instance_double('Formatron::Aws')
+    allow(@aws).to receive(:s3_client) { @s3_client }
+    allow(@aws).to receive(:cloudformation_client) { @cloudformation_client }
   end
 
   context 'when the dependency has cloudformation outputs' do
@@ -24,9 +24,13 @@ describe Formatron::Config::Depends do
           {
             "test1": "depends1",
             "test2": "depends2",
-            "stack": {
-              "test3": "depends3",
-              "formatronOutputs": {}
+            "stacks": {
+              "stack": {
+                "config": {
+                  "test3": "depends3"
+                },
+                "outputs": {}
+              }
             }
           }
         EOH
@@ -39,29 +43,31 @@ describe Formatron::Config::Depends do
           value: 'depends4'
         ]
       end
-      @config = @depends.load(
-        'bucket',
-        'prefix',
-        'stack',
-        'target',
-        'test1' => 'config1'
+      @dependency = Formatron::Dependency.new(
+        @aws,
+        s3_bucket: 'bucket',
+        prefix: 'prefix',
+        name: 'stack',
+        target: 'target'
       )
     end
 
-    describe '#load' do
-      it 'should merge the config and outputs ' \
-         'for the specified stack from S3' do
-        expect(@config).to eql(
-          'test1' => 'config1',
-          'test2' => 'depends2',
+    it 'should collect the config and outputs ' \
+       'for the specified stack from S3' do
+      expect(@dependency.hash).to eql(
+        'test1' => 'depends1',
+        'test2' => 'depends2',
+        'stacks' => {
           'stack' => {
-            'test3' => 'depends3',
-            'formatronOutputs' => {
+            'config' => {
+              'test3' => 'depends3'
+            },
+            'outputs' => {
               'test4' => 'depends4'
             }
           }
-        )
-      end
+        }
+      )
     end
   end
 
@@ -75,32 +81,38 @@ describe Formatron::Config::Depends do
           {
             "test1": "depends1",
             "test2": "depends2",
-            "stack": {
-              "test3": "depends3"
+            "stacks": {
+              "stack": {
+                "config": {
+                  "test3": "depends3"
+                }
+              }
             }
           }
         EOH
       end
-      @config = @depends.load(
-        'bucket',
-        'prefix',
-        'stack',
-        'target',
-        'test1' => 'config1'
+      @dependency = Formatron::Dependency.new(
+        @aws,
+        s3_bucket: 'bucket',
+        prefix: 'prefix',
+        name: 'stack',
+        target: 'target'
       )
     end
 
-    describe '#load' do
-      it 'should merge the config and outputs ' \
-         'for the specified stack from S3' do
-        expect(@config).to eql(
-          'test1' => 'config1',
-          'test2' => 'depends2',
+    it 'should collect the config ' \
+       'for the specified stack from S3' do
+      expect(@dependency.hash).to eql(
+        'test1' => 'depends1',
+        'test2' => 'depends2',
+        'stacks' => {
           'stack' => {
-            'test3' => 'depends3'
+            'config' => {
+              'test3' => 'depends3'
+            }
           }
-        )
-      end
+        }
+      )
     end
   end
 
@@ -114,9 +126,13 @@ describe Formatron::Config::Depends do
           {
             "test1": "depends1",
             "test2": "depends2",
-            "stack": {
-              "test3": "depends3",
-              "formatronOutputs": {}
+            "stacks": {
+              "stack": {
+                "config": {
+                  "test3": "depends3"
+                },
+                "outputs": {}
+              }
             }
           }
         EOH
@@ -131,18 +147,16 @@ describe Formatron::Config::Depends do
       end
     end
 
-    describe '#load' do
-      it 'should fail' do
-        expect do
-          @config = @depends.load(
-            'bucket',
-            'prefix',
-            'stack',
-            'target',
-            'test1' => 'config1'
-          )
-        end.to raise_error('Stack dependency not ready: prefix-stack-target')
-      end
+    it 'should fail' do
+      expect do
+        Formatron::Dependency.new(
+          @aws,
+          s3_bucket: 'bucket',
+          prefix: 'prefix',
+          name: 'stack',
+          target: 'target'
+        )
+      end.to raise_error('Stack dependency not ready: prefix-stack-target')
     end
   end
 end

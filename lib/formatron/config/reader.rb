@@ -7,15 +7,15 @@ class Formatron
       def self.read(dir, default_file)
         default = File.join(dir, default_file)
         config = File.file?(default) ? JSON.parse(File.read(default)) : {}
-        entries = Dir.entries(dir)
+        entries = Dir.glob(File.join(dir, '*'), File::FNM_DOTMATCH)
         entries.each do |entry|
-          path = File.join(dir, entry)
-          next if ['.', '..', default_file].include?(entry)
-          config[entry] = {} unless config[entry].is_a? Hash
-          config[entry].deep_merge!(
-            read(path, default_file)
-          ) if File.directory?(path)
-          config[entry] = File.read(path) if File.file?(path)
+          basename = File.basename(entry)
+          next if ['.', '..', default_file].include?(basename)
+          config[basename] = {} unless config[basename].is_a? Hash
+          config[basename].deep_merge!(
+            read(entry, default_file)
+          ) if File.directory?(entry)
+          config[basename] = File.read(entry) if File.file?(entry)
         end
         config
       end
