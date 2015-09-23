@@ -36,8 +36,6 @@ describe Formatron::Project do
     it 'should initialize the config and aws object' do
       expect(@formatronfile).to receive(:depends)
         .with(no_args).once { [] }
-      expect(@formatronfile).to receive(:cloudformation)
-        .with(no_args).once { nil }
       expect(@formatronfile).to receive(:opscode)
         .with(no_args).once { nil }
 
@@ -67,8 +65,6 @@ describe Formatron::Project do
        'and pass them to the config' do
       expect(@formatronfile).to receive(:depends)
         .with(no_args).once { %w(dependency1 dependency2) }
-      expect(@formatronfile).to receive(:cloudformation)
-        .with(no_args).once { nil }
       expect(@formatronfile).to receive(:opscode)
         .with(no_args).once { nil }
 
@@ -211,8 +207,6 @@ describe Formatron::Project do
       opscode_proc = proc { 'hello' }
       expect(@formatronfile).to receive(:depends)
         .with(no_args).once { [] }
-      expect(@formatronfile).to receive(:cloudformation)
-        .with(no_args).once { nil }
       expect(@formatronfile).to receive(:opscode)
         .with(no_args).once { opscode_proc }
 

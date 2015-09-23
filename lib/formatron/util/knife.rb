@@ -12,17 +12,8 @@ class Formatron
       end
 
       def initialize(server_url, user, key, organization, ssl_verify)
-        @key_file = Tempfile.new('knife_key')
-        @key_file.write(key)
-        @key_file.close
-        @knife_file = Tempfile.new('knife')
-        @knife_file.write <<-EOH.gsub(/^\s{8}/, '')
-          chef_server_url '#{server_url}/organizations/#{organization}'
-          node_name '#{user}'
-          client_key '#{@key_file.path}'
-          ssl_verify_mode #{ssl_verify ? ':verify_peer' : ':verify_none'}
-        EOH
-        @knife_file.close
+        _create_key_file key
+        _create_knife_file server_url, user, organization, ssl_verify
       end
 
       def unlink
@@ -37,6 +28,28 @@ class Formatron
         fail CreateEnvironmentError, "failed to create opscode environment: #{environment}" unless KernelHelper.success?
         # rubocop:enable Metrics/LineLength
       end
+
+      def _create_key_file(key)
+        @key_file = Tempfile.new('knife_key')
+        @key_file.write(key)
+        @key_file.close
+      end
+
+      def _create_knife_file(server_url, user, organization, ssl_verify)
+        @knife_file = Tempfile.new('knife')
+        @knife_file.write <<-EOH.gsub(/^\s{8}/, '')
+          chef_server_url '#{server_url}/organizations/#{organization}'
+          node_name '#{user}'
+          client_key '#{@key_file.path}'
+          ssl_verify_mode #{ssl_verify ? ':verify_peer' : ':verify_none'}
+        EOH
+        @knife_file.close
+      end
+
+      private(
+        :_create_key_file,
+        :_create_knife_file
+      )
     end
   end
 end

@@ -3,11 +3,17 @@ require 'deep_merge'
 
 class Formatron
   class Config
+    # reads config directories into config hash
     class Reader
       def self.read(dir, default_file)
         default = File.join(dir, default_file)
         config = File.file?(default) ? JSON.parse(File.read(default)) : {}
         entries = Dir.glob(File.join(dir, '*'), File::FNM_DOTMATCH)
+        do_entries entries, default_file, config
+        config
+      end
+
+      def self.do_entries(entries, default_file, config)
         entries.each do |entry|
           basename = File.basename(entry)
           next if ['.', '..', default_file].include?(basename)
@@ -17,7 +23,6 @@ class Formatron
           ) if File.directory?(entry)
           config[basename] = File.read(entry) if File.file?(entry)
         end
-        config
       end
     end
   end

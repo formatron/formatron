@@ -20,15 +20,19 @@ class Formatron
     def write
       FileUtils.mkdir_p @dest
       files = Dir.glob(File.join(TEMPLATE_DIR, '*'), File::FNM_DOTMATCH)
+      files = filter_files(files)
+      FileUtils.cp_r files, @dest
+      write_templates
+    end
+
+    def filter_files(files)
       ignore_files = [
         File.join(TEMPLATE_DIR, '.'),
         File.join(TEMPLATE_DIR, '..')
       ]
-      files = files.select do |file|
+      files.select do |file|
         file unless ignore_files.include?(file)
       end
-      FileUtils.cp_r files, @dest
-      write_templates
     end
 
     def write_templates
