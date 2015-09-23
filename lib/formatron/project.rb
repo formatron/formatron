@@ -13,6 +13,7 @@ class Formatron
     FORMATRON_FILE = 'Formatronfile'
     CONFIG_DIR = 'config'
     CREDENTIALS_JSON = 'credentials.json'
+    CLOUDFORMATION_DIR = 'cloudformation'
 
     def initialize(dir, target)
       aws = Formatron::Aws.new(
@@ -25,6 +26,8 @@ class Formatron
       prefix = formatronfile.prefix
       cloudformation = formatronfile.cloudformation
       opscode = formatronfile.opscode
+      cloudformation_dir = File.join(dir, CLOUDFORMATION_DIR)
+      has_cloudformation_stack = File.directory?(cloudformation_dir)
       @config = Formatron::Config.new(
         {
           name: formatronfile.name,
@@ -43,11 +46,11 @@ class Formatron
             prefix: prefix
           )
         end,
-        cloudformation.nil? ? false : true
+        has_cloudformation_stack
       )
       @cloudformation = Formatron::Cloudformation.new(
         @config, cloudformation
-      ) unless cloudformation.nil?
+      ) if has_cloudformation_stack
       @opscode = Formatron::Opscode.new(
         @config, opscode
       ) unless opscode.nil?
