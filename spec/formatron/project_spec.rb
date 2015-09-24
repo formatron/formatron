@@ -240,4 +240,51 @@ describe Formatron::Project do
       expect(project.opscode).to equal(opscode)
     end
   end
+
+  describe '#deploy' do
+    it 'should put the config on S3 encrypted' do
+      pending
+      fail
+    end
+
+    context 'when there is an opscode configuration' do
+      context 'and the chef server is defined in this stack' do
+        context 'and the chef server needs to be deployed' do
+          it 'should vendor the cookbooks and upload them ' \
+             'to S3 with the lock file' do
+            pending
+            fail
+          end
+        end
+
+        context 'and the chef server is already deployed' do
+          it 'should deploy the cookbooks to the chef server' do
+            pending
+            fail
+          end
+        end
+      end
+
+      context 'and the chef server is not defined in this stack' do
+        it 'should deploy the cookbooks to the chef server' do
+          pending
+          fail
+        end
+      end
+    end
+
+    context 'when there are opsworks cookbooks' do
+      it 'should vendor the cookbooks and upload them to S3' do
+        pending
+        fail
+      end
+    end
+
+    context 'when there is cloudformation configuration' do
+      it 'should deploy a cloudformation stack' do
+        pending
+        fail
+      end
+    end
+  end
 end
