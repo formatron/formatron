@@ -10,42 +10,35 @@
 Metrics/AbcSize:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'
 
 # Offense count: 1
 Metrics/BlockNesting:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'
 
 # Offense count: 1
 # Configuration parameters: CountComments.
 Metrics/ClassLength:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'
 
 # Offense count: 1
 Metrics/CyclomaticComplexity:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'
 
 # Offense count: 14
 # Configuration parameters: CountComments.
 Metrics/MethodLength:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'
 
 # Offense count: 1
 Metrics/PerceivedComplexity:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'
 
 # Offense count: 4
 Style/Documentation:
   Exclude:
     - 'lib/formatron.rb'
-    - 'lib/formatron/config_old.rb'

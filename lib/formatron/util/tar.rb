@@ -6,38 +6,40 @@ class Formatron
   module Util
     # Tar and Gzip in memory implementations
     module Tar
-      # :nocov:
       def self.tar(path)
         tarfile = StringIO.new('')
         Gem::Package::TarWriter.new(tarfile) do |tar|
-          tar_files tar, path
+          _tar_files tar, path
         end
         tarfile.rewind
         tarfile
       end
 
-      def self.tar_files(tar, path)
+      def self._tar_files(tar, path)
         Dir.glob(File.join(path, '**/*'), File::FNM_DOTMATCH).each do |file|
           next if ['.', '..'].include?(File.basename(file))
-          tar_entry tar, file, path
+          _tar_entry tar, file, path
         end
       end
 
-      def self.tar_entry(tar, file, path)
+      def self._tar_entry(tar, file, path)
         relative_file = file.sub(%r{^#{Regexp.escape path}/?}, '')
+        mode = File.stat(file).mode
         if File.directory?(file)
-          tar_directory tar, relative_file
+          _tar_directory tar, relative_file, mode
         else
-          tar_file tar, file, relative_file
+          _tar_file tar, file, relative_file, mode
         end
       end
 
-      def self.tar_directory(tar, relative_file)
+      def self._tar_directory(tar, relative_file, mode)
+        puts relative_file
         tar.mkdir relative_file, mode
       end
 
-      def self.tar_file(tar, file, relative_file)
-        mode = File.stat(file).mode
+      def self._tar_file(tar, file, relative_file, mode)
+        puts file
+        puts relative_file
         tar.add_file relative_file, mode do |tf|
           File.open(file, 'rb') { |f| tf.write f.read }
         end
@@ -52,7 +54,13 @@ class Formatron
         # now we need a new StringIO
         StringIO.new gz.string
       end
-      # :nocov:
+
+      private_class_method(
+        :_tar_files,
+        :_tar_entry,
+        :_tar_directory,
+        :_tar_file
+      )
     end
   end
 end
