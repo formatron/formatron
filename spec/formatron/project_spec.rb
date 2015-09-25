@@ -250,8 +250,7 @@ describe Formatron::Project do
     context 'when there is an opscode configuration' do
       context 'and the chef server is defined in this stack' do
         context 'and the chef server needs to be deployed' do
-          it 'should vendor the cookbooks and upload them ' \
-             'to S3 with the lock file' do
+          it 'should deploy the chef server first before deploying cookbooks' do
             pending
             fail
           end
@@ -270,13 +269,6 @@ describe Formatron::Project do
           pending
           fail
         end
-      end
-    end
-
-    context 'when there are opsworks cookbooks' do
-      it 'should vendor the cookbooks and upload them to S3' do
-        pending
-        fail
       end
     end
 
