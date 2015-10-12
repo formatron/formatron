@@ -1,5 +1,7 @@
 require 'spec_helper'
 
+require 'formatron/util/berks'
+
 describe Formatron::Util::Berks do
   before(:each) do
     @key_tempfile = instance_double('Tempfile')

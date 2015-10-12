@@ -5,8 +5,6 @@ class Formatron
   class Aws
     attr_reader :s3_client, :cloudformation_client
 
-    CREDENTIALS_JSON = 'credentials.json'
-
     def initialize(credentials_json)
       credentials = JSON.parse(File.read(credentials_json))
       region = credentials['region']

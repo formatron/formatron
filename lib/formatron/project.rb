@@ -1,15 +1,13 @@
 require 'formatron/config'
 require 'formatron/dependency'
 require 'formatron/aws'
-require 'formatron/cloudformation'
 require 'formatron/formatronfile'
-require 'formatron/opscode'
+require 'formatron/cloudformation'
+require 'formatron/formatronfile/opscode'
 
 class Formatron
   # The Formatron project loader
   class Project
-    attr_reader :config, :cloudformation, :opscode
-
     FORMATRON_FILE = 'Formatronfile'
     CONFIG_DIR = 'config'
     CREDENTIALS_JSON = 'credentials.json'
@@ -20,9 +18,15 @@ class Formatron
       @target = target
       _create_aws
       _load_formatronfile
-      _create_config
-      _create_cloudformation if _has_cloudformation_stack
+      _create_cloudformation
       _create_opscode
+      _create_config
+    end
+
+    def deploy
+      @config.deploy
+      @cloudformation.deploy @config
+      @opscode.deploy
     end
 
     def _create_aws
@@ -45,17 +49,12 @@ class Formatron
       )
     end
 
-    def _has_cloudformation_stack
-      cloudformation_dir = File.join(@dir, CLOUDFORMATION_DIR)
-      File.directory?(cloudformation_dir)
-    end
-
     def _create_config
       @config = Formatron::Config.new(
         _config_params,
         File.join(@dir, CONFIG_DIR),
         _dependencies,
-        _has_cloudformation_stack
+        @cloudformation.stack?
       )
     end
 
@@ -83,13 +82,14 @@ class Formatron
 
     def _create_cloudformation
       @cloudformation = Formatron::Cloudformation.new(
-        @config, @formatronfile.cloudformation
+        @aws,
+        File.join(@dir, CLOUDFORMATION_DIR)
       )
     end
 
     def _create_opscode
       opscode = @formatronfile.opscode
-      @opscode = Formatron::Opscode.new(
+      @opscode = Formatron::Formatronfile::Opscode.new(
         @config, opscode
       ) unless opscode.nil?
     end
@@ -98,7 +98,6 @@ class Formatron
       :_create_aws,
       :_load_formatronfile,
       :_create_formatronfile,
-      :_has_cloudformation_stack,
       :_create_config,
       :_config_params,
       :_dependencies,

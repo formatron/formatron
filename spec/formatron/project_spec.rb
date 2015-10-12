@@ -51,12 +51,10 @@ describe Formatron::Project do
         [],
         false
       ).once { @config }
-      project = Formatron::Project.new(
+      Formatron::Project.new(
         'test',
         'test_target'
       )
-
-      expect(project.config).to equal(@config)
     end
   end
 
@@ -100,105 +98,52 @@ describe Formatron::Project do
         ], false
       ).once { @config }
 
-      expect(Formatron::Project.new(
+      Formatron::Project.new(
         'test',
         'test_target'
-      ).config).to equal(@config)
+      )
     end
   end
 
   context 'when there is a cloudformation stack' do
     before(:each) do
-      cloudformation_dir = File.join('test', 'cloudformation')
-      FileUtils.mkdir_p(cloudformation_dir)
+      expect(@formatronfile).to receive(:depends)
+        .with(no_args).once { [] }
+      expect(@formatronfile).to receive(:opscode)
+        .with(no_args).once { nil }
     end
 
-    context 'and a cloudformation block in the Formatronfile' do
-      before(:each) do
-        @cloudformation_proc = proc { 'hello' }
-        expect(@formatronfile).to receive(:depends)
-          .with(no_args).once { [] }
-        expect(@formatronfile).to receive(:cloudformation)
-          .with(no_args).once { @cloudformation_proc }
-        expect(@formatronfile).to receive(:opscode)
-          .with(no_args).once { nil }
-      end
+    it 'should intialize the cloudformation instance ' \
+       'and notify the config' do
+      expect(@config_class).to receive(:new).with(
+        {
+          name: 'test_name',
+          target: 'test_target',
+          s3_bucket: 'test_bucket',
+          prefix: 'test_prefix',
+          kms_key: 'test_kms_key'
+        },
+        File.join('test', 'config'), [], true
+      ).once { @config }
 
-      it 'should intialize the cloudformation instance ' \
-         'and notify the config' do
-        expect(@config_class).to receive(:new).with(
-          {
-            name: 'test_name',
-            target: 'test_target',
-            s3_bucket: 'test_bucket',
-            prefix: 'test_prefix',
-            kms_key: 'test_kms_key'
-          },
-          File.join('test', 'config'), [], true
-        ).once { @config }
+      cloudformation = instance_double(
+        'Formatron::Cloudformation'
+      )
+      cloudformation_class = class_double(
+        'Formatron::Cloudformation'
+      ).as_stubbed_const
+      expect(cloudformation_class).to receive(
+        :new
+      ).with(
+        @aws,
+        File.join('test', 'cloudformation')
+      ).once { cloudformation }
+      expect(cloudformation).to_receive(:stack?).with(no_args).once { true }
 
-        cloudformation = instance_double('Formatron::Cloudformation')
-        cloudformation_class = class_double(
-          'Formatron::Cloudformation'
-        ).as_stubbed_const
-        expect(cloudformation_class).to receive(
-          :new
-        ).with(
-          @config,
-          @cloudformation_proc
-        ).once { cloudformation }
-
-        project = Formatron::Project.new(
-          'test',
-          'test_target'
-        )
-        expect(project.config).to equal(@config)
-        expect(project.cloudformation).to equal(cloudformation)
-      end
-    end
-
-    context 'but no cloudformation block in the Formatronfile' do
-      before(:each) do
-        @cloudformation_proc = proc { 'hello' }
-        expect(@formatronfile).to receive(:depends)
-          .with(no_args).once { [] }
-        expect(@formatronfile).to receive(:cloudformation)
-          .with(no_args).once { nil }
-        expect(@formatronfile).to receive(:opscode)
-          .with(no_args).once { nil }
-      end
-
-      it 'should intialize the cloudformation instance ' \
-         'and notify the config' do
-        expect(@config_class).to receive(:new).with(
-          {
-            name: 'test_name',
-            target: 'test_target',
-            s3_bucket: 'test_bucket',
-            prefix: 'test_prefix',
-            kms_key: 'test_kms_key'
-          },
-          File.join('test', 'config'), [], true
-        ).once { @config }
-
-        cloudformation = instance_double('Formatron::Cloudformation')
-        cloudformation_class = class_double(
-          'Formatron::Cloudformation'
-        ).as_stubbed_const
-        expect(cloudformation_class).to receive(
-          :new
-        ).with(
-          @config,
-          nil
-        ).once { cloudformation }
-
-        project = Formatron::Project.new(
-          'test',
-          'test_target'
-        )
-        expect(project.config).to equal(@config)
-        expect(project.cloudformation).to equal(cloudformation)
-      end
+      Formatron::Project.new(
+        'test',
+        'test_target'
+      )
     end
   end
 
@@ -221,9 +166,9 @@ describe Formatron::Project do
         File.join('test', 'config'), [], false
       ).once { @config }
 
-      opscode = instance_double('Formatron::Opscode')
+      opscode = instance_double('Formatron::Formatronfile::Opscode')
       opscode_class = class_double(
-        'Formatron::Opscode'
+        'Formatron::Formatronfile::Opscode'
       ).as_stubbed_const
       expect(opscode_class).to receive(
         :new
@@ -232,51 +177,81 @@ describe Formatron::Project do
         opscode_proc
       ).once { opscode }
 
-      project = Formatron::Project.new(
+      Formatron::Project.new(
         'test',
         'test_target'
       )
-      expect(project.config).to equal(@config)
-      expect(project.opscode).to equal(opscode)
     end
   end
 
   describe '#deploy' do
-    it 'should put the config on S3 encrypted' do
-      pending
-      fail
+    before(:each) do
+      cloudformation_dir = File.join('test', 'cloudformation')
+      FileUtils.mkdir_p(cloudformation_dir)
+
+      opscode_proc = proc { 'hello' }
+      expect(@formatronfile).to receive(:depends)
+        .with(no_args).once { [] }
+      expect(@formatronfile).to receive(:opscode)
+        .with(no_args).once { opscode_proc }
+
+      expect(@formatronfile).to receive(:depends)
+        .with(no_args).once { [] }
+      expect(@formatronfile).to receive(:cloudformation)
+        .with(no_args).once { cloudformation_proc }
+
+      expect(@config_class).to receive(:new).with(
+        {
+          name: 'test_name',
+          target: 'test_target',
+          s3_bucket: 'test_bucket',
+          prefix: 'test_prefix',
+          kms_key: 'test_kms_key'
+        },
+        File.join('test', 'config'), [], true
+      ).once { @config }
+
+      @cloudformation = instance_double(
+        'Formatron::Cloudformation'
+      )
+      cloudformation_class = class_double(
+        'Formatron::Cloudformation'
+      ).as_stubbed_const
+      expect(cloudformation_class).to receive(
+        :new
+      ).with(
+        @aws,
+        File.join('test', 'cloudformation')
+      ).once { @cloudformation }
+
+      @opscode = instance_double('Formatron::Formatronfile::Opscode')
+      opscode_class = class_double(
+        'Formatron::Formatronfile::Opscode'
+      ).as_stubbed_const
+      expect(opscode_class).to receive(
+        :new
+      ).with(
+        @config,
+        opscode_proc
+      ).once { @opscode }
+
+      project = Formatron::Project.new(
+        'test',
+        'test_target'
+      )
+      project.deploy
     end
 
-    context 'when there is an opscode configuration' do
-      context 'and the chef server is defined in this stack' do
-        context 'and the chef server needs to be deployed' do
-          it 'should deploy the chef server first before deploying cookbooks' do
-            pending
-            fail
-          end
-        end
-
-        context 'and the chef server is already deployed' do
-          it 'should deploy the cookbooks to the chef server' do
-            pending
-            fail
-          end
-        end
-      end
-
-      context 'and the chef server is not defined in this stack' do
-        it 'should deploy the cookbooks to the chef server' do
-          pending
-          fail
-        end
-      end
+    skip 'should deploy the config' do
+      expect(@config).to have_received(:deploy).with(no_args).once
     end
 
-    context 'when there is cloudformation configuration' do
-      it 'should deploy a cloudformation stack' do
-        pending
-        fail
-      end
+    skip 'should deploy the cloudformation stack' do
+      expect(@cloudformation).to have_received(:deploy).with(@config).once
+    end
+
+    skip 'should deploy the opscode cookbooks' do
+      expect(@opscode).to have_received(:deploy).with(no_args).once
     end
   end
 end

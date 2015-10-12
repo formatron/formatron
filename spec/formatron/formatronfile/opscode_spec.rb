@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'formatron/opscode'
+require 'formatron/formatronfile/opscode'
 
-describe Formatron::Opscode do
+describe Formatron::Formatronfile::Opscode do
   it 'should evaluate the block in the context ' \
      'of the the supplied configuration' do
     config = instance_double('Formatron::Config')
@@ -14,7 +14,7 @@ describe Formatron::Opscode do
         param5: 'param5'
       }
     end
-    opscode = Formatron::Opscode.new(
+    opscode = Formatron::Formatronfile::Opscode.new(
       config,
       proc do
         server_url @config[:param1]

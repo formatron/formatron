@@ -1,3 +1,5 @@
+require 'formatron/project'
+
 class Formatron
   module Support
     # Generates a Formatron project directory tree with the given files
@@ -22,7 +24,7 @@ class Formatron
             FileUtils.mkdir_p File.dirname(path)
             File.write path, content
           end
-          Formatron.new(dir, target).deploy
+          Formatron::Project.new(dir, target).deploy
         end
       end
     end

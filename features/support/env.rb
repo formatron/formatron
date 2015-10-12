@@ -1,7 +1,6 @@
 $LOAD_PATH.unshift File.expand_path('../../../support', __FILE__)
 
 require 'simplecov'
-require 'formatron'
 require 'json'
 require 'cucumber/rspec/doubles'
 

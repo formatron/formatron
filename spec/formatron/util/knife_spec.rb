@@ -1,5 +1,7 @@
 require 'spec_helper'
 
+require 'formatron/util/knife'
+
 ENVIRONMENT = 'env'
 ENVIRONMENT_CHECK_COMMAND = "knife environment show #{ENVIRONMENT} " \
                             '-c knife_file'

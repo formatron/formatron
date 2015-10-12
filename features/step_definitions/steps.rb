@@ -82,7 +82,8 @@ When(/^I deploy the formatron stack with target (\w+)$/) do |target|
   @knife_instance = double
   allow(@knife_instance).to receive(:create_environment)
   allow(@knife_instance).to receive(:unlink)
-  allow(Formatron::Util::Knife).to receive(:new) { @knife_instance }
+  @knife = class_double('Formatron::Util::Knife').as_stubbed_const
+  allow(@knife).to receive(:new) { @knife_instance }
   tar = class_double('Formatron::Util::Tar').as_stubbed_const
   allow(tar).to receive(:tar) { |dir| "tar #{dir}" }
   allow(tar).to receive(:gzip) { |tarfile| "gzip #{tarfile}" }
@@ -332,7 +333,7 @@ $/x) do |url, user, user_key, organization, ssl_verify|
     organization,
     ssl_verify == 'true'
   )
-  expect(Formatron::Util::Knife).to have_received(:new).with(
+  expect(@knife).to have_received(:new).with(
     url,
     user,
     user_key,

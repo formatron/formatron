@@ -1,16 +1,15 @@
 class Formatron
-  # parses cloudformation blocks
+  # Cloudformation configuration
   class Cloudformation
-    attr_reader :config, :parameters
-
-    def initialize(config, block)
-      @config = config.hash
-      @parameters = {}
-      instance_eval(&block)
+    def initialize(aws, dir)
+      @aws = aws
+      @dir = dir
     end
 
-    def parameter(key, value)
-      @parameters[key] = value
+    def stack?
+    end
+
+    def ready?
     end
   end
 end
