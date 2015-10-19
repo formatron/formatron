@@ -4,6 +4,7 @@ require 'rubygems'
 require 'commander/import'
 require 'formatron/version'
 require 'formatron/credentials'
+require 'formatron/bootstrap'
 
 program :version, Formatron::VERSION
 program :description, 'Quickly deploy AWS CloudFormation ' \
@@ -27,12 +28,27 @@ command :credentials do |c|
   c.example 'description', 'command example'
   c.option '--some-switch', 'Some switch that does something'
   c.action do |_args, _options|
-    credentials = ask 'credentials file? ' do |q|
-      q.default = File.join(Dir.home, '.formatron', 'credentials.json')
+    credentials = ask 'Credentials file? ' do |q|
+      q.default = if File.file?('Formatronfile')
+                    File.join(Dir.pwd, '.formatron', 'credentials.json')
+                  else
+                    File.join(Dir.home, '.formatron', 'credentials.json')
+                  end
     end
-    region = ask 'region? '
-    access_key_id = ask 'access key ID? '
-    secret_access_key = password 'secret access key? '
+    region = choose(
+      "Region:\n",
+      'us-east-1',
+      'us-west-2',
+      'us-west-1',
+      'eu-west-1',
+      'eu-central-1',
+      'ap-southeast-1',
+      'ap-southeast-2',
+      'ap-northeast-1',
+      'sa-east-1'
+    )
+    access_key_id = ask 'Access Key ID? '
+    secret_access_key = password 'Secret Access Key? '
     Formatron::Credentials.generate(
       credentials,
       region,
@@ -49,7 +65,18 @@ command :bootstrap do |c|
   c.example 'description', 'command example'
   c.option '--some-switch', 'Some switch that does something'
   c.action do |_args, _options|
-    # Do something or c.when_called Formatron::Commands::Bootstrap,
+    configuration = ask 'Directory? ' do |q|
+      q.default = '.'
+    end
+    name = ask 'Name? ' do |q|
+      q.default = File.basename File.expand_path(configuration)
+    end
+    hosted_zone_id = ask 'Hosted Zone ID? '
+    Formatron::Bootstrap.generate(
+      configuration,
+      name,
+      hosted_zone_id
+    )
   end
 end
 
@@ -60,6 +87,17 @@ command :instance do |c|
   c.example 'description', 'command example'
   c.option '--some-switch', 'Some switch that does something'
   c.action do |_args, _options|
-    # Do something or c.when_called Formatron::Commands::Instance
+    configuration = ask 'Directory? ' do |q|
+      q.default = '.'
+    end
+    name = ask 'Name? ' do |q|
+      q.default = File.basename configuration
+    end
+    bootstrap_configuration = ask 'Bootstrap configuration? '
+    Formatron::Instance.generate(
+      configuration,
+      name,
+      bootstrap_configuration
+    )
   end
 end

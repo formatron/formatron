@@ -4,7 +4,7 @@ module Formatron
     def self.generate(target_directory, name, hosted_zone_id)
       FileUtils.mkdir_p target_directory
       formatronfile = File.join target_directory, 'Formatronfile'
-      File.write formatronfile, <<-EOH.gsub(/^ {8}/, '').strip
+      File.write formatronfile, <<-EOH.gsub(/^ {8}/, '')
         name '#{name}'
 
         bootstrap do

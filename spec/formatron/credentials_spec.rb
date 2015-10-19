@@ -21,7 +21,7 @@ describe Formatron::Credentials do
           secret_access_key
         )
         actual = File.read 'credentials.json'
-        expect(actual).to eql <<-EOH.gsub(/^ {10}/, '').strip
+        expect(actual).to eql <<-EOH.gsub(/^ {10}/, '')
           {
             "region": "region",
             "access_key_id": "access_key_id",

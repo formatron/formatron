@@ -16,7 +16,7 @@ describe Formatron::Bootstrap do
       it 'should generate the initial Formatronfile' do
         Formatron::Bootstrap.generate target_directory, name, hosted_zone_id
         actual = File.read File.join(target_directory, 'Formatronfile')
-        expect(actual).to eql <<-EOH.gsub(/^ {10}/, '').strip
+        expect(actual).to eql <<-EOH.gsub(/^ {10}/, '')
           name '#{name}'
 
           bootstrap do
