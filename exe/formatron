@@ -35,6 +35,7 @@ command :credentials do |c|
                     File.join(Dir.home, '.formatron', 'credentials.json')
                   end
     end
+    credentials = File.expand_path credentials
     region = choose(
       'Region:',
       'us-east-1',
@@ -68,8 +69,9 @@ command :bootstrap do |c|
     configuration = ask 'Directory? ' do |q|
       q.default = '.'
     end
+    configuration = File.expand_path configuration
     name = ask 'Name? ' do |q|
-      q.default = File.basename File.expand_path(configuration)
+      q.default = File.basename configuration
     end
     hosted_zone_id = ask 'Hosted Zone ID? '
     Formatron::Bootstrap.generate(
@@ -90,6 +92,7 @@ command :instance do |c|
     configuration = ask 'Directory? ' do |q|
       q.default = '.'
     end
+    configuration = File.expand_path configuration
     name = ask 'Name? ' do |q|
       q.default = File.basename configuration
     end
