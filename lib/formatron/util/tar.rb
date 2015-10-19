@@ -2,7 +2,7 @@ require 'rubygems'
 require 'rubygems/package'
 require 'zlib'
 
-class Formatron
+module Formatron
   module Util
     # Tar and Gzip in memory implementations
     module Tar

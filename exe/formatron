@@ -1,25 +1,65 @@
 #!/usr/bin/env ruby
 
-COMMAND = ARGV[0]
+require 'rubygems'
+require 'commander/import'
+require 'formatron/version'
+require 'formatron/credentials'
 
-if COMMAND == 'deploy'
+program :version, Formatron::VERSION
+program :description, 'Quickly deploy AWS CloudFormation ' \
+                      'stacks backed by a Chef Server'
 
-  TARGET = ARGV[1]
-  PRODUCTION = 'production'
-  if TARGET == PRODUCTION
-    # rubocop:disable Metrics/LineLength
-    puts "Confirm that you wish to deploy to #{PRODUCTION} by typing '#{PRODUCTION}':"
-    # rubocop:enable Metrics/LineLength
-    confirmation = STDIN.gets.chomp
-    fail 'Confirmation failed' unless confirmation == PRODUCTION
+command :deploy do |c|
+  c.syntax = 'formatron deploy, [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |_args, _options|
+    # Do something or c.when_called Formatron::Commands::Deploy,
   end
-  require 'formatron'
-  Formatron.new(Dir.pwd, TARGET).deploy
+end
 
-elsif COMMAND == 'init'
+command :credentials do |c|
+  c.syntax = 'formatron credentials, [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |_args, _options|
+    credentials = ask 'credentials file? ' do |q|
+      q.default = File.join(Dir.home, '.formatron', 'credentials.json')
+    end
+    region = ask 'region? '
+    access_key_id = ask 'access key ID? '
+    secret_access_key = password 'secret access key? '
+    Formatron::Credentials.generate(
+      credentials,
+      region,
+      access_key_id,
+      secret_access_key
+    )
+  end
+end
 
-  DIRECTORY = ARGV[1]
-  require 'formatron/init'
-  Formatron::Init.new(DIRECTORY).write
+command :bootstrap do |c|
+  c.syntax = 'formatron bootstrap, [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |_args, _options|
+    # Do something or c.when_called Formatron::Commands::Bootstrap,
+  end
+end
 
+command :instance do |c|
+  c.syntax = 'formatron instance [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |_args, _options|
+    # Do something or c.when_called Formatron::Commands::Instance
+  end
 end

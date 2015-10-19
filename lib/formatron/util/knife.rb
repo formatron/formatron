@@ -1,7 +1,7 @@
 require_relative 'kernel_helper'
 require 'English'
 
-class Formatron
+module Formatron
   module Util
     # Wrapper for the berks cli
     class Knife

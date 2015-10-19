@@ -1,3 +1,0 @@
-source 'https://rubygems.org'
-
-gem 'formatron', git: 'https://github.com/pghalliday/formatron.git'

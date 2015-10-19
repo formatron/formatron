@@ -22,7 +22,7 @@ EOH
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
-    f.match(%r{^(test|spec|features)/})
+    f.match(%r{^(test|spec)/})
   end
 
   spec.bindir        = 'exe'
@@ -39,11 +39,7 @@ EOH
   spec.add_development_dependency 'pry-nav'
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'rubocop', '0.33.0'
-  spec.add_development_dependency 'cucumber'
   spec.add_development_dependency 'yard'
-  # yard-cucumber is currently installed from the Gemfile as I need to
-  # load it from git until it is made compatible with Cucumber 2.0 and released
-  # spec.add_development_dependency 'yard-cucumber'
   spec.add_development_dependency 'yard-rspec'
   spec.add_development_dependency 'guard-livereload'
   spec.add_development_dependency 'guard-yard'
@@ -51,6 +47,7 @@ EOH
   spec.add_development_dependency 'fakefs'
 
   spec.add_runtime_dependency 'aws-sdk', '~> 2.1'
+  spec.add_runtime_dependency 'commander', '~> 4.3.5'
   spec.add_runtime_dependency 'deep_merge', '~> 1.0'
   spec.add_runtime_dependency 'berkshelf', '~> 3.3'
   spec.add_runtime_dependency 'chef', '~> 12.4'

@@ -2,10 +2,7 @@
 --title 'Formatron'
 --charset utf-8
 --markup markdown
---plugin yard-cucumber
 --plugin yard-rspec
 'lib/**/*.rb'
-'features/**/*.rb'
-'features/**/*.feature'
 -
 '*.md'

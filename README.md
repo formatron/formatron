@@ -4,9 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/pghalliday/formatron/badge.svg?branch=refactor&service=github)](https://coveralls.io/github/pghalliday/formatron?branch=refactor)
 [![Dependency Status](https://gemnasium.com/pghalliday/formatron.svg)](https://gemnasium.com/pghalliday/formatron)
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/formatron`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Simple AWS CloudFormation configuration with Chef Server
 
 ## Installation
 
@@ -26,7 +24,23 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+To initialize a bootstrap configurstaion including a VPC and Chef Server
+
+```
+formatron bootstrap <dirname>
+```
+
+To initialize an instance configuration with a dependency on a named bootstrap configuration
+
+```
+formatron instance <bootstrap_configuration> <dirname>
+```
+
+To deploy a configuration with the given target specifier
+
+```
+formatron deploy <target>
+```
 
 ## Development
 

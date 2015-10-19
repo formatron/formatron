@@ -1,4 +1,4 @@
-class Formatron
+module Formatron
   module Support
     # Stub CloudFormation describe_stacks response class
     class CloudformationDescribeStacksResponse

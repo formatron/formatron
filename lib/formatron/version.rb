@@ -1,4 +1,4 @@
 # add version to class
-class Formatron
+module Formatron
   VERSION = '0.1.0'
 end
