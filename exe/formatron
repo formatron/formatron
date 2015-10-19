@@ -36,7 +36,7 @@ command :credentials do |c|
                   end
     end
     region = choose(
-      "Region:\n",
+      'Region:',
       'us-east-1',
       'us-west-2',
       'us-west-1',
