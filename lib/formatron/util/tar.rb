@@ -33,13 +33,10 @@ module Formatron
       end
 
       def self._tar_directory(tar, relative_file, mode)
-        puts relative_file
         tar.mkdir relative_file, mode
       end
 
       def self._tar_file(tar, file, relative_file, mode)
-        puts file
-        puts relative_file
         tar.add_file relative_file, mode do |tf|
           File.open(file, 'rb') { |f| tf.write f.read }
         end
