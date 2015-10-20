@@ -1,10 +1,5 @@
 guard 'livereload' do
-  watch(%r{.yardoc/.+$})
-end
-
-guard 'yard', stdout: 'yard.stdout.log', stderr: 'yard.stderr.log' do
-  watch(%r{lib/.+\.rb})
-  watch(%r{[^/]+.md})
+  watch(%r{coverage/.+$})
 end
 
 guard :rake, task: 'default' do

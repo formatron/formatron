@@ -1,8 +1,0 @@
---readme README.md
---title 'Formatron'
---charset utf-8
---markup markdown
---plugin yard-rspec
-'lib/**/*.rb'
--
-'*.md'

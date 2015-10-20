@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-require 'formatron/credentials'
+require 'formatron/generators/credentials'
 
-describe Formatron::Credentials do
+describe Formatron::Generators::Credentials do
   include FakeFS::SpecHelpers
 
   region = 'region'
@@ -14,7 +14,7 @@ describe Formatron::Credentials do
           "region of #{region}" do
     describe '::generate' do
       it 'should generate the credentials JSON' do
-        Formatron::Credentials.generate(
+        Formatron::Generators::Credentials.generate(
           'credentials.json',
           region,
           access_key_id,
