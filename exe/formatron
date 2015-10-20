@@ -10,8 +10,10 @@ program :version, Formatron::VERSION
 program :description, 'Quickly deploy AWS CloudFormation ' \
                       'stacks backed by a Chef Server'
 
+global_option '-c', '--credentials FILE', 'The credentials file'
+
 command :deploy do |c|
-  c.syntax = 'formatron deploy, [options]'
+  c.syntax = 'formatron deploy [options]'
   c.summary = ''
   c.description = ''
   c.example 'description', 'command example'
@@ -22,13 +24,14 @@ command :deploy do |c|
 end
 
 command :credentials do |c|
-  c.syntax = 'formatron credentials, [options]'
-  c.summary = ''
-  c.description = ''
-  c.example 'description', 'command example'
-  c.option '--some-switch', 'Some switch that does something'
-  c.action do |_args, _options|
-    credentials = ask 'Credentials file? ' do |q|
+  c.syntax = 'formatron credentials [options]'
+  c.summary = 'Generate a credentials JSON file'
+  c.description = 'Generate a credentials JSON file'
+  c.option '--region STRING', 'The AWS region'
+  c.option '--access-key-id STRING', 'The AWS access key ID'
+  c.option '--secret-access-key STRING', 'The AWS secret access key'
+  c.action do |_args, options|
+    credentials = options.credentials || ask('Credentials file? ') do |q|
       q.default = if File.file?('Formatronfile')
                     File.join(Dir.pwd, '.formatron', 'credentials.json')
                   else
@@ -36,7 +39,7 @@ command :credentials do |c|
                   end
     end
     credentials = File.expand_path credentials
-    region = choose(
+    region = options.region || choose(
       'Region:',
       'us-east-1',
       'us-west-2',
@@ -48,8 +51,9 @@ command :credentials do |c|
       'ap-northeast-1',
       'sa-east-1'
     )
-    access_key_id = ask 'Access Key ID? '
-    secret_access_key = password 'Secret Access Key? '
+    access_key_id = options.access_key_id || ask('Access Key ID? ')
+    secret_access_key =
+      options.secret_access_key || password('Secret Access Key? ')
     Formatron::Credentials.generate(
       credentials,
       region,
@@ -60,7 +64,7 @@ command :credentials do |c|
 end
 
 command :bootstrap do |c|
-  c.syntax = 'formatron bootstrap, [options]'
+  c.syntax = 'formatron bootstrap [options]'
   c.summary = ''
   c.description = ''
   c.example 'description', 'command example'
