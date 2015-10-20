@@ -6,6 +6,7 @@ module Formatron
       def self.shell(command)
         `#{command}`
       end
+
       def self.success?
         $CHILD_STATUS.success?
       end

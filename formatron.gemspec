@@ -38,7 +38,7 @@ EOH
   spec.add_development_dependency 'pry-remote', '~> 0.1'
   spec.add_development_dependency 'pry-nav', '~> 0.2'
   spec.add_development_dependency 'coveralls', '~> 0.8'
-  spec.add_development_dependency 'rubocop', '0.34'
+  spec.add_development_dependency 'rubocop', '0.33'
   spec.add_development_dependency 'yard', '~> 0.8'
   spec.add_development_dependency 'yard-rspec', '~> 0'
   spec.add_development_dependency 'guard-livereload', '~> 2.4'
