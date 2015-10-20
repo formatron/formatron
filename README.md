@@ -1,7 +1,7 @@
 # Formatron
 
-[![Build Status](https://travis-ci.org/pghalliday/formatron.svg?branch=refactor)](https://travis-ci.org/pghalliday/formatron?branch=refactor)
-[![Coverage Status](https://coveralls.io/repos/pghalliday/formatron/badge.svg?branch=refactor&service=github)](https://coveralls.io/github/pghalliday/formatron?branch=refactor)
+[![Build Status](https://travis-ci.org/pghalliday/formatron.svg?branch=refactor2)](https://travis-ci.org/pghalliday/formatron?branch=refactor2)
+[![Coverage Status](https://coveralls.io/repos/pghalliday/formatron/badge.svg?branch=refactor2&service=github)](https://coveralls.io/github/pghalliday/formatron?branch=refactor2)
 [![Dependency Status](https://gemnasium.com/pghalliday/formatron.svg)](https://gemnasium.com/pghalliday/formatron)
 
 Simple AWS CloudFormation configuration with Chef Server
