@@ -5,17 +5,14 @@ module Formatron
     # CLI command for destroy
     module DestroyCLI
       def destroy_directory(options)
-        directory = options.directory || Dir.pwd
-        File.expand_path directory
+        options.directory || Dir.pwd
       end
 
       def destroy_credentials(options)
-        credentials =
-          options.credentials ||
+        options.credentials ||
           Generators::Credentials::CLI.default_credentials(
             destroy_directory(options)
           )
-        File.expand_path credentials
       end
 
       def destroy_target(target, configuration)
