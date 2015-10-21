@@ -69,10 +69,9 @@ module Formatron
         # rubocop:enable Metrics/MethodLength
 
         def bootstrap_directory(options)
-          directory = options.directory || ask('Directory? ') do |q|
+          options.directory || ask('Directory? ') do |q|
             q.default = Dir.pwd
           end
-          File.expand_path directory
         end
 
         def bootstrap_name(options, directory)

@@ -92,7 +92,7 @@ describe Formatron::Generators::Bootstrap::CLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(Formatron::Generators::Bootstrap).to receive(:generate).once.with(
-        File.expand_path('directory'),
+        directory,
         expected_params
       ).and_call_original
       Test.new.run
@@ -129,7 +129,7 @@ describe Formatron::Generators::Bootstrap::CLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(Formatron::Generators::Bootstrap).to receive(:generate).once.with(
-        File.expand_path('directory'),
+        directory,
         expected_params
       )
       Test.new.run
@@ -166,7 +166,7 @@ describe Formatron::Generators::Bootstrap::CLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(Formatron::Generators::Bootstrap).to receive(:generate).once.with(
-        File.expand_path('directory'),
+        directory,
         expected_params
       )
       Test.new.run

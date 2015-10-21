@@ -15,10 +15,9 @@ module Formatron
         end
 
         def instance_directory(options)
-          directory = options.directory || ask('Directory? ') do |q|
+          options.directory || ask('Directory? ') do |q|
             q.default = Dir.pwd
           end
-          File.expand_path directory
         end
 
         def instance_name(options, directory)
@@ -37,8 +36,8 @@ module Formatron
             directory = instance_directory options
             Instance.generate(
               directory,
-              instance_name(options, directory),
-              instance_bootstrap_configuration(options)
+              name: instance_name(options, directory),
+              bootstrap_configuration: instance_bootstrap_configuration(options)
             )
           end
         end
