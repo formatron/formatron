@@ -1,6 +1,16 @@
 #!/usr/bin/env ruby
 
 require 'formatron/cli'
+require 'formatron/generators/credentials/cli'
+require 'formatron/generators/bootstrap/cli'
+require 'formatron/generators/instance/cli'
+require 'formatron/configuration/deploy_cli'
+require 'formatron/configuration/destroy_cli'
 
+Formatron::CLI.include Formatron::Generators::Credentials::CLI
+Formatron::CLI.include Formatron::Generators::Bootstrap::CLI
+Formatron::CLI.include Formatron::Generators::Instance::CLI
+Formatron::CLI.include Formatron::Configuration::DeployCLI
+Formatron::CLI.include Formatron::Configuration::DestroyCLI
 cli = Formatron::CLI.new
 cli.run

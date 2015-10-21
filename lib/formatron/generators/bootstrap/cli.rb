@@ -36,13 +36,13 @@ module Formatron
             directory = bootstrap_directory options
             Bootstrap.generate(
               directory,
-              bootstrap_name(options, directory),
-              bootstrap_hosted_zone_id(options)
+              name: bootstrap_name(options, directory),
+              hosted_zone_id: bootstrap_hosted_zone_id(options)
             )
           end
         end
 
-        def bootstrap_command
+        def bootstrap_formatron_command
           command :bootstrap do |c|
             c.syntax = 'formatron bootstrap [options]'
             c.summary = 'Generate a bootstrap configuration'

@@ -44,7 +44,7 @@ module Formatron
         end
       end
 
-      def deploy_command
+      def deploy_formatron_command
         command :deploy do |c|
           c.syntax = 'formatron deploy [options] [TARGET]'
           c.summary = 'Deploy or update a Formatron stack'

@@ -1,21 +1,10 @@
 require 'commander'
-
 require 'formatron/version'
-require 'formatron/generators/credentials/cli'
-require 'formatron/generators/bootstrap/cli'
-require 'formatron/generators/instance/cli'
-require 'formatron/configuration/deploy_cli'
-require 'formatron/configuration/destroy_cli'
 
 module Formatron
   # CLI interface
   class CLI
     include Commander::Methods
-    include Generators::Credentials::CLI
-    include Generators::Bootstrap::CLI
-    include Generators::Instance::CLI
-    include Configuration::DeployCLI
-    include Configuration::DestroyCLI
 
     def global_options
       global_option '-c', '--credentials FILE', 'The credentials file'
@@ -27,11 +16,9 @@ module Formatron
     end
 
     def commands
-      deploy_command
-      destroy_command
-      bootstrap_command
-      instance_command
-      credentials_command
+      self.class.instance_methods.each do |method|
+        send(method) if method =~ /_formatron_command$/
+      end
     end
 
     def run

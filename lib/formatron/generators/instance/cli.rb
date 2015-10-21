@@ -43,7 +43,7 @@ module Formatron
           end
         end
 
-        def instance_command
+        def instance_formatron_command
           command :instance do |c|
             c.syntax = 'formatron instance [options]'
             c.summary = 'Generate an instance configuration'

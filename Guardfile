@@ -1,5 +1,5 @@
 guard 'livereload' do
-  watch(%r{coverage/.+$})
+  watch(%r{^coverage/.+$})
 end
 
 guard :rake, task: 'default' do

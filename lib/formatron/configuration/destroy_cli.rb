@@ -44,7 +44,7 @@ module Formatron
         end
       end
 
-      def destroy_command
+      def destroy_formatron_command
         command :destroy do |c|
           c.syntax = 'formatron destroy [options] [TARGET]'
           c.summary = 'Destroy a Formatron stack'
