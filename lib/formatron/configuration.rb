@@ -5,11 +5,15 @@ module Formatron
     end
 
     def targets
+      # :nocov:
       %w(production test)
+      # :nocov:
     end
 
     def protected?(_target)
+      # :nocov:
       true
+      # :nocov:
     end
 
     def deploy(_target)
