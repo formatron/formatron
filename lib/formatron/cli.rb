@@ -1,10 +1,11 @@
 require 'commander'
 
 require 'formatron/version'
-require 'formatron/generators/credentials'
-require 'formatron/generators/bootstrap'
-require 'formatron/generators/instance'
-require 'formatron/configuration'
+require 'formatron/generators/credentials/cli'
+require 'formatron/generators/bootstrap/cli'
+require 'formatron/generators/instance/cli'
+require 'formatron/configuration/deploy_cli'
+require 'formatron/configuration/destroy_cli'
 
 module Formatron
   # CLI interface
