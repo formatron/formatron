@@ -42,6 +42,7 @@ EOH
   spec.add_development_dependency 'guard-livereload', '~> 2.4'
   spec.add_development_dependency 'guard-rake', '~> 1.0'
   spec.add_development_dependency 'fakefs', '~> 0.6'
+  spec.add_development_dependency 'highline-test', '~> 0'
 
   spec.add_runtime_dependency 'aws-sdk', '~> 2.1'
   spec.add_runtime_dependency 'commander', '~> 4.3'

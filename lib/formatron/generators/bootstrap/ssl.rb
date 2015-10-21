@@ -2,7 +2,7 @@ module Formatron
   module Generators
     module Bootstrap
       # generates placeholder SSL stuff
-      module Ssl
+      module SSL
         def self.write(directory, target)
           target_directory = File.join directory, 'ssl', target
           FileUtils.mkdir_p target_directory
