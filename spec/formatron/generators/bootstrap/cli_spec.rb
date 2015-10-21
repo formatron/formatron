@@ -105,6 +105,7 @@ describe Formatron::Generators::Bootstrap::CLI do
         @singleton ||=
           Commander::Runner.new [
             'bootstrap',
+            '-t',
             '-d', directory,
             '-n', name,
             '-s', s3_bucket,

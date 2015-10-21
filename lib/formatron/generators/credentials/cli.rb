@@ -59,18 +59,15 @@ module Formatron
         end
 
         def credentials_directory(options)
-          directory = options.directory || Dir.pwd
-          File.expand_path directory
+          options.directory || Dir.pwd
         end
 
         def credentials_credentials(options)
-          credentials =
-            options.credentials ||
+          options.credentials ||
             ask('Credentials file? ') do |q|
               q.default =
                 CLI.default_generated_credentials credentials_directory(options)
             end
-          File.expand_path credentials
         end
 
         def credentials_region(options)
