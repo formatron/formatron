@@ -33,10 +33,8 @@ module Formatron
           local = local_credentials directory
           if File.file?(local)
             local
-          elsif File.file?(global_credentials)
-            global_credentials
           else
-            fail 'No credentials found'
+            global_credentials
           end
         end
 

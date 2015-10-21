@@ -111,4 +111,69 @@ describe Formatron::Generators::Credentials::CLI do
       Test.new.run
     end
   end
+
+  context 'with global default credentials file' do
+    before(:each) do
+      allow(Commander::Runner).to receive(:instance) do
+        @singleton ||=
+          Commander::Runner.new [
+            'credentials',
+            '-t',
+            '--region', region,
+            '--access-key-id', access_key_id,
+            '--secret-access-key', secret_access_key
+          ]
+      end
+    end
+
+    it 'should call generate' do
+      @input = StringIO.new "\n"
+      @output = StringIO.new
+      # rubocop:disable Style/GlobalVars
+      $terminal = HighLine.new @input, @output
+      # rubocop:enable Style/GlobalVars
+      expect(
+        Formatron::Generators::Credentials
+      ).to receive(:generate).once.with(
+        File.join(Dir.home, '.formatron/credentials.json'),
+        region,
+        access_key_id,
+        secret_access_key
+      )
+      Test.new.run
+    end
+  end
+
+  context 'with local default credentials file' do
+    before(:each) do
+      File.write 'Formatronfile', ''
+      allow(Commander::Runner).to receive(:instance) do
+        @singleton ||=
+          Commander::Runner.new [
+            'credentials',
+            '-t',
+            '--region', region,
+            '--access-key-id', access_key_id,
+            '--secret-access-key', secret_access_key
+          ]
+      end
+    end
+
+    it 'should call generate' do
+      @input = StringIO.new "\n"
+      @output = StringIO.new
+      # rubocop:disable Style/GlobalVars
+      $terminal = HighLine.new @input, @output
+      # rubocop:enable Style/GlobalVars
+      expect(
+        Formatron::Generators::Credentials
+      ).to receive(:generate).once.with(
+        File.join(Dir.pwd, '.formatron/credentials.json'),
+        region,
+        access_key_id,
+        secret_access_key
+      )
+      Test.new.run
+    end
+  end
 end

@@ -5,17 +5,14 @@ module Formatron
     # CLI command for deploy
     module DeployCLI
       def deploy_directory(options)
-        directory = options.directory || Dir.pwd
-        File.expand_path directory
+        options.directory || Dir.pwd
       end
 
       def deploy_credentials(options)
-        credentials =
-          options.credentials ||
+        options.credentials ||
           Generators::Credentials::CLI.default_credentials(
             deploy_directory(options)
           )
-        File.expand_path credentials
       end
 
       def deploy_target(target, configuration)
