@@ -4,7 +4,7 @@ module Formatron
       # generates placeholder SSL stuff
       module SSL
         def self.write(directory, target)
-          target_directory = File.join directory, 'ssl', target
+          target_directory = File.join directory, 'ssl', target.to_s
           FileUtils.mkdir_p target_directory
           placeholder_key = File.join target_directory, 'key'
           placeholder_cert = File.join target_directory, 'cert'

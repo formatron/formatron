@@ -11,12 +11,13 @@ bootstrap do
   first_name '<%= params[:first_name] %>'
   last_name '<%= params[:last_name] %>'
   instance_cookbook 'chef_server_extra'
-<% params[:targets].each do |name, target_params| %>  target '<%= name %>', {
-    protected: <%= target_params[:protected] %>,
-    sub_domain: '<%= target_params[:sub_domain] %>',
-    password: '<%= target_params[:password] %>',
-    ssl_key: 'ssl/<%= name %>/key',
-    ssl_cert: 'ssl/<%= name %>/cert',
-    ssl_verify: false
-  }
+<% params[:targets].each do |name, target_params| %>
+  target '<%= name %>' do
+    protect <%= target_params[:protect] %>
+    sub_domain '<%= target_params[:sub_domain] %>'
+    password '<%= target_params[:password] %>'
+    ssl_key 'ssl/<%= name %>/key'
+    ssl_cert 'ssl/<%= name %>/cert'
+    ssl_verify false
+  end
 <% end %>end

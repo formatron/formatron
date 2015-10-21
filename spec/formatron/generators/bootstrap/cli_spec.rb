@@ -22,14 +22,14 @@ describe Formatron::Generators::Bootstrap::CLI do
   email = 'email'
   first_name = 'first-name'
   last_name = 'last-name'
-  instance_cookbook = 'instance-cookbook'
   targets = %w(target1 target2)
   target_params = {}
   targets.each do |target|
-    target_params[target] = {}
-    target_params[target][:protected] = true
-    target_params[target][:sub_domain] = "#{target}-sub-domain"
-    target_params[target][:password] = "#{target}-password"
+    target_sym = target.to_sym
+    target_params[target_sym] = {}
+    target_params[target_sym][:protect] = true
+    target_params[target_sym][:sub_domain] = "#{target}-sub-domain"
+    target_params[target_sym][:password] = "#{target}-password"
   end
 
   expected_params = {
@@ -43,7 +43,6 @@ describe Formatron::Generators::Bootstrap::CLI do
     email: email,
     first_name: first_name,
     last_name: last_name,
-    instance_cookbook: instance_cookbook,
     targets: target_params
   }
 
@@ -60,7 +59,7 @@ describe Formatron::Generators::Bootstrap::CLI do
   context 'with no options' do
     before(:each) do
       allow(Commander::Runner).to receive(:instance) do
-        @singleton ||= Commander::Runner.new ['bootstrap']
+        @singleton ||= Commander::Runner.new ['bootstrap', '-t']
       end
     end
 
@@ -77,14 +76,14 @@ describe Formatron::Generators::Bootstrap::CLI do
         #{email}
         #{first_name}
         #{last_name}
-        #{instance_cookbook}
         #{targets.join(' ')}
       EOH
       targets.each do |target|
+        target_sym = target.to_sym
         responses << <<-EOH.gsub(/^ {10}/, '')
-          #{target_params[target][:protected] ? 'yes' : 'no'}
-          #{target_params[target][:sub_domain]}
-          #{target_params[target][:password]}
+          #{target_params[target_sym][:protect] ? 'yes' : 'no'}
+          #{target_params[target_sym][:sub_domain]}
+          #{target_params[target_sym][:password]}
         EOH
       end
       @input = StringIO.new responses
@@ -117,7 +116,6 @@ describe Formatron::Generators::Bootstrap::CLI do
             '-m', email,
             '-f', first_name,
             '-l', last_name,
-            '-i', instance_cookbook,
             '-j', "'#{target_params.to_json space: ' '}'"
           ]
       end
@@ -155,7 +153,6 @@ describe Formatron::Generators::Bootstrap::CLI do
             '--email', email,
             '--first-name', first_name,
             '--last-name', last_name,
-            '--instance-cookbook', instance_cookbook,
             '--targets-json', "'#{target_params.to_json space: ' '}'"
           ]
       end

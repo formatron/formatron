@@ -117,25 +117,35 @@ module Formatron
           options.last_name || ask('Last Name? ')
         end
 
-        def bootstrap_instance_cookbook(options)
-          options.instance_cookbook || ask('Instance Cookbook? ')
+        def bootstrap_target_params(params, target)
+          params[:protect] =
+            agree "#{target} protect? " do |q|
+              q.default = 'yes'
+            end
+          params[:sub_domain] = ask "#{target} sub domain? "
+          params[:password] = password "#{target} password? "
         end
 
         def bootstrap_ask_targets
           params = {}
-          targets = ask 'Targets? ', Array
+          targets = ask 'Targets? ', Array do |q|
+            q.default = 'production test'
+          end
           targets.each do |target|
-            params[target] = {}
-            params[target][:protected] = agree "#{target} protected? "
-            params[target][:sub_domain] = ask "#{target} sub domain? "
-            params[target][:password] = password "#{target} password? "
+            target_sym = target.to_sym
+            params[target_sym] = {}
+            bootstrap_target_params params[target_sym], target
           end
           params
         end
 
         def bootstrap_targets(options)
           json = options.targets_json
-          json ? JSON.parse(json.gsub!(/\A'|'\Z/, '')) : bootstrap_ask_targets
+          if json
+            JSON.parse(json.gsub!(/\A'|'\Z/, ''), symbolize_names: true)
+          else
+            bootstrap_ask_targets
+          end
         end
 
         # rubocop:disable Metrics/MethodLength
@@ -151,7 +161,6 @@ module Formatron
             email: bootstrap_email(options),
             first_name: bootstrap_first_name(options),
             last_name: bootstrap_last_name(options),
-            instance_cookbook: bootstrap_instance_cookbook(options),
             targets: bootstrap_targets(options)
           }
         end

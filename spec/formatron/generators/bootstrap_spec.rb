@@ -18,12 +18,12 @@ describe Formatron::Generators::Bootstrap do
     last_name: 'my_last_name',
     targets: {
       'target1' => {
-        protected: true,
+        protect: true,
         sub_domain: 'chef-1',
         password: 'password-1'
       },
       'target2' => {
-        protected: false,
+        protect: false,
         sub_domain: 'chef-2',
         password: 'password-2'
       }
@@ -67,22 +67,24 @@ describe Formatron::Generators::Bootstrap do
           first_name '#{params[:first_name]}'
           last_name '#{params[:last_name]}'
           instance_cookbook 'chef_server_extra'
-          target 'target1', {
-            protected: #{params[:targets]['target1'][:protected]},
-            sub_domain: '#{params[:targets]['target1'][:sub_domain]}',
-            password: '#{params[:targets]['target1'][:password]}',
-            ssl_key: 'ssl/target1/key',
-            ssl_cert: 'ssl/target1/cert',
-            ssl_verify: false
-          }
-          target 'target2', {
-            protected: #{params[:targets]['target2'][:protected]},
-            sub_domain: '#{params[:targets]['target2'][:sub_domain]}',
-            password: '#{params[:targets]['target2'][:password]}',
-            ssl_key: 'ssl/target2/key',
-            ssl_cert: 'ssl/target2/cert',
-            ssl_verify: false
-          }
+
+          target 'target1' do
+            protect #{params[:targets]['target1'][:protect]}
+            sub_domain '#{params[:targets]['target1'][:sub_domain]}'
+            password '#{params[:targets]['target1'][:password]}'
+            ssl_key 'ssl/target1/key'
+            ssl_cert 'ssl/target1/cert'
+            ssl_verify false
+          end
+
+          target 'target2' do
+            protect #{params[:targets]['target2'][:protect]}
+            sub_domain '#{params[:targets]['target2'][:sub_domain]}'
+            password '#{params[:targets]['target2'][:password]}'
+            ssl_key 'ssl/target2/key'
+            ssl_cert 'ssl/target2/cert'
+            ssl_verify false
+          end
         end
       EOH
     end
