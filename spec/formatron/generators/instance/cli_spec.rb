@@ -33,7 +33,12 @@ describe Formatron::Generators::Instance::CLI do
   context 'with no options' do
     before(:each) do
       allow(Commander::Runner).to receive(:instance) do
-        @singleton ||= Commander::Runner.new ['instance', '-t']
+        @singleton ||=
+          Commander::Runner.new [
+            'generate',
+            'instance',
+            '-t'
+          ]
       end
     end
 
@@ -61,6 +66,7 @@ describe Formatron::Generators::Instance::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'instance',
             '-t',
             '-d', directory,
@@ -89,6 +95,7 @@ describe Formatron::Generators::Instance::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'instance',
             '-t',
             '--directory', directory,

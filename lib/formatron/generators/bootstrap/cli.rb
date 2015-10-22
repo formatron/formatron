@@ -176,8 +176,8 @@ module Formatron
         end
 
         def bootstrap_formatron_command
-          command :bootstrap do |c|
-            c.syntax = 'formatron bootstrap [options]'
+          command :'generate bootstrap' do |c|
+            c.syntax = 'formatron generate bootstrap [options]'
             c.summary = 'Generate a bootstrap configuration'
             c.description = 'Generate a bootstrap configuration'
             bootstrap_options c

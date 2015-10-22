@@ -59,7 +59,12 @@ describe Formatron::Generators::Bootstrap::CLI do
   context 'with no options' do
     before(:each) do
       allow(Commander::Runner).to receive(:instance) do
-        @singleton ||= Commander::Runner.new ['bootstrap', '-t']
+        @singleton ||=
+          Commander::Runner.new [
+            'generate',
+            'bootstrap',
+            '-t'
+          ]
       end
     end
 
@@ -104,6 +109,7 @@ describe Formatron::Generators::Bootstrap::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'bootstrap',
             '-t',
             '-d', directory,
@@ -141,6 +147,7 @@ describe Formatron::Generators::Bootstrap::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'bootstrap',
             '-t',
             '--directory', directory,

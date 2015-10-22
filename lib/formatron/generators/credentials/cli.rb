@@ -95,8 +95,8 @@ module Formatron
         end
 
         def credentials_formatron_command
-          command :credentials do |c|
-            c.syntax = 'formatron credentials [options]'
+          command :'generate credentials' do |c|
+            c.syntax = 'formatron generate credentials [options]'
             c.summary = 'Generate a credentials JSON file'
             c.description = 'Generate a credentials JSON file'
             credentials_options c

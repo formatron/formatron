@@ -11,21 +11,20 @@ describe Formatron::Generators::Bootstrap do
     hosted_zone_id: 'HOSTEDZONEID',
     kms_key: 'KMSKEY',
     s3_bucket: 'my_s3_bucket',
-    organization: 'my_organization',
-    username: 'my_username',
-    email: 'my_email',
-    first_name: 'my_first_name',
-    last_name: 'my_last_name',
+    chef_server: {
+      organization: 'my_organization',
+      username: 'my_username',
+      email: 'my_email',
+      first_name: 'my_first_name',
+      last_name: 'my_last_name',
+      password: 'password'
+    },
     targets: {
-      'target1' => {
-        protect: true,
-        sub_domain: 'chef-1',
-        password: 'password-1'
+      target1: {
+        protect: true
       },
-      'target2' => {
-        protect: false,
-        sub_domain: 'chef-2',
-        password: 'password-2'
+      target2: {
+        protect: false
       }
     }
   }
@@ -61,73 +60,141 @@ describe Formatron::Generators::Bootstrap do
           kms_key '#{params[:kms_key]}'
           ec2_key '#{params[:ec2_key]}'
           hosted_zone_id '#{params[:hosted_zone_id]}'
-          organization '#{params[:organization]}'
-          username '#{params[:username]}'
-          email '#{params[:email]}'
-          first_name '#{params[:first_name]}'
-          last_name '#{params[:last_name]}'
-          instance_cookbook 'chef_server_extra'
 
           target 'target1' do
             protect #{params[:targets]['target1'][:protect]}
-            sub_domain '#{params[:targets]['target1'][:sub_domain]}'
-            password '#{params[:targets]['target1'][:password]}'
-            ssl_key 'ssl/target1/key'
-            ssl_cert 'ssl/target1/cert'
-            ssl_verify false
           end
 
           target 'target2' do
             protect #{params[:targets]['target2'][:protect]}
-            sub_domain '#{params[:targets]['target2'][:sub_domain]}'
-            password '#{params[:targets]['target2'][:password]}'
-            ssl_key 'ssl/target2/key'
-            ssl_cert 'ssl/target2/cert'
-            ssl_verify false
+          end
+
+          vpc do
+            cidr '10.0.0.0/24'
+
+            subnet 'management_1' do
+              availability_zone '#{params[:availability_zone]}'
+              cidr '10.0.0.0/16'
+              nat false
+            end
+
+            subnet 'public_1' do
+              availability_zone '#{params[:availability_zone]}'
+              cidr '10.0.1.0/16'
+              nat false
+            end
+
+            subnet 'private_1' do
+              availability_zone '#{params[:availability_zone]}'
+              cidr '10.0.2.0/16'
+              nat true
+            end
+          end
+
+          bastion do
+            subnet 'management_1'
+            sub_domain config['bastion']['sub_domain']
+            instance_cookbook 'bastion_instance'
+          end
+
+          nat do
+            subnet 'public_1'
+            sub_domain config['nat']['sub_domain']
+            instance_cookbook 'nat_instance'
+          end
+
+          chef_server do
+            subnet 'private_1'
+            sub_domain config['chef_server']['sub_domain']
+            instance_cookbook 'chef_server_instance'
+            organization '#{params[:chef_server][:organization]}'
+            username '#{params[:chef_server][:username]}'
+            email '#{params[:chef_server][:email]}'
+            first_name '#{params[:chef_server][:first_name]}'
+            last_name '#{params[:chef_server][:last_name]}'
+            password '#{params[:chef_server][:password]}'
+            ssl_key config['chef_server']['ssl']['key']
+            ssl_cert config['chef_server']['ssl']['cert']
+            ssl_verify config['chef_server']['ssl']['verify']
           end
         end
       EOH
     end
 
     it 'should generate a config stub for each target' do
-      empty_json = <<-EOH.gsub(/^ {8}/, '')
+      actual = File.read File.join(directory, 'config/_default/_default.json')
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         {
         }
       EOH
-      actual = File.read File.join(directory, 'config/_default/_default.json')
-      expect(actual).to eql empty_json
       actual = File.read File.join(directory, 'config/target1/_default.json')
-      expect(actual).to eql empty_json
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        {
+          "bastion": {
+            "sub_domain": "bastion-target1"
+          },
+          "nat": {
+            "sub_domain": "nat-target1"
+          },
+          "chef_server": {
+            "sub_domain": "chef-target1"
+          }
+        }
+      EOH
       actual = File.read File.join(directory, 'config/target2/_default.json')
-      expect(actual).to eql empty_json
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        {
+          "bastion": {
+            "sub_domain": "bastion-target2"
+          },
+          "nat": {
+            "sub_domain": "nat-target2"
+          },
+          "chef_server": {
+            "sub_domain": "chef-target2"
+          }
+        }
+      EOH
     end
 
     it 'should add placeholders for the ssl certs, etc' do
       ssl_key_placeholder = "Remember to generate an SSL key\n"
       ssl_cert_placeholder = "Remember to generate an SSL certificate\n"
-      actual = File.read File.join(directory, 'ssl/target1/key')
+      actual = File.read File.join(
+        directory,
+        'config/target1/chef_server/ssl/key'
+      )
       expect(actual).to eql ssl_key_placeholder
-      actual = File.read File.join(directory, 'ssl/target1/cert')
+      actual = File.read File.join(
+        directory,
+        'config/target1/chef_server/ssl/cert'
+      )
       expect(actual).to eql ssl_cert_placeholder
-      actual = File.read File.join(directory, 'ssl/target2/key')
+      actual = File.read File.join(
+        directory,
+        'config/target2/chef_server/ssl/key'
+      )
       expect(actual).to eql ssl_key_placeholder
-      actual = File.read File.join(directory, 'ssl/target2/cert')
+      actual = File.read File.join(
+        directory,
+        'config/target2/chef_server/ssl/cert'
+      )
       expect(actual).to eql ssl_cert_placeholder
     end
 
-    it 'should add a chef_server_extra cookbook stub' do
+    it 'should add a chef_server_instance cookbook stub' do
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_extra/metadata.rb'
+        'instance_cookbooks/chef_server_instance/metadata.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
-        name 'chef_server_extra'
+        name 'chef_server_instance'
         version '0.1.0'
         supports 'ubuntu'
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_extra/Berksfile'
+        'instance_cookbooks/chef_server_instance/Berksfile'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         source 'https://supermarket.chef.io'
@@ -136,16 +203,88 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_extra/README.md'
+        'instance_cookbooks/chef_server_instance/README.md'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
-        # chef_server_extra
+        # chef_server_instance
 
         Cookbook to perform additional configuration on the Chef Server
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_extra/recipes/default.rb'
+        'instance_cookbooks/chef_server_instance/recipes/default.rb'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+      EOH
+    end
+
+    it 'should add a nat_instance cookbook stub' do
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/nat_instance/metadata.rb'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        name 'nat_instance'
+        version '0.1.0'
+        supports 'ubuntu'
+      EOH
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/nat_instance/Berksfile'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        source 'https://supermarket.chef.io'
+
+        metadata
+      EOH
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/nat_instance/README.md'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        # nat_instance
+
+        Cookbook to perform additional configuration on the NAT instance
+      EOH
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/nat_instance/recipes/default.rb'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+      EOH
+    end
+
+    it 'should add a bastion_instance cookbook stub' do
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/bastion_instance/metadata.rb'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        name 'bastion_instance'
+        version '0.1.0'
+        supports 'ubuntu'
+      EOH
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/bastion_instance/Berksfile'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        source 'https://supermarket.chef.io'
+
+        metadata
+      EOH
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/bastion_instance/README.md'
+      )
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        # bastion_instance
+
+        Cookbook to perform additional configuration on the bastion server
+      EOH
+      actual = File.read File.join(
+        directory,
+        'instance_cookbooks/bastion_instance/recipes/default.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
       EOH

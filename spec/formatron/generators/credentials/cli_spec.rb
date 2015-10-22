@@ -27,7 +27,12 @@ describe Formatron::Generators::Credentials::CLI do
   context 'with no options' do
     before(:each) do
       allow(Commander::Runner).to receive(:instance) do
-        @singleton ||= Commander::Runner.new ['credentials', '-t']
+        @singleton ||=
+          Commander::Runner.new [
+            'generate',
+            'credentials',
+            '-t'
+          ]
       end
     end
 
@@ -57,6 +62,7 @@ describe Formatron::Generators::Credentials::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'credentials',
             '-t',
             '-c', credentials,
@@ -87,6 +93,7 @@ describe Formatron::Generators::Credentials::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'credentials',
             '-t',
             '--credentials', credentials,
@@ -117,6 +124,7 @@ describe Formatron::Generators::Credentials::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'credentials',
             '-t',
             '--region', region,
@@ -150,6 +158,7 @@ describe Formatron::Generators::Credentials::CLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
+            'generate',
             'credentials',
             '-t',
             '--region', region,
