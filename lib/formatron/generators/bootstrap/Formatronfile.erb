@@ -7,7 +7,7 @@ bootstrap do
 
   ec2 do
     key_pair '<%= params[:ec2_key_pair] %>'
-    private_key 'ec2/private_key.pem'
+    private_key 'ec2/private-key.pem'
   end
 <% params[:targets].each do |name, target_params| %>
   target '<%= name %>' do

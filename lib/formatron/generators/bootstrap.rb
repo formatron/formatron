@@ -4,6 +4,7 @@ require_relative 'bootstrap/ssl'
 require_relative 'bootstrap/instance_cookbook'
 require_relative 'bootstrap/readme'
 require_relative 'bootstrap/gitignore'
+require_relative 'bootstrap/ec2'
 
 module Formatron
   module Generators
@@ -69,6 +70,7 @@ module Formatron
         Gitignore.write directory
         Formatronfile.write directory, params
         Config.write directory
+        EC2.write directory
         generate_targets directory, params[:targets]
         generate_cookbooks directory
       end
