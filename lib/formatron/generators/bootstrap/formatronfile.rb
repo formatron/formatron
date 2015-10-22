@@ -1,4 +1,5 @@
 require 'erb'
+require 'curb'
 
 module Formatron
   module Generators
@@ -7,10 +8,11 @@ module Formatron
       module Formatronfile
         # exports params to bootstrap ERB template
         class Template
-          attr_reader :params
+          attr_reader :params, :ip
 
           def initialize(params)
             @params = params
+            @ip = Curl.get('http://whatismyip.akamai.com').body_str
           end
         end
 

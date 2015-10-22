@@ -8,15 +8,67 @@ module Formatron
   module Generators
     # generates a bootstrap configuration
     module Bootstrap
-      def self.generate(directory, params)
-        Readme.write directory, params[:name]
-        Formatronfile.write directory, params
-        Config.write directory, '_default'
-        params[:targets].each do |target, _|
+      def self.validate_target_params(targets)
+        targets.each do |_, params|
+          fail 'target should have :protect parameter' if params[:protect].nil?
+        end
+      end
+
+      def self.validate_hash_params(hash, params)
+        params.each do |param|
+          fail "params should contain #{param}" if hash[param].nil?
+        end
+      end
+
+      # rubocop:disable Metrics/MethodLength
+      def self.validate_params(params)
+        validate_hash_params params, [
+          :name,
+          :s3_bucket,
+          :kms_key,
+          :ec2_key_pair,
+          :hosted_zone_id,
+          :hosted_zone_id,
+          :targets,
+          :availability_zone,
+          :chef_server
+        ]
+        validate_hash_params params[:chef_server], [
+          :organization,
+          :username,
+          :email,
+          :first_name,
+          :last_name,
+          :password
+        ]
+        validate_target_params params[:targets]
+      end
+      # rubocop:enable Metrics/MethodLength
+
+      def self.generate_targets(directory, targets)
+        targets.each do |target, _|
           Config.write directory, target
           SSL.write directory, target
         end
-        InstanceCookbook.write directory
+      end
+
+      def self.generate_cookbooks(directory)
+        InstanceCookbook.write(
+          directory,
+          'chef_server_instance',
+          'Chef Server instance'
+        )
+        InstanceCookbook.write directory, 'nat_instance', 'NAT instance'
+        InstanceCookbook.write directory, 'bastion_instance', 'Bastion instance'
+      end
+
+      def self.generate(directory, params)
+        validate_params params
+        Readme.write directory, params[:name]
+        Formatronfile.write directory, params
+        Config.write directory
+        generate_targets directory, params[:targets]
+        generate_cookbooks directory
       end
     end
   end

@@ -3,21 +3,66 @@ s3_bucket '<%= params[:s3_bucket] %>'
 
 bootstrap do
   kms_key '<%= params[:kms_key] %>'
-  ec2_key '<%= params[:ec2_key] %>'
   hosted_zone_id '<%= params[:hosted_zone_id] %>'
-  organization '<%= params[:organization] %>'
-  username '<%= params[:username] %>'
-  email '<%= params[:email] %>'
-  first_name '<%= params[:first_name] %>'
-  last_name '<%= params[:last_name] %>'
-  instance_cookbook 'chef_server_extra'
+
+  ec2 do
+    key_pair '<%= params[:ec2_key_pair] %>'
+    private_key 'ec2/private_key.pem'
+  end
 <% params[:targets].each do |name, target_params| %>
   target '<%= name %>' do
     protect <%= target_params[:protect] %>
-    sub_domain '<%= target_params[:sub_domain] %>'
-    password '<%= target_params[:password] %>'
-    ssl_key 'ssl/<%= name %>/key'
-    ssl_cert 'ssl/<%= name %>/cert'
-    ssl_verify false
   end
-<% end %>end
+<% end %>
+  vpc do
+    cidr '10.0.0.0/24'
+
+    subnet 'management_1' do
+      availability_zone '<%= params[:availability_zone] %>'
+      cidr '10.0.0.0/16'
+      public do
+        restrict_source_ip [
+          '<%= ip %>'
+        ]
+      end
+    end
+
+    subnet 'public_1' do
+      availability_zone '<%= params[:availability_zone] %>'
+      cidr '10.0.1.0/16'
+      public
+    end
+
+    subnet 'private_1' do
+      availability_zone '<%= params[:availability_zone] %>'
+      cidr '10.0.2.0/16'
+    end
+  end
+
+  bastion do
+    subnet 'management_1'
+    sub_domain config['bastion']['sub_domain']
+    instance_cookbook 'bastion_instance'
+  end
+
+  nat do
+    subnet 'public_1'
+    sub_domain config['nat']['sub_domain']
+    instance_cookbook 'nat_instance'
+  end
+
+  chef_server do
+    subnet 'private_1'
+    sub_domain config['chef_server']['sub_domain']
+    instance_cookbook 'chef_server_instance'
+    organization '<%= params[:chef_server][:organization] %>'
+    username '<%= params[:chef_server][:username] %>'
+    email '<%= params[:chef_server][:email] %>'
+    first_name '<%= params[:chef_server][:first_name] %>'
+    last_name '<%= params[:chef_server][:last_name] %>'
+    password '<%= params[:chef_server][:password] %>'
+    ssl_key config['chef_server']['ssl']['key']
+    ssl_cert config['chef_server']['ssl']['cert']
+    ssl_verify config['chef_server']['ssl']['verify']
+  end
+end

@@ -3,35 +3,35 @@ module Formatron
     module Bootstrap
       # generates placeholder instance cookbook for chef server
       module InstanceCookbook
-        def self.write(directory)
+        def self.write(directory, name, description)
           cookbook_directory = File.join(
             directory,
             'instance_cookbooks',
-            'chef_server_extra'
+            name
           )
-          _write_cookbook_metadata cookbook_directory
-          _write_cookbook_readme cookbook_directory
+          _write_cookbook_metadata cookbook_directory, name
+          _write_cookbook_readme cookbook_directory, name, description
           _write_cookbook_berksfile cookbook_directory
           _write_cookbook_recipe cookbook_directory
         end
 
-        def self._write_cookbook_metadata(directory)
+        def self._write_cookbook_metadata(directory, name)
           FileUtils.mkdir_p directory
           metadata = File.join directory, 'metadata.rb'
           File.write metadata, <<-EOH.gsub(/^ {12}/, '')
-            name 'chef_server_extra'
+            name '#{name}'
             version '0.1.0'
             supports 'ubuntu'
           EOH
         end
 
-        def self._write_cookbook_readme(directory)
+        def self._write_cookbook_readme(directory, name, description)
           FileUtils.mkdir_p directory
           readme = File.join directory, 'README.md'
           File.write readme, <<-EOH.gsub(/^ {12}/, '')
-            # chef_server_extra
+            # #{name}
 
-            Cookbook to perform additional configuration on the Chef Server
+            Cookbook to perform additional configuration on the #{description}
           EOH
         end
 

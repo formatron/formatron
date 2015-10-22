@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'curb'
 
 require 'formatron/generators/bootstrap'
 
@@ -10,6 +11,8 @@ describe Formatron::Generators::Bootstrap do
     name: 'bootstrap',
     hosted_zone_id: 'HOSTEDZONEID',
     kms_key: 'KMSKEY',
+    ec2_key_pair: 'ec2-key-pair',
+    availability_zone: 'a',
     s3_bucket: 'my_s3_bucket',
     chef_server: {
       organization: 'my_organization',
@@ -58,15 +61,19 @@ describe Formatron::Generators::Bootstrap do
 
         bootstrap do
           kms_key '#{params[:kms_key]}'
-          ec2_key '#{params[:ec2_key]}'
           hosted_zone_id '#{params[:hosted_zone_id]}'
 
+          ec2 do
+            key_pair '#{params[:ec2_key_pair]}'
+            private_key 'ec2/private_key.pem'
+          end
+
           target 'target1' do
-            protect #{params[:targets]['target1'][:protect]}
+            protect #{params[:targets][:target1][:protect]}
           end
 
           target 'target2' do
-            protect #{params[:targets]['target2'][:protect]}
+            protect #{params[:targets][:target2][:protect]}
           end
 
           vpc do
@@ -75,19 +82,22 @@ describe Formatron::Generators::Bootstrap do
             subnet 'management_1' do
               availability_zone '#{params[:availability_zone]}'
               cidr '10.0.0.0/16'
-              nat false
+              public do
+                restrict_source_ip [
+                  '#{Curl.get('http://whatismyip.akamai.com').body_str}'
+                ]
+              end
             end
 
             subnet 'public_1' do
               availability_zone '#{params[:availability_zone]}'
               cidr '10.0.1.0/16'
-              nat false
+              public
             end
 
             subnet 'private_1' do
               availability_zone '#{params[:availability_zone]}'
               cidr '10.0.2.0/16'
-              nat true
             end
           end
 
@@ -208,7 +218,7 @@ describe Formatron::Generators::Bootstrap do
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         # chef_server_instance
 
-        Cookbook to perform additional configuration on the Chef Server
+        Cookbook to perform additional configuration on the Chef Server instance
       EOH
       actual = File.read File.join(
         directory,
@@ -280,7 +290,7 @@ describe Formatron::Generators::Bootstrap do
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         # bastion_instance
 
-        Cookbook to perform additional configuration on the bastion server
+        Cookbook to perform additional configuration on the Bastion instance
       EOH
       actual = File.read File.join(
         directory,

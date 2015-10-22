@@ -21,13 +21,19 @@ module Formatron
           )
           c.option(
             '-e',
-            '--ec2-key STRING',
+            '--ec2-key-pair STRING',
             'The EC2 key pair to associate with EC2 instances'
           )
           c.option(
             '-z',
             '--hosted-zone-id STRING',
             'The Route53 Hosted Zone ID for the public hosted zone'
+          )
+          c.option(
+            '-a',
+            '--availability-zone STRING',
+            'The AWS availability zone letter (region is already taken ' \
+            'from the AWS credentials)'
           )
           c.option(
             '-o',
@@ -38,6 +44,11 @@ module Formatron
             '-u',
             '--username STRING',
             'The username to create on the Chef Server'
+          )
+          c.option(
+            '-p',
+            '--password STRING',
+            'The password for the Chef Server user'
           )
           c.option(
             '-m',
@@ -61,9 +72,16 @@ module Formatron
             'configuration to the Chef Server'
           )
           c.option(
-            '-j',
-            '--targets-json JSON',
-            'The target specific configuration for the Chef Server'
+            '-x',
+            '--protected-targets LIST',
+            Array,
+            'The protected targets (eg. production)'
+          )
+          c.option(
+            '-y',
+            '--unprotected-targets LIST',
+            Array,
+            'The unprotected targets (eg. test)'
           )
         end
         # rubocop:enable Metrics/MethodLength
@@ -88,63 +106,66 @@ module Formatron
           options.kms_key || ask('KMS Key? ')
         end
 
-        def bootstrap_ec2_key(options)
-          options.ec2_key || ask('EC2 Key? ')
+        def bootstrap_ec2_key_pair(options)
+          options.ec2_key_pair || ask('EC2 Key Pair? ')
         end
 
         def bootstrap_hosted_zone_id(options)
           options.hosted_zone_id || ask('Hosted Zone ID? ')
         end
 
+        def bootstrap_availability_zone(options)
+          options.availability_zone || ask('Availability Zone? ')
+        end
+
         def bootstrap_organization(options)
-          options.organization || ask('Organization? ')
+          options.organization || ask('Chef Server Organization? ')
         end
 
         def bootstrap_username(options)
-          options.username || ask('Username? ')
+          options.username || ask('Chef Server Username? ')
+        end
+
+        def bootstrap_password(options)
+          options.password || password('Chef Server Password? ')
         end
 
         def bootstrap_email(options)
-          options.email || ask('Email? ')
+          options.email || ask('Chef Server User Email? ')
         end
 
         def bootstrap_first_name(options)
-          options.first_name || ask('First Name? ')
+          options.first_name || ask('Chef Server User First Name? ')
         end
 
         def bootstrap_last_name(options)
-          options.last_name || ask('Last Name? ')
+          options.last_name || ask('Chef Server User Last Name? ')
         end
 
-        def bootstrap_target_params(params, target)
-          params[:protect] =
-            agree "#{target} protect? " do |q|
-              q.default = 'yes'
+        def bootstrap_protected_targets(options)
+          options.protected_targets || ask('Protected Targets? ', Array) do |q|
+            q.default = 'production'
+          end
+        end
+
+        def bootstrap_unprotected_targets(options)
+          options.unprotected_targets ||
+            ask('Unprotected Targets? ', Array) do |q|
+              q.default = 'test'
             end
-          params[:sub_domain] = ask "#{target} sub domain? "
-          params[:password] = password "#{target} password? "
-        end
-
-        def bootstrap_ask_targets
-          params = {}
-          targets = ask 'Targets? ', Array do |q|
-            q.default = 'production test'
-          end
-          targets.each do |target|
-            target_sym = target.to_sym
-            params[target_sym] = {}
-            bootstrap_target_params params[target_sym], target
-          end
-          params
         end
 
         def bootstrap_targets(options)
-          json = options.targets_json
-          if json
-            JSON.parse(json.gsub!(/\A'|'\Z/, ''), symbolize_names: true)
-          else
-            bootstrap_ask_targets
+          protected_targets = bootstrap_protected_targets options
+          unprotected_targets = bootstrap_unprotected_targets options
+          targets = {}
+          protected_targets.each do |target|
+            targets[target.to_sym] = { protect: true }
           end
+          unprotected_targets.each do |target|
+            targets[target.to_sym] = { protect: false }
+          end
+          targets
         end
 
         # rubocop:disable Metrics/MethodLength
@@ -153,13 +174,17 @@ module Formatron
             name: bootstrap_name(options, directory),
             s3_bucket: bootstrap_s3_bucket(options),
             kms_key: bootstrap_kms_key(options),
-            ec2_key: bootstrap_ec2_key(options),
+            ec2_key_pair: bootstrap_ec2_key_pair(options),
             hosted_zone_id: bootstrap_hosted_zone_id(options),
-            organization: bootstrap_organization(options),
-            username: bootstrap_username(options),
-            email: bootstrap_email(options),
-            first_name: bootstrap_first_name(options),
-            last_name: bootstrap_last_name(options),
+            availability_zone: bootstrap_availability_zone(options),
+            chef_server: {
+              organization: bootstrap_organization(options),
+              username: bootstrap_username(options),
+              password: bootstrap_password(options),
+              email: bootstrap_email(options),
+              first_name: bootstrap_first_name(options),
+              last_name: bootstrap_last_name(options)
+            },
             targets: bootstrap_targets(options)
           }
         end

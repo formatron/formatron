@@ -15,34 +15,44 @@ describe Formatron::Generators::Bootstrap::CLI do
   name = 'test'
   s3_bucket = 's3-bucket'
   kms_key = 'kms-key'
-  ec2_key = 'ec2-key'
+  ec2_key_pair = 'ec2-key-_pair'
   hosted_zone_id = 'ABCDEF'
+  availability_zone = 'b'
   organization = 'organization'
   username = 'username'
   email = 'email'
   first_name = 'first-name'
   last_name = 'last-name'
-  targets = %w(target1 target2)
+  password = 'password'
+  protected_targets = %w(target1)
+  unprotected_targets = %w(target2)
   target_params = {}
-  targets.each do |target|
+  protected_targets.each do |target|
     target_sym = target.to_sym
     target_params[target_sym] = {}
     target_params[target_sym][:protect] = true
-    target_params[target_sym][:sub_domain] = "#{target}-sub-domain"
-    target_params[target_sym][:password] = "#{target}-password"
+  end
+  unprotected_targets.each do |target|
+    target_sym = target.to_sym
+    target_params[target_sym] = {}
+    target_params[target_sym][:protect] = false
   end
 
   expected_params = {
     name: name,
     s3_bucket: s3_bucket,
     kms_key: kms_key,
-    ec2_key: ec2_key,
+    ec2_key_pair: ec2_key_pair,
     hosted_zone_id: hosted_zone_id,
-    organization: organization,
-    username: username,
-    email: email,
-    first_name: first_name,
-    last_name: last_name,
+    availability_zone: availability_zone,
+    chef_server: {
+      organization: organization,
+      username: username,
+      password: password,
+      email: email,
+      first_name: first_name,
+      last_name: last_name
+    },
     targets: target_params
   }
 
@@ -74,23 +84,18 @@ describe Formatron::Generators::Bootstrap::CLI do
         #{name}
         #{s3_bucket}
         #{kms_key}
-        #{ec2_key}
+        #{ec2_key_pair}
         #{hosted_zone_id}
+        #{availability_zone}
         #{organization}
         #{username}
+        #{password}
         #{email}
         #{first_name}
         #{last_name}
-        #{targets.join(' ')}
+        #{protected_targets.join ' '}
+        #{unprotected_targets.join ' '}
       EOH
-      targets.each do |target|
-        target_sym = target.to_sym
-        responses << <<-EOH.gsub(/^ {10}/, '')
-          #{target_params[target_sym][:protect] ? 'yes' : 'no'}
-          #{target_params[target_sym][:sub_domain]}
-          #{target_params[target_sym][:password]}
-        EOH
-      end
       @input = StringIO.new responses
       @output = StringIO.new
       # rubocop:disable Style/GlobalVars
@@ -116,14 +121,17 @@ describe Formatron::Generators::Bootstrap::CLI do
             '-n', name,
             '-s', s3_bucket,
             '-k', kms_key,
-            '-e', ec2_key,
+            '-e', ec2_key_pair,
             '-z', hosted_zone_id,
+            '-a', availability_zone,
             '-o', organization,
             '-u', username,
+            '-p', password,
             '-m', email,
             '-f', first_name,
             '-l', last_name,
-            '-j', "'#{target_params.to_json space: ' '}'"
+            '-x', protected_targets.join(','),
+            '-y', unprotected_targets.join(',')
           ]
       end
     end
@@ -154,14 +162,17 @@ describe Formatron::Generators::Bootstrap::CLI do
             '--name', name,
             '--s3-bucket', s3_bucket,
             '--kms-key', kms_key,
-            '--ec2-key', ec2_key,
+            '--ec2-key-pair', ec2_key_pair,
             '--hosted-zone-id', hosted_zone_id,
+            '--availability-zone', availability_zone,
             '--organization', organization,
             '--username', username,
+            '--password', password,
             '--email', email,
             '--first-name', first_name,
             '--last-name', last_name,
-            '--targets-json', "'#{target_params.to_json space: ' '}'"
+            '--protected-targets', protected_targets.join(','),
+            '--unprotected-targets', unprotected_targets.join(',')
           ]
       end
     end
