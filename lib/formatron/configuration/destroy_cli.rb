@@ -25,7 +25,9 @@ module Formatron
       def destroy_ok(configuration, target)
         !configuration.protected?(target) || agree(
           "Are you sure you wish to destroy protected target: #{target}?"
-        )
+        ) do |q|
+          q.default = 'no'
+        end
       end
 
       def destroy_action(c)

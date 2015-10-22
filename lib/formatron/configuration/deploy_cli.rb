@@ -25,7 +25,9 @@ module Formatron
       def deploy_ok(configuration, target)
         !configuration.protected?(target) || agree(
           "Are you sure you wish to deploy protected target: #{target}?"
-        )
+        ) do |q|
+          q.default = 'no'
+        end
       end
 
       def deploy_action(c)
