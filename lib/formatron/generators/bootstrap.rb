@@ -3,6 +3,7 @@ require_relative 'bootstrap/config'
 require_relative 'bootstrap/ssl'
 require_relative 'bootstrap/instance_cookbook'
 require_relative 'bootstrap/readme'
+require_relative 'bootstrap/gitignore'
 
 module Formatron
   module Generators
@@ -65,6 +66,7 @@ module Formatron
       def self.generate(directory, params)
         validate_params params
         Readme.write directory, params[:name]
+        Gitignore.write directory
         Formatronfile.write directory, params
         Config.write directory
         generate_targets directory, params[:targets]

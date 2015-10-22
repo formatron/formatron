@@ -53,6 +53,13 @@ describe Formatron::Generators::Bootstrap do
       EOH
     end
 
+    it 'should generate a .gitignore' do
+      actual = File.read File.join(directory, '.gitignore')
+      expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
+        /.formatron/
+      EOH
+    end
+
     it 'should generate a Formatronfile' do
       actual = File.read File.join(directory, 'Formatronfile')
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
