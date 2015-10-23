@@ -32,4 +32,4 @@ _formatron_complete()  {
   COMPREPLY=($(compgen -W "$completions" -- "$word"))
 }
 
-complete -F _formatron_complete <%= command %>
+complete -o default -F _formatron_complete <%= command %>
