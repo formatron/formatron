@@ -1,48 +1,26 @@
 module Formatron
   # command completion utilities
   module Completion
-    def self.normalize_commands(commands)
-      commands.map { |command| command.split.join ' ' }
-    end
+    # exports commands, etc to completion script ERB template
+    class Template
+      attr_reader :subcommands, :command
 
-    def self.filter_commands(entered, commands)
-      commands.select! do |command|
-        command.start_with? entered
+      def initialize(command, subcommands)
+        @command = command
+        @subcommands = subcommands
       end
     end
 
-    def self.shift_commands(entered, current_word, commands)
-      length = entered.split.length
-      commands.map! do |command|
-        components = command.split
-        if length > 0
-          components.shift(length - 1)
-          components.shift if current_word.eql? ''
-        end
-        components[0]
-      end
+    def self.script(command, subcommands)
+      template = File.join(
+        File.dirname(File.expand_path(__FILE__)),
+        'completion',
+        'completion.sh.erb'
+      )
+      erb = ERB.new File.read(template)
+      erb.filename = template
+      erb_template = erb.def_class Template, 'render()'
+      erb_template.new(command, subcommands).render
     end
-
-    def self.complete(entered, current_word, commands)
-      commands = normalize_commands commands
-      filter_commands entered, commands
-      shift_commands entered, current_word, commands
-      commands.uniq.join ' '
-    end
-
-    # rubocop:disable Metrics/LineLength
-    def self.completion_script(prefix)
-      <<-EOH.gsub(/^ {8}/, '')
-        _formatron_complete()  {
-          COMPREPLY=()
-          local word="${COMP_WORDS[COMP_CWORD]}"
-          local completions=$(#{prefix} ${COMP_WORDS[0]} complete "${COMP_LINE}" "$word")
-          COMPREPLY=( $(compgen -W "$completions" -- "$word") )
-        }
-
-        complete -F _formatron_complete formatron
-      EOH
-    end
-    # rubocop:enable Metrics/LineLength
   end
 end

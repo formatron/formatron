@@ -6,15 +6,13 @@ require 'formatron/generators/bootstrap/cli'
 require 'formatron/generators/instance/cli'
 require 'formatron/configuration/deploy_cli'
 require 'formatron/configuration/destroy_cli'
-require 'formatron/completion/completion_script_cli'
-require 'formatron/completion/complete_cli'
+require 'formatron/completion/cli'
 
 Formatron::CLI.include Formatron::Generators::Credentials::CLI
 Formatron::CLI.include Formatron::Generators::Bootstrap::CLI
 Formatron::CLI.include Formatron::Generators::Instance::CLI
 Formatron::CLI.include Formatron::Configuration::DeployCLI
 Formatron::CLI.include Formatron::Configuration::DestroyCLI
-Formatron::CLI.include Formatron::Completion::CompletionScriptCLI
-Formatron::CLI.include Formatron::Completion::CompleteCLI
+Formatron::CLI.include Formatron::Completion::CLI
 cli = Formatron::CLI.new
 cli.run
