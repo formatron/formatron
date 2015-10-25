@@ -70,17 +70,7 @@ describe Formatron::Configuration do
         @configuration.deploy 'target1'
       end
 
-      it 'should upload the configuration to S3' do
-      end
-
-      context 'when the CloudFormation stack has not yet been created' do
-        skip 'should create the CloudFormation stack' do
-        end
-      end
-
-      context 'when the CloudFormation stack has been created' do
-        skip 'should update the CloudFormation stack' do
-        end
+      skip 'should upload the configuration to S3' do
       end
     end
   end
