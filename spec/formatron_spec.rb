@@ -19,12 +19,6 @@ describe Formatron do
     @configuration = instance_double('Formatron::Configuration')
     allow(@configuration_class).to receive(:new) { @configuration }
 
-    @formatronfile_class = class_double(
-      'Formatron::Formatronfile'
-    ).as_stubbed_const
-    @formatronfile = instance_double('Formatron::Formatronfile')
-    allow(@formatronfile_class).to receive(:new) { @formatronfile }
-
     @formatron = Formatron.new(
       credentials,
       directory
@@ -39,26 +33,19 @@ describe Formatron do
     it 'should create a Configuration instance' do
       expect(@configuration_class).to have_received(:new).once.with(directory)
     end
-
-    it 'should create a Formatronfile instance' do
-      expect(@formatronfile_class).to have_received(:new).once.with(
-        directory,
-        @configuration
-      )
-    end
   end
 
   describe '#targets' do
     it 'should get the list of targets from the formatronfile' do
       targets = %w(target1 target2 target3)
-      expect(@formatronfile).to receive(:targets).once.with(no_args) { targets }
+      expect(@configuration).to receive(:targets).once.with(no_args) { targets }
       expect(@formatron.targets).to eql targets
     end
   end
 
   describe '#protected?' do
     it 'should return whether the target should be protected from changes' do
-      expect(@formatronfile).to receive(:protected?)
+      expect(@configuration).to receive(:protected?)
         .once.with('target1') { true }
       expect(@formatron.protected?('target1')).to eql true
     end
@@ -87,7 +74,7 @@ describe Formatron do
     it 'should upload the configuration to S3' do
       expect(@s3_configuration).to have_received(:deploy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -95,7 +82,7 @@ describe Formatron do
     it 'should upload the CloudFormation template to S3' do
       expect(@s3_cloud_formation_template).to have_received(:deploy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -103,7 +90,7 @@ describe Formatron do
     it 'should deploy the CloudFormation stack' do
       expect(@cloud_formation_stack).to have_received(:deploy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -122,7 +109,7 @@ describe Formatron do
     it 'should provision the instances with Chef' do
       expect(@chef_instances).to have_received(:provision).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -156,7 +143,7 @@ describe Formatron do
     it 'should delete the configuration from S3' do
       expect(@s3_configuration).to have_received(:destroy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -164,7 +151,7 @@ describe Formatron do
     it 'should delete the CloudFormation template from S3' do
       expect(@s3_cloud_formation_template).to have_received(:destroy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -172,7 +159,7 @@ describe Formatron do
     it 'should destroy the CloudFormation stack' do
       expect(@cloud_formation_stack).to have_received(:destroy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end
@@ -180,7 +167,7 @@ describe Formatron do
     it 'should cleanup the Chef Server configuration for the instances' do
       expect(@chef_instances).to have_received(:destroy).once.with(
         @aws,
-        @formatronfile,
+        @configuration,
         'target1'
       )
     end

@@ -1,5 +1,4 @@
 require 'formatron/aws'
-require 'formatron/formatronfile'
 require 'formatron/configuration'
 require 'formatron/s3_configuration'
 require 'formatron/s3_cloud_formation_template'
@@ -11,31 +10,30 @@ class Formatron
   def initialize(credentials, directory)
     @aws = AWS.new credentials
     @configuration = Configuration.new directory
-    @formatronfile = Formatronfile.new directory, @configuration
   end
 
   def targets
-    @formatronfile.targets
+    @configuration.targets
   end
 
   def protected?(target)
-    @formatronfile.protected? target
+    @configuration.protected? target
   end
 
   def deploy(target)
-    S3Configuration.deploy @aws, @formatronfile, target
-    S3CloudFormationTemplate.deploy @aws, @formatronfile, target
-    CloudFormationStack.deploy @aws, @formatronfile, target
+    S3Configuration.deploy @aws, @configuration, target
+    S3CloudFormationTemplate.deploy @aws, @configuration, target
+    CloudFormationStack.deploy @aws, @configuration, target
   end
 
   def provision(target)
-    ChefInstances.provision @aws, @formatronfile, target
+    ChefInstances.provision @aws, @configuration, target
   end
 
   def destroy(target)
-    S3Configuration.destroy @aws, @formatronfile, target
-    S3CloudFormationTemplate.destroy @aws, @formatronfile, target
-    CloudFormationStack.destroy @aws, @formatronfile, target
-    ChefInstances.destroy @aws, @formatronfile, target
+    S3Configuration.destroy @aws, @configuration, target
+    S3CloudFormationTemplate.destroy @aws, @configuration, target
+    CloudFormationStack.destroy @aws, @configuration, target
+    ChefInstances.destroy @aws, @configuration, target
   end
 end

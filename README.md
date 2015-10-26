@@ -24,7 +24,7 @@ Or install it yourself as:
 
 ## Usage
 
-To initialize a bootstrap configurstaion including a VPC and Chef Server
+To initialize a bootstrap configuration including a VPC and Chef Server
 
 ```
 formatron bootstrap <dirname>
@@ -40,6 +40,12 @@ To deploy a configuration with the given target specifier
 
 ```
 formatron deploy <target>
+```
+
+To provision a configuration with the given target specifier
+
+```
+formatron provision <target>
 ```
 
 ## Development
