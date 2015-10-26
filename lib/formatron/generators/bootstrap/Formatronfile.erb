@@ -2,6 +2,7 @@ name '<%= params[:name] %>'
 s3_bucket '<%= params[:s3_bucket] %>'
 
 bootstrap do
+  protect config['protected']
   kms_key '<%= params[:kms_key] %>'
   hosted_zone_id '<%= params[:hosted_zone_id] %>'
 
@@ -9,11 +10,7 @@ bootstrap do
     key_pair '<%= params[:ec2_key_pair] %>'
     private_key 'ec2/private-key.pem'
   end
-<% params[:targets].each do |name, target_params| %>
-  target '<%= name %>' do
-    protect <%= target_params[:protect] %>
-  end
-<% end %>
+
   vpc do
     cidr '10.0.0.0/24'
 

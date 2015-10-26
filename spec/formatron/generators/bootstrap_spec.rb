@@ -74,20 +74,13 @@ describe Formatron::Generators::Bootstrap do
         s3_bucket '#{params[:s3_bucket]}'
 
         bootstrap do
+          protect config['protected']
           kms_key '#{params[:kms_key]}'
           hosted_zone_id '#{params[:hosted_zone_id]}'
 
           ec2 do
             key_pair '#{params[:ec2_key_pair]}'
             private_key 'ec2/private-key.pem'
-          end
-
-          target 'target1' do
-            protect #{params[:targets][:target1][:protect]}
-          end
-
-          target 'target2' do
-            protect #{params[:targets][:target2][:protect]}
           end
 
           vpc do
@@ -154,6 +147,7 @@ describe Formatron::Generators::Bootstrap do
       actual = File.read File.join(directory, 'config/target1/_default.json')
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         {
+          "protected": true,
           "bastion": {
             "sub_domain": "bastion-target1"
           },
@@ -168,6 +162,7 @@ describe Formatron::Generators::Bootstrap do
       actual = File.read File.join(directory, 'config/target2/_default.json')
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         {
+          "protected": false,
           "bastion": {
             "sub_domain": "bastion-target2"
           },

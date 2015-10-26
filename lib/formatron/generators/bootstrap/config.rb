@@ -11,9 +11,10 @@ class Formatron
         end
 
         # rubocop:disable Metrics/MethodLength
-        def self.write_target(file, target)
+        def self.write_target(file, target, protect)
           File.write file, <<-EOH.gsub(/^ {12}/, '')
             {
+              "protected": #{protect},
               "bastion": {
                 "sub_domain": "bastion-#{target}"
               },
@@ -28,7 +29,7 @@ class Formatron
         end
         # rubocop:enable Metrics/MethodLength
 
-        def self.write(directory, target = nil)
+        def self.write(directory, target = nil, protect = true)
           target_directory = File.join(
             directory,
             'config',
@@ -37,7 +38,7 @@ class Formatron
           FileUtils.mkdir_p target_directory
           file = File.join target_directory, '_default.json'
           write_default(file) if target.nil?
-          write_target(file, target) unless target.nil?
+          write_target(file, target, protect) unless target.nil?
         end
       end
     end

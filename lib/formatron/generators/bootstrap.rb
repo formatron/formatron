@@ -48,8 +48,8 @@ class Formatron
       # rubocop:enable Metrics/MethodLength
 
       def self.generate_targets(directory, targets)
-        targets.each do |target, _|
-          Config.write directory, target
+        targets.each do |target, params|
+          Config.write directory, target, params[:protect]
           SSL.write directory, target
         end
       end
