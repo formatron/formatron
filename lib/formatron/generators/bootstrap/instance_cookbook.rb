@@ -1,4 +1,4 @@
-module Formatron
+class Formatron
   module Generators
     module Bootstrap
       # generates placeholder instance cookbook for chef server

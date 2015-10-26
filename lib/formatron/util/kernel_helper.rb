@@ -1,4 +1,4 @@
-module Formatron
+class Formatron
   module Util
     # wrapper for shelling out calls so that we can still test
     module KernelHelper

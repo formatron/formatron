@@ -1,14 +1,14 @@
 require 'spec_helper'
 
 require 'formatron/cli'
-require 'formatron/generators/bootstrap/cli'
+require 'formatron/cli/generators/bootstrap'
 
-describe Formatron::Generators::Bootstrap::CLI do
+describe Formatron::CLI::Generators::Bootstrap do
   include FakeFS::SpecHelpers
 
   # Test harness
   class Test < Formatron::CLI
-    include Formatron::Generators::Bootstrap::CLI
+    include Formatron::CLI::Generators::Bootstrap
   end
 
   directory = 'directory'

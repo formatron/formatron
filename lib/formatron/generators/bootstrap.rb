@@ -6,7 +6,7 @@ require_relative 'bootstrap/readme'
 require_relative 'bootstrap/gitignore'
 require_relative 'bootstrap/ec2'
 
-module Formatron
+class Formatron
   module Generators
     # generates a bootstrap configuration
     module Bootstrap

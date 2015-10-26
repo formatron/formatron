@@ -1,4 +1,4 @@
-module Formatron
+class Formatron
   module Support
     # Stub S3 get_object response class
     class S3GetObjectResponse

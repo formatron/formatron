@@ -1,4 +1,4 @@
-module Formatron
+class Formatron
   module Generators
     # generates a credentials JSON file
     module Credentials

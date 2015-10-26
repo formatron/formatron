@@ -1,7 +1,7 @@
 require 'commander'
 require 'formatron/version'
 
-module Formatron
+class Formatron
   # CLI interface
   class CLI
     include Commander::Methods

@@ -1,11 +1,11 @@
-require_relative '../bootstrap'
+require 'formatron/generators/bootstrap'
 
-module Formatron
-  module Generators
-    module Bootstrap
+class Formatron
+  class CLI
+    module Generators
       # CLI command for bootstrap generator
       # rubocop:disable Metrics/ModuleLength
-      module CLI
+      module Bootstrap
         # rubocop:disable Metrics/MethodLength
         def bootstrap_options(c)
           c.option '-n', '--name STRING', 'The name for the configuration'
@@ -193,7 +193,7 @@ module Formatron
         def bootstrap_action(c)
           c.action do |_args, options|
             directory = bootstrap_directory options
-            Bootstrap.generate(
+            Formatron::Generators::Bootstrap.generate(
               directory,
               bootstrap_params(options, directory)
             )

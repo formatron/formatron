@@ -1,4 +1,4 @@
-module Formatron
+class Formatron
   module Generators
     module Bootstrap
       # generates an empty config

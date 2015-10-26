@@ -1,7 +1,7 @@
 require 'erb'
 require 'curb'
 
-module Formatron
+class Formatron
   module Generators
     module Bootstrap
       # generates a bootstrap Formatronfile

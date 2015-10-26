@@ -1,25 +1,7 @@
-module Formatron
-  # deploys a configuration
+class Formatron
+  # Processes the target specific configuration
   class Configuration
-    def initialize(_credentials, _directory)
-    end
-
-    def targets
-      # :nocov:
-      %w(production test)
-      # :nocov:
-    end
-
-    def protected?(_target)
-      # :nocov:
-      true
-      # :nocov:
-    end
-
-    def deploy(_target)
-    end
-
-    def destroy(_target)
+    def initialize(_directory)
     end
   end
 end

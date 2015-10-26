@@ -1,18 +1,20 @@
 #!/usr/bin/env ruby
 
 require 'formatron/cli'
-require 'formatron/generators/credentials/cli'
-require 'formatron/generators/bootstrap/cli'
-require 'formatron/generators/instance/cli'
-require 'formatron/configuration/deploy_cli'
-require 'formatron/configuration/destroy_cli'
-require 'formatron/completion/cli'
+require 'formatron/cli/generators/credentials'
+require 'formatron/cli/generators/bootstrap'
+require 'formatron/cli/generators/instance'
+require 'formatron/cli/deploy'
+require 'formatron/cli/destroy'
+require 'formatron/cli/provision'
+require 'formatron/cli/completion'
 
-Formatron::CLI.include Formatron::Generators::Credentials::CLI
-Formatron::CLI.include Formatron::Generators::Bootstrap::CLI
-Formatron::CLI.include Formatron::Generators::Instance::CLI
-Formatron::CLI.include Formatron::Configuration::DeployCLI
-Formatron::CLI.include Formatron::Configuration::DestroyCLI
-Formatron::CLI.include Formatron::Completion::CLI
+Formatron::CLI.include Formatron::CLI::Generators::Credentials
+Formatron::CLI.include Formatron::CLI::Generators::Bootstrap
+Formatron::CLI.include Formatron::CLI::Generators::Instance
+Formatron::CLI.include Formatron::CLI::Deploy
+Formatron::CLI.include Formatron::CLI::Destroy
+Formatron::CLI.include Formatron::CLI::Provision
+Formatron::CLI.include Formatron::CLI::Completion
 cli = Formatron::CLI.new
 cli.run

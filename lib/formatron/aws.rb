@@ -1,6 +1,6 @@
 require 'aws-sdk'
 
-module Formatron
+class Formatron
   # shared AWS clients
   class Aws
     attr_reader :s3_client, :cloudformation_client

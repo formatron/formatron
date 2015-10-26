@@ -1,6 +1,6 @@
-require_relative '../completion'
+require 'formatron/completion'
 
-module Formatron
+class Formatron
   module Completion
     # CLI command for completion enabling script
     module CLI

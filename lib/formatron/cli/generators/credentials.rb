@@ -1,10 +1,10 @@
-require_relative '../credentials'
+require 'formatron/generators/credentials'
 
-module Formatron
-  module Generators
-    module Credentials
+class Formatron
+  class CLI
+    module Generators
       # CLI command for credentials generator
-      module CLI
+      module Credentials
         REGIONS = %w(
           us-east-1
           us-west-2
@@ -64,7 +64,9 @@ module Formatron
           options.credentials ||
             ask('Credentials file? ') do |q|
               q.default =
-                CLI.default_generated_credentials credentials_directory(options)
+                Credentials.default_generated_credentials(
+                  credentials_directory(options)
+                )
             end
         end
 
@@ -85,7 +87,7 @@ module Formatron
 
         def credentials_action(c)
           c.action do |_args, options|
-            Credentials.generate(
+            Formatron::Generators::Credentials.generate(
               credentials_credentials(options),
               credentials_region(options),
               credentials_access_key_id(options),

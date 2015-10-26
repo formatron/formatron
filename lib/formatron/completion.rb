@@ -1,4 +1,4 @@
-module Formatron
+class Formatron
   # command completion utilities
   module Completion
     # exports commands, etc to completion script ERB template

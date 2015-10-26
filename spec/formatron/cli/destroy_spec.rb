@@ -1,14 +1,14 @@
 require 'spec_helper'
 
 require 'formatron/cli'
-require 'formatron/configuration/deploy_cli'
+require 'formatron/cli/destroy'
 
-describe Formatron::Configuration::DeployCLI do
+describe Formatron::CLI::Destroy do
   include FakeFS::SpecHelpers
 
   # Test harness
   class Test < Formatron::CLI
-    include Formatron::Configuration::DeployCLI
+    include Formatron::CLI::Destroy
   end
 
   credentials = 'credentials'
@@ -26,11 +26,11 @@ describe Formatron::Configuration::DeployCLI do
   ]
 
   before(:each) do
-    @configuration = instance_double('Formatron::Configuration')
-    allow(@configuration).to receive(:targets) do
+    @formatron = instance_double('Formatron')
+    allow(@formatron).to receive(:targets) do
       %w(production test)
     end
-    allow(@configuration).to receive(:protected?) do
+    allow(@formatron).to receive(:protected?) do
       true
     end
   end
@@ -38,7 +38,7 @@ describe Formatron::Configuration::DeployCLI do
   context 'with no options and global defaults' do
     before(:each) do
       allow(Commander::Runner).to receive(:instance) do
-        @singleton ||= Commander::Runner.new ['deploy', '-t']
+        @singleton ||= Commander::Runner.new ['destroy', '-t']
       end
     end
 
@@ -53,14 +53,14 @@ describe Formatron::Configuration::DeployCLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(
-        Formatron::Configuration
+        Formatron
       ).to receive(:new).once.with(
         File.join(Dir.home, '.formatron/credentials.json'),
         Dir.pwd
       ) do
-        @configuration
+        @formatron
       end
-      expect(@configuration).to receive(:deploy).with(
+      expect(@formatron).to receive(:destroy).with(
         *expected_params
       ).once
       Test.new.run
@@ -72,7 +72,7 @@ describe Formatron::Configuration::DeployCLI do
       FileUtils.mkdir_p File.join(Dir.pwd, '.formatron')
       File.write File.join(Dir.pwd, '.formatron/credentials.json'), ''
       allow(Commander::Runner).to receive(:instance) do
-        @singleton ||= Commander::Runner.new ['deploy', '-t']
+        @singleton ||= Commander::Runner.new ['destroy', '-t']
       end
     end
 
@@ -87,14 +87,14 @@ describe Formatron::Configuration::DeployCLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(
-        Formatron::Configuration
+        Formatron
       ).to receive(:new).once.with(
         File.join(Dir.pwd, '.formatron/credentials.json'),
         Dir.pwd
       ) do
-        @configuration
+        @formatron
       end
-      expect(@configuration).to receive(:deploy).with(
+      expect(@formatron).to receive(:destroy).with(
         *expected_params
       ).once
       Test.new.run
@@ -106,7 +106,7 @@ describe Formatron::Configuration::DeployCLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
-            'deploy',
+            'destroy',
             '-t',
             '-c', credentials,
             '-d', directory,
@@ -125,13 +125,13 @@ describe Formatron::Configuration::DeployCLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(
-        Formatron::Configuration
+        Formatron
       ).to receive(:new).once.with(
         *expected_constructor_params
       ) do
-        @configuration
+        @formatron
       end
-      expect(@configuration).to receive(:deploy).with(
+      expect(@formatron).to receive(:destroy).with(
         *expected_params
       ).once
       Test.new.run
@@ -143,7 +143,7 @@ describe Formatron::Configuration::DeployCLI do
       allow(Commander::Runner).to receive(:instance) do
         @singleton ||=
           Commander::Runner.new [
-            'deploy',
+            'destroy',
             '-t',
             '--credentials', credentials,
             '--directory', directory,
@@ -162,13 +162,13 @@ describe Formatron::Configuration::DeployCLI do
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
       expect(
-        Formatron::Configuration
+        Formatron
       ).to receive(:new).once.with(
         *expected_constructor_params
       ) do
-        @configuration
+        @formatron
       end
-      expect(@configuration).to receive(:deploy).with(
+      expect(@formatron).to receive(:destroy).with(
         *expected_params
       ).once
       Test.new.run

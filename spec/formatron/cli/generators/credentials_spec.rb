@@ -1,14 +1,14 @@
 require 'spec_helper'
 
 require 'formatron/cli'
-require 'formatron/generators/credentials/cli'
+require 'formatron/cli/generators/credentials'
 
-describe Formatron::Generators::Credentials::CLI do
+describe Formatron::CLI::Generators::Credentials do
   include FakeFS::SpecHelpers
 
   # Test harness
   class Test < Formatron::CLI
-    include Formatron::Generators::Credentials::CLI
+    include Formatron::CLI::Generators::Credentials
   end
 
   credentials = 'credentials'

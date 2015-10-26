@@ -1,10 +1,10 @@
-require_relative '../instance'
+require 'formatron/generators/instance'
 
-module Formatron
-  module Generators
-    module Instance
+class Formatron
+  class CLI
+    module Generators
       # CLI command for instance generator
-      module CLI
+      module Instance
         def instance_options(c)
           c.option '-n', '--name STRING', 'The name for the configuration'
           c.option(
@@ -34,7 +34,7 @@ module Formatron
         def instance_action(c)
           c.action do |_args, options|
             directory = instance_directory options
-            Instance.generate(
+            Formatron::Generators::Instance.generate(
               directory,
               name: instance_name(options, directory),
               bootstrap_configuration: instance_bootstrap_configuration(options)

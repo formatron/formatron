@@ -1,29 +1,29 @@
-require_relative '../configuration'
+require 'formatron'
 
-module Formatron
-  class Configuration
+class Formatron
+  class CLI
     # CLI command for destroy
-    module DestroyCLI
+    module Destroy
       def destroy_directory(options)
         options.directory || Dir.pwd
       end
 
       def destroy_credentials(options)
         options.credentials ||
-          Generators::Credentials::CLI.default_credentials(
+          Generators::Credentials.default_credentials(
             destroy_directory(options)
           )
       end
 
-      def destroy_target(target, configuration)
+      def destroy_target(target, formatron)
         target || choose(
           'Target?',
-          *configuration.targets
+          *formatron.targets
         )
       end
 
-      def destroy_ok(configuration, target)
-        !configuration.protected?(target) || agree(
+      def destroy_ok(formatron, target)
+        !formatron.protected?(target) || agree(
           "Are you sure you wish to destroy protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -32,14 +32,14 @@ module Formatron
 
       def destroy_action(c)
         c.action do |args, options|
-          configuration = Configuration.new(
+          formatron = Formatron.new(
             destroy_credentials(options),
             destroy_directory(options)
           )
-          t = destroy_target args[0], configuration
-          configuration.destroy(
+          t = destroy_target args[0], formatron
+          formatron.destroy(
             t
-          ) if destroy_ok(configuration, t)
+          ) if destroy_ok(formatron, t)
         end
       end
 
