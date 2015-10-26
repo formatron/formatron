@@ -9,7 +9,7 @@ require 'formatron/chef_instances'
 class Formatron
   def initialize(credentials, directory)
     @aws = AWS.new credentials
-    @configuration = Configuration.new directory
+    @configuration = Configuration.new @aws, directory
   end
 
   def targets

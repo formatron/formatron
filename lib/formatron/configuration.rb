@@ -1,7 +1,7 @@
 class Formatron
   # Processes the target specific configuration
   class Configuration
-    def initialize(_directory)
+    def initialize(_aws, _directory)
     end
 
     def targets

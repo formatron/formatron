@@ -31,7 +31,10 @@ describe Formatron do
     end
 
     it 'should create a Configuration instance' do
-      expect(@configuration_class).to have_received(:new).once.with(directory)
+      expect(@configuration_class).to have_received(:new).once.with(
+        @aws,
+        directory
+      )
     end
   end
 
