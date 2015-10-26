@@ -2,7 +2,7 @@ require 'aws-sdk'
 
 class Formatron
   # shared AWS clients
-  class Aws
+  class AWS
     attr_reader :s3_client, :cloudformation_client
 
     def initialize(credentials_json)

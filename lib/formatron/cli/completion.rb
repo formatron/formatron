@@ -1,13 +1,13 @@
 require 'formatron/completion'
 
 class Formatron
-  module Completion
+  class CLI
     # CLI command for completion enabling script
-    module CLI
+    module Completion
       def completion_script_action(c)
         c.action do |args|
           command = args[0] || 'formatron'
-          print Completion.script command, defined_commands.keys
+          print Formatron::Completion.script command, defined_commands.keys
         end
       end
 

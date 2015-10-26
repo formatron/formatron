@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'formatron/cloudformation_stack'
+require 'formatron/cloud_formation_stack'
 
-describe Formatron::CloudformationStack do
+describe Formatron::CloudFormationStack do
   describe '::deploy' do
     skip 'should do something' do
     end

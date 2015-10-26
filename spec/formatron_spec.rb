@@ -71,15 +71,15 @@ describe Formatron do
       ).as_stubbed_const
       allow(@s3_configuration).to receive(:deploy)
 
-      @s3_cloudformation_template = class_double(
-        'Formatron::S3CloudformationTemplate'
+      @s3_cloud_formation_template = class_double(
+        'Formatron::S3CloudFormationTemplate'
       ).as_stubbed_const
-      allow(@s3_cloudformation_template).to receive(:deploy)
+      allow(@s3_cloud_formation_template).to receive(:deploy)
 
-      @cloudformation_stack = class_double(
-        'Formatron::CloudformationStack'
+      @cloud_formation_stack = class_double(
+        'Formatron::CloudFormationStack'
       ).as_stubbed_const
-      allow(@cloudformation_stack).to receive(:deploy)
+      allow(@cloud_formation_stack).to receive(:deploy)
 
       @formatron.deploy 'target1'
     end
@@ -93,7 +93,7 @@ describe Formatron do
     end
 
     it 'should upload the CloudFormation template to S3' do
-      expect(@s3_cloudformation_template).to have_received(:deploy).once.with(
+      expect(@s3_cloud_formation_template).to have_received(:deploy).once.with(
         @aws,
         @formatronfile,
         'target1'
@@ -101,7 +101,7 @@ describe Formatron do
     end
 
     it 'should deploy the CloudFormation stack' do
-      expect(@cloudformation_stack).to have_received(:deploy).once.with(
+      expect(@cloud_formation_stack).to have_received(:deploy).once.with(
         @aws,
         @formatronfile,
         'target1'
@@ -135,15 +135,15 @@ describe Formatron do
       ).as_stubbed_const
       allow(@s3_configuration).to receive(:destroy)
 
-      @s3_cloudformation_template = class_double(
-        'Formatron::S3CloudformationTemplate'
+      @s3_cloud_formation_template = class_double(
+        'Formatron::S3CloudFormationTemplate'
       ).as_stubbed_const
-      allow(@s3_cloudformation_template).to receive(:destroy)
+      allow(@s3_cloud_formation_template).to receive(:destroy)
 
-      @cloudformation_stack = class_double(
-        'Formatron::CloudformationStack'
+      @cloud_formation_stack = class_double(
+        'Formatron::CloudFormationStack'
       ).as_stubbed_const
-      allow(@cloudformation_stack).to receive(:destroy)
+      allow(@cloud_formation_stack).to receive(:destroy)
 
       @chef_instances = class_double(
         'Formatron::ChefInstances'
@@ -162,7 +162,7 @@ describe Formatron do
     end
 
     it 'should delete the CloudFormation template from S3' do
-      expect(@s3_cloudformation_template).to have_received(:destroy).once.with(
+      expect(@s3_cloud_formation_template).to have_received(:destroy).once.with(
         @aws,
         @formatronfile,
         'target1'
@@ -170,7 +170,7 @@ describe Formatron do
     end
 
     it 'should destroy the CloudFormation stack' do
-      expect(@cloudformation_stack).to have_received(:destroy).once.with(
+      expect(@cloud_formation_stack).to have_received(:destroy).once.with(
         @aws,
         @formatronfile,
         'target1'

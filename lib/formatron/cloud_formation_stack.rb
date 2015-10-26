@@ -1,6 +1,6 @@
 class Formatron
-  # manage the cloudformation template stored on S3
-  module S3CloudformationTemplate
+  # manage the CloudFormation stack
+  module CloudFormationStack
     def self.deploy(_aws, _formatronfile, _target)
     end
 

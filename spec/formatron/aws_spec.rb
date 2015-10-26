@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'formatron/aws'
 
-describe Formatron::Aws do
+describe Formatron::AWS do
   before(:each) do
     aws_credentials = instance_double('Aws::Credentials')
     aws_credentials_class = class_double('Aws::Credentials').as_stubbed_const
@@ -44,7 +44,7 @@ describe Formatron::Aws do
     end
 
     it 'should initialize the S3 and CloudFormation clients' do
-      aws = Formatron::Aws.new(
+      aws = Formatron::AWS.new(
         File.join('test', 'credentials.json')
       )
       expect(aws.s3_client).to equal(@s3_client)

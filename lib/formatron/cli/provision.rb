@@ -47,9 +47,9 @@ class Formatron
         command :provision do |c|
           c.syntax = 'formatron provision [options] [TARGET]'
           c.summary = 'Provision the instances in a Formatron ' \
-                      'stack using chef'
+                      'stack using Opscode Chef'
           c.description = 'Provision the instances in a Formatron ' \
-                          'stack using chef'
+                          'stack using Opscode Chef'
           provision_action c
         end
       end

@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'formatron/s3_cloudformation_template'
+require 'formatron/s3_cloud_formation_template'
 
-describe Formatron::S3CloudformationTemplate do
+describe Formatron::S3CloudFormationTemplate do
   describe '::deploy' do
     skip 'should do something' do
     end
