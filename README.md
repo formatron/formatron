@@ -44,7 +44,7 @@ To initialize an instance configuration with a dependency on a named bootstrap c
 formatron generate instance
 ```
 
-To initialize an AWS credentials filea
+To initialize an AWS credentials file
 
 ```
 formatron generate credentials
