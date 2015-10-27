@@ -5,31 +5,35 @@ class Formatron
   # Processes the target specific configuration
   class Configuration
     def initialize(aws, directory)
-      @aws = aws
-      @directory = directory
-      @formatronfile = nil
+      @formatronfiles = {}
+      Config.targets(directory).each do |target|
+        @formatronfiles[target] = Formatronfile.new(
+          aws,
+          target,
+          Config.target(directory, target),
+          directory
+        )
+      end
     end
 
     def targets
-      Config.targets @directory
+      @formatronfiles.keys
     end
 
     def protected?(target)
-      _load_formatronfile target
-      @formatronfile.bootstrap.protect
+      @formatronfiles[target].bootstrap.protect
     end
 
-    def _load_formatronfile(target)
-      @formatronfile ||= Formatronfile.new(
-        @aws,
-        target,
-        Config.target(@directory, target),
-        @directory
-      )
+    def name(_target)
     end
 
-    private(
-      :_load_formatronfile
-    )
+    def kms_key(_target)
+    end
+
+    def bucket(_target)
+    end
+
+    def config(_target)
+    end
   end
 end

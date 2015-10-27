@@ -51,4 +51,9 @@ describe Formatron::AWS do
       expect(aws.cloudformation_client).to equal(@cloudformation_client)
     end
   end
+
+  describe '#upload' do
+    skip 'it should do something' do
+    end
+  end
 end

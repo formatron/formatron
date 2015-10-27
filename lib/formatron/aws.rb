@@ -13,6 +13,9 @@ class Formatron
       _create_cloudformation_client aws_credentials, region
     end
 
+    def upload(_kms_key, _bucket, _key, _content)
+    end
+
     def _create_aws_credentials(credentials)
       ::Aws::Credentials.new(
         credentials['accessKeyId'],

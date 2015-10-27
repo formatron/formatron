@@ -56,4 +56,24 @@ describe Formatron::Configuration do
       expect(@bootstrap).to have_received(:protect).once.with no_args
     end
   end
+
+  describe '#name' do
+    skip 'it should do something' do
+    end
+  end
+
+  describe '#kms_key' do
+    skip 'it should do something' do
+    end
+  end
+
+  describe '#bucket' do
+    skip 'it should do something' do
+    end
+  end
+
+  describe '#config' do
+    skip 'it should do something' do
+    end
+  end
 end
