@@ -24,28 +24,58 @@ Or install it yourself as:
 
 ## Usage
 
+For the full list of commands and options
+
+```
+formatron help [COMMAND]
+```
+
+### Project generation
+
 To initialize a bootstrap configuration including a VPC and Chef Server
 
 ```
-formatron bootstrap <dirname>
+formatron generate bootstrap
 ```
 
 To initialize an instance configuration with a dependency on a named bootstrap configuration
 
 ```
-formatron instance <bootstrap_configuration> <dirname>
+formatron generate instance
 ```
+
+To initialize n AWS credentials filea
+
+```
+formatron generate credentials
+```
+
+### Deploy and provision
 
 To deploy a configuration with the given target specifier
 
 ```
-formatron deploy <target>
+formatron deploy TARGET
 ```
 
 To provision a configuration with the given target specifier
 
 ```
-formatron provision <target>
+formatron provision TARGET
+```
+
+To destroy a configuration and clean up its cookbooks, etc
+
+```
+formatron destroy TARGET
+```
+
+### Bash command completion
+
+Add the following to your `.bashrc`
+
+```
+eval "$(formatron completion-script)"
 ```
 
 ## Development
