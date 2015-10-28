@@ -3,7 +3,7 @@ class Formatron
     class Formatronfile
       # Generates the CloudFormation templates
       module CloudFormation
-        def self.bootstrap_template
+        def self.template(_formatronfile)
         end
       end
     end

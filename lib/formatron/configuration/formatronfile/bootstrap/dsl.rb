@@ -1,9 +1,9 @@
 class Formatron
   class Configuration
     class Formatronfile
-      class DSL
+      class Bootstrap
         # DSL for the Formatronfile bootstrap section
-        class Bootstrap
+        class DSL
           attr_reader(
             :target,
             :config,
@@ -27,6 +27,16 @@ class Formatron
           def kms_key(value = nil)
             @kms_key = value unless value.nil?
             @kms_key
+          end
+
+          def hosted_zone_id(value = nil)
+            @hosted_zone_id = value unless value.nil?
+            @hosted_zone_id
+          end
+
+          def ec2(&block)
+            @ec2 = block if block_given?
+            @ec2
           end
         end
       end

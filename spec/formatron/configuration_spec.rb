@@ -30,16 +30,11 @@ describe Formatron::Configuration do
     allow(@formatronfile_class).to receive(:new) { @formatronfile }
     allow(@formatronfile).to receive(:name) { name }
     allow(@formatronfile).to receive(:bucket) { bucket }
+    allow(@formatronfile).to receive(:protected?) { protect }
+    allow(@formatronfile).to receive(:kms_key) { kms_key }
     allow(@formatronfile).to receive(
       :cloud_formation_template
     ) { cloud_formation_template }
-
-    @bootstrap = instance_double(
-      'Formatron::Configuration::Formatronfile::Bootstrap'
-    )
-    allow(@formatronfile).to receive(:bootstrap) { @bootstrap }
-    allow(@bootstrap).to receive(:protect) { protect }
-    allow(@bootstrap).to receive(:kms_key) { kms_key }
 
     @aws = instance_double('Formatron::AWS')
 
@@ -64,8 +59,7 @@ describe Formatron::Configuration do
         target_config,
         directory
       )
-      expect(@formatronfile).to have_received(:bootstrap).once.with no_args
-      expect(@bootstrap).to have_received(:protect).once.with no_args
+      expect(@formatronfile).to have_received(:protected?).once.with no_args
     end
   end
 
@@ -77,10 +71,9 @@ describe Formatron::Configuration do
   end
 
   describe '#kms_key' do
-    it 'should return the KMS key from the bootstrap configuration' do
+    it 'should return the KMS key from the Formatronfile' do
       expect(@configuration.kms_key(targets[0])).to eql kms_key
-      expect(@formatronfile).to have_received(:bootstrap).once.with no_args
-      expect(@bootstrap).to have_received(:kms_key).once.with no_args
+      expect(@formatronfile).to have_received(:kms_key).once.with no_args
     end
   end
 

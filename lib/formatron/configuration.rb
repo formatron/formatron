@@ -17,7 +17,7 @@ class Formatron
 
     def protected?(target)
       _load target
-      @formatronfiles[target].bootstrap.protect
+      @formatronfiles[target].protected?
     end
 
     def name(target)
@@ -27,7 +27,7 @@ class Formatron
 
     def kms_key(target)
       _load target
-      @formatronfiles[target].bootstrap.kms_key
+      @formatronfiles[target].kms_key
     end
 
     def bucket(target)

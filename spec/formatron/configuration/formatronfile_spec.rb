@@ -34,26 +34,6 @@ describe Formatron::Configuration::Formatronfile do
     allow(dsl).to receive(:name) { name }
     allow(dsl).to receive(:bucket) { bucket }
 
-    dsl_bootstrap_class = class_double(
-      'Formatron::Configuration::Formatronfile::DSL::Bootstrap'
-    ).as_stubbed_const
-    dsl_bootstrap = instance_double(
-      'Formatron::Configuration::Formatronfile::DSL::Bootstrap'
-    )
-    expect(dsl_bootstrap_class).to receive(:new).once.with(
-      target,
-      config,
-      name,
-      bucket,
-      bootstrap_block
-    ) { dsl_bootstrap }
-    expect(dsl_bootstrap).to receive(:protect).once.with(
-      no_args
-    ) { protect }
-    expect(dsl_bootstrap).to receive(:kms_key).once.with(
-      no_args
-    ) { kms_key }
-
     bootstrap_class = class_double(
       'Formatron::Configuration::Formatronfile::Bootstrap'
     ).as_stubbed_const
@@ -61,22 +41,33 @@ describe Formatron::Configuration::Formatronfile do
       'Formatron::Configuration::Formatronfile::Bootstrap'
     )
     expect(bootstrap_class).to receive(:new).once.with(
-      protect,
-      kms_key
+      target,
+      config,
+      name,
+      bucket,
+      bootstrap_block
     ) { @bootstrap }
+    expect(@bootstrap).to receive(:protect).once.with(
+      no_args
+    ) { protect }
+    expect(@bootstrap).to receive(:kms_key).once.with(
+      no_args
+    ) { kms_key }
 
     @cloud_formation = class_double(
       'Formatron::Configuration::Formatronfile::CloudFormation'
     ).as_stubbed_const
-    expect(@cloud_formation).to receive(:bootstrap_template).once.with(
-      no_args
-    ) { cloud_formation_template }
+    allow(@cloud_formation).to receive(:template) { cloud_formation_template }
 
     @formatronfile = Formatron::Configuration::Formatronfile.new(
       aws,
       target,
       config,
       directory
+    )
+
+    expect(@cloud_formation).to have_received(:template).once.with(
+      @formatronfile
     )
   end
 
@@ -95,6 +86,18 @@ describe Formatron::Configuration::Formatronfile do
   describe '#bucket' do
     it 'should return the S3 bucket for the configuration' do
       expect(@formatronfile.bucket).to eql bucket
+    end
+  end
+
+  describe '#protected?' do
+    it 'should return whether the configuration should be protected' do
+      expect(@formatronfile.protected?).to eql protect
+    end
+  end
+
+  describe '#kms_key' do
+    it 'should return the KMS key for the configuration' do
+      expect(@formatronfile.kms_key).to eql kms_key
     end
   end
 
