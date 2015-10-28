@@ -55,8 +55,10 @@ describe Formatron::Configuration do
       expect(@config).to have_received(:target).once.with directory, targets[0]
       expect(@formatronfile_class).to have_received(:new).once.with(
         @aws,
-        targets[0],
-        target_config,
+        {
+          target: targets[0],
+          config: target_config
+        },
         directory
       )
       expect(@formatronfile).to have_received(:protected?).once.with no_args

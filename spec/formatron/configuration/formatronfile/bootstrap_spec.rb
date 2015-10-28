@@ -4,6 +4,7 @@ require 'formatron/configuration/formatronfile/bootstrap'
 class Formatron
   class Configuration
     # namespacing for tests
+    # rubocop:disable Metrics/ClassLength
     class Formatronfile
       describe Bootstrap do
         target = 'target'
@@ -28,10 +29,12 @@ class Formatron
             'Formatron::Configuration::Formatronfile::Bootstrap::DSL'
           )
           expect(@dsl_class).to receive(:new).once.with(
-            target,
-            config,
-            name,
-            bucket,
+            {
+              target: target,
+              config: config,
+              name: name,
+              bucket: bucket
+            },
             block
           ) { @dsl }
 
@@ -47,21 +50,25 @@ class Formatron
             'Formatron::Configuration::Formatronfile::Bootstrap::EC2'
           )
           expect(@ec2_class).to receive(:new).once.with(
-            target,
-            config,
-            name,
-            bucket,
-            kms_key,
-            protect,
-            hosted_zone_id,
+            {
+              target: target,
+              config: config,
+              name: name,
+              bucket: bucket,
+              kms_key: kms_key,
+              protect: protect,
+              hosted_zone_id: hosted_zone_id
+            },
             block
           ) { @ec2 }
 
           @bootstrap = Bootstrap.new(
-            target,
-            config,
-            name,
-            bucket,
+            {
+              target: target,
+              config: config,
+              name: name,
+              bucket: bucket
+            },
             block
           )
         end
@@ -90,7 +97,32 @@ class Formatron
             expect(@bootstrap.ec2).to eql @ec2
           end
         end
+
+        describe '#vpc' do
+          skip 'should return the VPC configuration' do
+            expect(@bootstrap.vpc).to eql @vpc
+          end
+        end
+
+        describe '#bastion' do
+          skip 'should return the bastion instance configuration' do
+            expect(@bootstrap.bastion).to eql @bastion
+          end
+        end
+
+        describe '#nat' do
+          skip 'should return the NAT instance configuration' do
+            expect(@bootstrap.nat).to eql @nat
+          end
+        end
+
+        describe '#chef_server' do
+          skip 'should return the Chef Server instance configuration' do
+            expect(@bootstrap.chef_server).to eql @chef_server
+          end
+        end
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

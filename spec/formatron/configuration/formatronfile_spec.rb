@@ -26,8 +26,10 @@ describe Formatron::Configuration::Formatronfile do
       'Formatron::Configuration::Formatronfile::DSL'
     )
     expect(dsl_class).to receive(:new).once.with(
-      target,
-      config,
+      {
+        target: target,
+        config: config
+      },
       File.join(directory, 'Formatronfile')
     ) { dsl }
     allow(dsl).to receive(:bootstrap) { bootstrap_block }
@@ -41,10 +43,12 @@ describe Formatron::Configuration::Formatronfile do
       'Formatron::Configuration::Formatronfile::Bootstrap'
     )
     expect(bootstrap_class).to receive(:new).once.with(
-      target,
-      config,
-      name,
-      bucket,
+      {
+        target: target,
+        config: config,
+        name: name,
+        bucket: bucket
+      },
       bootstrap_block
     ) { @bootstrap }
     expect(@bootstrap).to receive(:protect).once.with(
@@ -61,8 +65,10 @@ describe Formatron::Configuration::Formatronfile do
 
     @formatronfile = Formatron::Configuration::Formatronfile.new(
       aws,
-      target,
-      config,
+      {
+        target: target,
+        config: config
+      },
       directory
     )
 

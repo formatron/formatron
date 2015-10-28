@@ -47,10 +47,13 @@ class Formatron
 
     def _load(target)
       @configs[target] ||= Config.target @directory, target
+      scope = {
+        target: target,
+        config: @configs[target]
+      }
       @formatronfiles[target] ||= Formatronfile.new(
         @aws,
-        target,
-        @configs[target],
+        scope,
         @directory
       )
     end

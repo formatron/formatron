@@ -5,14 +5,13 @@ class Formatron
       class DSL
         attr_reader(
           :name,
-          :bucket,
-          :target,
-          :config
+          :bucket
         )
 
-        def initialize(target, config, file)
-          @target = target
-          @config = config
+        def initialize(scope, file)
+          scope.each do |key, value|
+            self.class.send(:define_method, key, proc { value })
+          end
           instance_eval File.read(file), file
         end
 

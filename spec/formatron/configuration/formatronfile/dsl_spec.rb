@@ -23,8 +23,10 @@ describe Formatron::Configuration::Formatronfile::DSL do
       EOH
     )
     @dsl = Formatron::Configuration::Formatronfile::DSL.new(
-      target,
-      config,
+      {
+        target: target,
+        config: config
+      },
       file
     )
   end

@@ -4,18 +4,10 @@ class Formatron
       class Bootstrap
         # DSL for the Formatronfile bootstrap section
         class DSL
-          attr_reader(
-            :target,
-            :config,
-            :name,
-            :bucket
-          )
-
-          def initialize(target, config, name, bucket, block)
-            @target = target
-            @config = config
-            @name = name
-            @bucket = bucket
+          def initialize(scope, block)
+            scope.each do |key, value|
+              self.class.send(:define_method, key, proc { value })
+            end
             instance_eval(&block)
           end
 

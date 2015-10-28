@@ -13,33 +13,28 @@ class Formatron
           :ec2
         )
 
-        def initialize(target, config, name, bucket, block)
+        def initialize(scope, block)
           @dsl = DSL.new(
-            target,
-            config,
-            name,
-            bucket,
+            scope,
             block
           )
-          _initialize_properties target, config, name, bucket
+          _initialize_properties scope
         end
 
-        def _initialize_properties(target, config, name, bucket)
+        def _initialize_properties(scope)
           @protect = @dsl.protect
           @kms_key = @dsl.kms_key
           @hosted_zone_id = @dsl.hosted_zone_id
-          _initialize_ec2 target, config, name, bucket
+          _initialize_ec2 scope
         end
 
-        def _initialize_ec2(target, config, name, bucket)
+        def _initialize_ec2(scope)
+          ec2_scope = scope.clone
+          ec2_scope[:kms_key] = @kms_key
+          ec2_scope[:protect] = @protect
+          ec2_scope[:hosted_zone_id] = @hosted_zone_id
           @ec2 = EC2.new(
-            target,
-            config,
-            name,
-            bucket,
-            @kms_key,
-            @protect,
-            @hosted_zone_id,
+            ec2_scope,
             @dsl.ec2
           )
         end

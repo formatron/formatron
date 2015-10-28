@@ -7,8 +7,6 @@ class Formatron
       # namespacing for tests
       class Bootstrap
         describe DSL do
-          include FakeFS::SpecHelpers
-
           block = proc do
             protect true
             kms_key "#{target}-#{config['kms_key']}-#{name}-#{bucket}"
@@ -27,10 +25,12 @@ class Formatron
 
           before(:each) do
             @dsl = DSL.new(
-              target,
-              config,
-              name,
-              bucket,
+              {
+                target: target,
+                config: config,
+                name: name,
+                bucket: bucket
+              },
               block
             )
           end
