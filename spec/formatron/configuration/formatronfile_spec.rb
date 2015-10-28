@@ -19,10 +19,10 @@ describe Formatron::Configuration::Formatronfile do
     end
 
     dsl_class = class_double(
-      'Formatron::DSL'
+      'Formatron::Configuration::Formatronfile::DSL'
     ).as_stubbed_const
     dsl = instance_double(
-      'Formatron::DSL'
+      'Formatron::Configuration::Formatronfile::DSL'
     )
     expect(dsl_class).to receive(:new).once.with(
       target,
@@ -34,10 +34,10 @@ describe Formatron::Configuration::Formatronfile do
     allow(dsl).to receive(:bucket) { bucket }
 
     dsl_bootstrap_class = class_double(
-      'Formatron::DSL::Bootstrap'
+      'Formatron::Configuration::Formatronfile::DSL::Bootstrap'
     ).as_stubbed_const
     dsl_bootstrap = instance_double(
-      'Formatron::DSL::Bootstrap'
+      'Formatron::Configuration::Formatronfile::DSL::Bootstrap'
     )
     expect(dsl_bootstrap_class).to receive(:new).once.with(
       target,

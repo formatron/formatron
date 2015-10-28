@@ -21,7 +21,7 @@ class Formatron
       end
 
       def _initialize_dsl(directory)
-        @dsl = Formatron::DSL.new(
+        @dsl = DSL.new(
           @target,
           @config,
           File.join(directory, 'Formatronfile')
@@ -31,7 +31,7 @@ class Formatron
       end
 
       def _initialize_bootstrap
-        dsl_bootstrap = Formatron::DSL::Bootstrap.new(
+        dsl_bootstrap = DSL::Bootstrap.new(
           @target,
           @config,
           @dsl.bootstrap
