@@ -4,11 +4,13 @@ class Formatron
       # The bootstrap configuration
       class Bootstrap
         attr_reader(
-          :protect
+          :protect,
+          :kms_key
         )
 
-        def initialize(protect)
+        def initialize(protect, kms_key)
           @protect = protect
+          @kms_key = kms_key
         end
       end
     end

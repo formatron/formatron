@@ -7,7 +7,9 @@ class Formatron
     # Processes the Formatronfile in the context of the given target
     class Formatronfile
       attr_reader(
-        :bootstrap
+        :bootstrap,
+        :name,
+        :bucket
       )
 
       def initialize(aws, target, config, directory)
@@ -24,6 +26,8 @@ class Formatron
           @config,
           File.join(directory, 'Formatronfile')
         )
+        @name = @dsl.name
+        @bucket = @dsl.bucket
       end
 
       def _initialize_bootstrap
@@ -33,7 +37,8 @@ class Formatron
           @dsl.bootstrap
         )
         @bootstrap = Bootstrap.new(
-          dsl_bootstrap.protect
+          dsl_bootstrap.protect,
+          dsl_bootstrap.kms_key
         )
       end
 

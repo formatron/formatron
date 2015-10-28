@@ -5,8 +5,13 @@ require 'formatron/configuration'
 describe Formatron::Configuration do
   directory = 'test/configuration'
   targets = %w(target1 target2)
-  target_config = {}
+  target_config = {
+    param: 'param'
+  }
   protect = true
+  name = 'name'
+  kms_key = 'kms_key'
+  bucket = 'bucket'
 
   before(:each) do
     @config = class_double(
@@ -22,12 +27,15 @@ describe Formatron::Configuration do
       'Formatron::Configuration::Formatronfile'
     )
     allow(@formatronfile_class).to receive(:new) { @formatronfile }
+    allow(@formatronfile).to receive(:name) { name }
+    allow(@formatronfile).to receive(:bucket) { bucket }
 
     @bootstrap = instance_double(
       'Formatron::Configuration::Formatronfile::Bootstrap'
     )
     allow(@formatronfile).to receive(:bootstrap) { @bootstrap }
     allow(@bootstrap).to receive(:protect) { protect }
+    allow(@bootstrap).to receive(:kms_key) { kms_key }
 
     @aws = instance_double('Formatron::AWS')
 
@@ -58,22 +66,30 @@ describe Formatron::Configuration do
   end
 
   describe '#name' do
-    skip 'it should do something' do
+    it 'should return the name from the Formatronfile' do
+      expect(@configuration.name(targets[0])).to eql name
+      expect(@formatronfile).to have_received(:name).once.with no_args
     end
   end
 
   describe '#kms_key' do
-    skip 'it should do something' do
+    it 'should return the KMS key from the bootstrap configuration' do
+      expect(@configuration.kms_key(targets[0])).to eql kms_key
+      expect(@formatronfile).to have_received(:bootstrap).once.with no_args
+      expect(@bootstrap).to have_received(:kms_key).once.with no_args
     end
   end
 
   describe '#bucket' do
-    skip 'it should do something' do
+    it 'should return the bucket from the Formatronfile' do
+      expect(@configuration.bucket(targets[0])).to eql bucket
+      expect(@formatronfile).to have_received(:bucket).once.with no_args
     end
   end
 
   describe '#config' do
-    skip 'it should do something' do
+    it 'should return the merged config to be uploaded to S3' do
+      expect(@configuration.config(targets[0])).to eql target_config
     end
   end
 end

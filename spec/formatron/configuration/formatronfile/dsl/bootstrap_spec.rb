@@ -6,6 +6,7 @@ describe Formatron::Configuration::Formatronfile::DSL::Bootstrap do
 
   block = proc do
     protect true
+    kms_key 'kms_key'
   end
   target = 'target'
   config = {}
@@ -21,6 +22,12 @@ describe Formatron::Configuration::Formatronfile::DSL::Bootstrap do
   describe '#protect' do
     it 'should set the protect property' do
       expect(@bootstrap.protect).to eql true
+    end
+  end
+
+  describe '#kms_key' do
+    it 'should set the kms_key property' do
+      expect(@bootstrap.kms_key).to eql 'kms_key'
     end
   end
 end

@@ -11,6 +11,16 @@ class Formatron
           @bootstrap = block if block_given?
           @bootstrap
         end
+
+        def name(value = nil)
+          @name = value unless value.nil?
+          @name
+        end
+
+        def bucket(value = nil)
+          @bucket = value unless value.nil?
+          @bucket
+        end
       end
     end
   end

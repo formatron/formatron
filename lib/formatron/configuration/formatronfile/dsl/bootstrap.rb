@@ -12,6 +12,11 @@ class Formatron
             @protect = value unless value.nil?
             @protect
           end
+
+          def kms_key(value = nil)
+            @kms_key = value unless value.nil?
+            @kms_key
+          end
         end
       end
     end
