@@ -12,9 +12,7 @@ describe Formatron::Configuration::Formatronfile::DSL do
     File.write(
       file,
       <<-EOH.gsub(/^ {8}/, '')
-        name 'name'
-        bucket 'bucket'
-        bootstrap do
+        bootstrap 'name', 'bucket' do
           'bootstrap'
         end
       EOH

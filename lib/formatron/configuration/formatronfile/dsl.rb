@@ -3,23 +3,20 @@ class Formatron
     class Formatronfile
       # DSL for the Formatronfile
       class DSL
+        attr_reader(
+          :name,
+          :bucket
+        )
+
         def initialize(_target, _config, file)
           instance_eval File.read(file), file
         end
 
-        def bootstrap(&block)
+        def bootstrap(name = nil, bucket = nil, &block)
+          @name = name unless name.nil?
+          @bucket = bucket unless bucket.nil?
           @bootstrap = block if block_given?
           @bootstrap
-        end
-
-        def name(value = nil)
-          @name = value unless value.nil?
-          @name
-        end
-
-        def bucket(value = nil)
-          @bucket = value unless value.nil?
-          @bucket
         end
       end
     end

@@ -70,10 +70,7 @@ describe Formatron::Generators::Bootstrap do
     it 'should generate a Formatronfile' do
       actual = File.read File.join(directory, 'Formatronfile')
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
-        name '#{params[:name]}'
-        s3_bucket '#{params[:s3_bucket]}'
-
-        bootstrap do
+        bootstrap '#{params[:name]}', '#{params[:s3_bucket]}' do
           protect config['protected']
           kms_key '#{params[:kms_key]}'
           hosted_zone_id '#{params[:hosted_zone_id]}'
