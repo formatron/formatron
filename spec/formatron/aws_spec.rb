@@ -72,5 +72,21 @@ describe Formatron::AWS do
         )
       end
     end
+
+    describe '#delete' do
+      bucket = 'bucket'
+      key = 'key'
+
+      it 'should recursively delete the key from the bucket' do
+        expect(@s3_client).to receive(:delete_object).once.with(
+          bucket: bucket,
+          key: key
+        )
+        @aws.delete(
+          bucket,
+          key
+        )
+      end
+    end
   end
 end

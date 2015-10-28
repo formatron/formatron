@@ -8,21 +8,26 @@ describe Formatron::S3Configuration do
   target = 'target'
   kms_key = 'kms_key'
   bucket = 'bucket'
-  name = 'name'
   config = {
     'param' => 'param'
   }
+  key = 'key'
 
   before(:each) do
     @aws = instance_double 'Formatron::AWS'
     @configuration = instance_double 'Formatron::Configuration'
+    @s3_path = class_double(
+      'Formatron::S3Path'
+    ).as_stubbed_const
   end
 
   describe '::deploy' do
     it 'should upload the JSON configuration to S3' do
-      expect(@configuration).to receive(:name).once.with(
-        target
-      ) { name }
+      expect(@s3_path).to receive(:path).once.with(
+        @configuration,
+        target,
+        'config.json'
+      ) { key }
       expect(@configuration).to receive(:kms_key).once.with(
         target
       ) { kms_key }
@@ -35,7 +40,7 @@ describe Formatron::S3Configuration do
       expect(@aws).to receive(:upload).once.with(
         kms_key,
         bucket,
-        File.join(target, name, 'config.json'),
+        key,
         config.to_json
       )
       Formatron::S3Configuration.deploy(
@@ -47,7 +52,24 @@ describe Formatron::S3Configuration do
   end
 
   describe '::destroy' do
-    skip 'should do something' do
+    it 'should delete the JSON configuration from S3' do
+      expect(@s3_path).to receive(:path).once.with(
+        @configuration,
+        target,
+        'config.json'
+      ) { key }
+      expect(@configuration).to receive(:bucket).once.with(
+        target
+      ) { bucket }
+      expect(@aws).to receive(:delete).once.with(
+        bucket,
+        key
+      )
+      Formatron::S3Configuration.destroy(
+        @aws,
+        @configuration,
+        target
+      )
     end
   end
 end

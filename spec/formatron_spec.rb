@@ -118,7 +118,7 @@ describe Formatron do
     end
   end
 
-  describe '#provision' do
+  describe '#destroy' do
     before(:each) do
       @s3_configuration = class_double(
         'Formatron::S3Configuration'

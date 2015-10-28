@@ -42,6 +42,8 @@ describe Formatron::Configuration::Formatronfile do
     expect(dsl_bootstrap_class).to receive(:new).once.with(
       target,
       config,
+      name,
+      bucket,
       bootstrap_block
     ) { dsl_bootstrap }
     expect(dsl_bootstrap).to receive(:protect).once.with(

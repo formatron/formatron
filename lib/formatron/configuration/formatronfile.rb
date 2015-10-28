@@ -31,20 +31,27 @@ class Formatron
       end
 
       def _initialize_bootstrap
-        dsl_bootstrap = DSL::Bootstrap.new(
-          @target,
-          @config,
-          @dsl.bootstrap
-        )
+        dsl_bootstrap = _dsl_bootstrap
         @bootstrap = Bootstrap.new(
           dsl_bootstrap.protect,
           dsl_bootstrap.kms_key
         )
       end
 
+      def _dsl_bootstrap
+        DSL::Bootstrap.new(
+          @target,
+          @config,
+          @name,
+          @bucket,
+          @dsl.bootstrap
+        )
+      end
+
       private(
         :_initialize_dsl,
-        :_initialize_bootstrap
+        :_initialize_bootstrap,
+        :_dsl_bootstrap
       )
     end
   end

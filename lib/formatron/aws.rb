@@ -23,6 +23,13 @@ class Formatron
       )
     end
 
+    def delete(bucket, key)
+      @s3_client.delete_object(
+        bucket: bucket,
+        key: key
+      )
+    end
+
     def _create_aws_credentials(credentials)
       ::Aws::Credentials.new(
         credentials['access_key_id'],

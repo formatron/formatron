@@ -1,5 +1,6 @@
 require 'formatron/aws'
 require 'formatron/configuration'
+require 'formatron/s3_path'
 require 'formatron/s3_configuration'
 require 'formatron/s3_cloud_formation_template'
 require 'formatron/cloud_formation_stack'
