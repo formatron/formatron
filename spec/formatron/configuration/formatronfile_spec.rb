@@ -10,6 +10,7 @@ describe Formatron::Configuration::Formatronfile do
   protect = false
   kms_key = 'kms_key'
   bucket = 'bucket'
+  cloud_formation_template = 'cloud_formation_template'
 
   before(:each) do
     aws = instance_double('Formatron::AWS')
@@ -64,6 +65,13 @@ describe Formatron::Configuration::Formatronfile do
       kms_key
     ) { @bootstrap }
 
+    @cloud_formation = class_double(
+      'Formatron::Configuration::Formatronfile::CloudFormation'
+    ).as_stubbed_const
+    expect(@cloud_formation).to receive(:bootstrap_template).once.with(
+      no_args
+    ) { cloud_formation_template }
+
     @formatronfile = Formatron::Configuration::Formatronfile.new(
       aws,
       target,
@@ -87,6 +95,14 @@ describe Formatron::Configuration::Formatronfile do
   describe '#bucket' do
     it 'should return the S3 bucket for the configuration' do
       expect(@formatronfile.bucket).to eql bucket
+    end
+  end
+
+  describe '#cloud_formation_template' do
+    it 'should return the CloudFormation template for the configuration' do
+      expect(
+        @formatronfile.cloud_formation_template
+      ).to eql cloud_formation_template
     end
   end
 end

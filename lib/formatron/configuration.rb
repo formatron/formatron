@@ -7,6 +7,7 @@ class Formatron
     def initialize(aws, directory)
       @aws = aws
       @directory = directory
+      @configs = {}
       @formatronfiles = {}
     end
 
@@ -15,42 +16,47 @@ class Formatron
     end
 
     def protected?(target)
-      _load_formatronfile target
+      _load target
       @formatronfiles[target].bootstrap.protect
     end
 
     def name(target)
-      _load_formatronfile target
+      _load target
       @formatronfiles[target].name
     end
 
     def kms_key(target)
-      _load_formatronfile target
+      _load target
       @formatronfiles[target].bootstrap.kms_key
     end
 
     def bucket(target)
-      _load_formatronfile target
+      _load target
       @formatronfiles[target].bucket
     end
 
     def config(target)
-      _load_formatronfile target
-      @config
+      _load target
+      @configs[target]
     end
 
-    def _load_formatronfile(target)
-      @config = Config.target @directory, target
+    def cloud_formation_template(target)
+      _load target
+      @formatronfiles[target].cloud_formation_template
+    end
+
+    def _load(target)
+      @configs[target] ||= Config.target @directory, target
       @formatronfiles[target] ||= Formatronfile.new(
         @aws,
         target,
-        @config,
+        @configs[target],
         @directory
       )
     end
 
     private(
-      :_load_formatronfile
+      :_load
     )
   end
 end

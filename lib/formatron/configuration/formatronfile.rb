@@ -1,6 +1,7 @@
 require_relative 'formatronfile/dsl'
 require_relative 'formatronfile/dsl/bootstrap'
 require_relative 'formatronfile/bootstrap'
+require_relative 'formatronfile/cloud_formation'
 
 class Formatron
   class Configuration
@@ -8,6 +9,7 @@ class Formatron
     class Formatronfile
       attr_reader(
         :bootstrap,
+        :cloud_formation_template,
         :name,
         :bucket
       )
@@ -17,7 +19,9 @@ class Formatron
         @target = target
         @config = config
         _initialize_dsl directory
+        _initialize_dsl_bootstrap
         _initialize_bootstrap
+        _initialize_cloud_formation_template
       end
 
       def _initialize_dsl(directory)
@@ -30,16 +34,8 @@ class Formatron
         @bucket = @dsl.bucket
       end
 
-      def _initialize_bootstrap
-        dsl_bootstrap = _dsl_bootstrap
-        @bootstrap = Bootstrap.new(
-          dsl_bootstrap.protect,
-          dsl_bootstrap.kms_key
-        )
-      end
-
-      def _dsl_bootstrap
-        DSL::Bootstrap.new(
+      def _initialize_dsl_bootstrap
+        @dsl_bootstrap = DSL::Bootstrap.new(
           @target,
           @config,
           @name,
@@ -48,10 +44,22 @@ class Formatron
         )
       end
 
+      def _initialize_bootstrap
+        @bootstrap = Bootstrap.new(
+          @dsl_bootstrap.protect,
+          @dsl_bootstrap.kms_key
+        )
+      end
+
+      def _initialize_cloud_formation_template
+        @cloud_formation_template = CloudFormation.bootstrap_template
+      end
+
       private(
         :_initialize_dsl,
+        :_initialize_dsl_bootstrap,
         :_initialize_bootstrap,
-        :_dsl_bootstrap
+        :_initialize_cloud_formation_template
       )
     end
   end

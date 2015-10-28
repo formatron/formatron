@@ -8,6 +8,7 @@ describe Formatron::Configuration do
   target_config = {
     param: 'param'
   }
+  cloud_formation_template = 'cloud_formation_template'
   protect = true
   name = 'name'
   kms_key = 'kms_key'
@@ -29,6 +30,9 @@ describe Formatron::Configuration do
     allow(@formatronfile_class).to receive(:new) { @formatronfile }
     allow(@formatronfile).to receive(:name) { name }
     allow(@formatronfile).to receive(:bucket) { bucket }
+    allow(@formatronfile).to receive(
+      :cloud_formation_template
+    ) { cloud_formation_template }
 
     @bootstrap = instance_double(
       'Formatron::Configuration::Formatronfile::Bootstrap'
@@ -90,6 +94,17 @@ describe Formatron::Configuration do
   describe '#config' do
     it 'should return the merged config to be uploaded to S3' do
       expect(@configuration.config(targets[0])).to eql target_config
+    end
+  end
+
+  describe '#cloud_formation_template' do
+    it 'should return the CloudFormation template to be uploaded to S3' do
+      expect(@configuration.cloud_formation_template(targets[0])).to eql(
+        cloud_formation_template
+      )
+      expect(@formatronfile).to have_received(
+        :cloud_formation_template
+      ).once.with no_args
     end
   end
 end
