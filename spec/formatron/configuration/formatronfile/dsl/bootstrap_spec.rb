@@ -6,15 +6,21 @@ describe Formatron::Configuration::Formatronfile::DSL::Bootstrap do
 
   block = proc do
     protect true
-    kms_key 'kms_key'
+    kms_key "#{target}-#{config['kms_key']}-#{name}-#{bucket}"
   end
   target = 'target'
-  config = {}
+  config = {
+    'kms_key' => 'kms_key'
+  }
+  name = 'name'
+  bucket = 'bucket'
 
   before(:each) do
     @bootstrap = Formatron::Configuration::Formatronfile::DSL::Bootstrap.new(
       target,
       config,
+      name,
+      bucket,
       block
     )
   end
@@ -27,7 +33,9 @@ describe Formatron::Configuration::Formatronfile::DSL::Bootstrap do
 
   describe '#kms_key' do
     it 'should set the kms_key property' do
-      expect(@bootstrap.kms_key).to eql 'kms_key'
+      expect(@bootstrap.kms_key).to eql(
+        "#{target}-#{config['kms_key']}-#{name}-#{bucket}"
+      )
     end
   end
 end

@@ -4,7 +4,18 @@ class Formatron
       class DSL
         # DSL for the Formatronfile bootstrap section
         class Bootstrap
-          def initialize(_target, _config, block)
+          attr_reader(
+            :target,
+            :config,
+            :name,
+            :bucket
+          )
+
+          def initialize(target, config, name, bucket, block)
+            @target = target
+            @config = config
+            @name = name
+            @bucket = bucket
             instance_eval(&block)
           end
 
