@@ -20,6 +20,9 @@ class Formatron
         ec2_block = proc do
           'ec2'
         end
+        vpc_block = proc do
+          'vpc'
+        end
 
         before(:each) do
           @dsl_class = class_double(
@@ -42,6 +45,7 @@ class Formatron
           allow(@dsl).to receive(:kms_key) { kms_key }
           allow(@dsl).to receive(:hosted_zone_id) { hosted_zone_id }
           allow(@dsl).to receive(:ec2) { ec2_block }
+          allow(@dsl).to receive(:vpc) { vpc_block }
 
           @ec2_class = class_double(
             'Formatron::Configuration::Formatronfile::Bootstrap::EC2'
@@ -59,8 +63,27 @@ class Formatron
               protect: protect,
               hosted_zone_id: hosted_zone_id
             },
-            block
+            ec2_block
           ) { @ec2 }
+
+          @vpc_class = class_double(
+            'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
+          ).as_stubbed_const
+          @vpc = instance_double(
+            'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
+          )
+          expect(@vpc_class).to receive(:new).once.with(
+            {
+              target: target,
+              config: config,
+              name: name,
+              bucket: bucket,
+              kms_key: kms_key,
+              protect: protect,
+              hosted_zone_id: hosted_zone_id
+            },
+            vpc_block
+          ) { @vpc }
 
           @bootstrap = Bootstrap.new(
             {
@@ -99,7 +122,7 @@ class Formatron
         end
 
         describe '#vpc' do
-          skip 'should return the VPC configuration' do
+          it 'should return the VPC configuration' do
             expect(@bootstrap.vpc).to eql @vpc
           end
         end

@@ -14,6 +14,9 @@ class Formatron
             ec2 do
               'ec2'
             end
+            vpc do
+              'vpc'
+            end
           end
           target = 'target'
           config = {
@@ -61,6 +64,14 @@ class Formatron
             it 'should set the ec2 property' do
               expect(@dsl.ec2.call).to eql(
                 'ec2'
+              )
+            end
+          end
+
+          describe '#vpc' do
+            it 'should set the vpc property' do
+              expect(@dsl.vpc.call).to eql(
+                'vpc'
               )
             end
           end

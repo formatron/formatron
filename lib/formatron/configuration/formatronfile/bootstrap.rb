@@ -1,5 +1,6 @@
 require_relative 'bootstrap/dsl'
 require_relative 'bootstrap/ec2'
+require_relative 'bootstrap/vpc'
 
 class Formatron
   class Configuration
@@ -10,7 +11,8 @@ class Formatron
           :protect,
           :kms_key,
           :hosted_zone_id,
-          :ec2
+          :ec2,
+          :vpc
         )
 
         def initialize(scope, block)
@@ -25,17 +27,25 @@ class Formatron
           @protect = @dsl.protect
           @kms_key = @dsl.kms_key
           @hosted_zone_id = @dsl.hosted_zone_id
-          _initialize_ec2 scope
+          new_scope = scope.clone
+          new_scope[:kms_key] = @kms_key
+          new_scope[:protect] = @protect
+          new_scope[:hosted_zone_id] = @hosted_zone_id
+          _initialize_ec2 new_scope
+          _initialize_vpc new_scope
         end
 
         def _initialize_ec2(scope)
-          ec2_scope = scope.clone
-          ec2_scope[:kms_key] = @kms_key
-          ec2_scope[:protect] = @protect
-          ec2_scope[:hosted_zone_id] = @hosted_zone_id
           @ec2 = EC2.new(
-            ec2_scope,
+            scope,
             @dsl.ec2
+          )
+        end
+
+        def _initialize_vpc(scope)
+          @vpc = VPC.new(
+            scope,
+            @dsl.vpc
           )
         end
 

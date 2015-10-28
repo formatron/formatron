@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'formatron/configuration/formatronfile/bootstrap/dsl'
+require 'formatron/configuration/formatronfile/bootstrap/ec2/dsl'
 
 class Formatron
   class Configuration

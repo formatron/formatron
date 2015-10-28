@@ -89,11 +89,9 @@ describe Formatron::Generators::Bootstrap do
             subnet 'management_1' do
               availability_zone '#{params[:availability_zone]}'
               cidr '10.0.0.0/16'
-              make_public do
-                restrict_source_ip [
-                  '#{Curl.get('http://whatismyip.akamai.com').body_str}'
-                ]
-              end
+              make_public [
+                '#{Curl.get('http://whatismyip.akamai.com').body_str}'
+              ]
             end
 
             subnet 'public_1' do

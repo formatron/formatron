@@ -30,6 +30,11 @@ class Formatron
             @ec2 = block if block_given?
             @ec2
           end
+
+          def vpc(&block)
+            @vpc = block if block_given?
+            @vpc
+          end
         end
       end
     end
