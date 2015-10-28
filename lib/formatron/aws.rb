@@ -13,13 +13,20 @@ class Formatron
       _create_cloudformation_client aws_credentials, region
     end
 
-    def upload(_kms_key, _bucket, _key, _content)
+    def upload(kms_key, bucket, key, content)
+      @s3_client.put_object(
+        bucket: bucket,
+        key: key,
+        body: content,
+        server_side_encryption: 'aws:kms',
+        ssekms_key_id: kms_key
+      )
     end
 
     def _create_aws_credentials(credentials)
       ::Aws::Credentials.new(
-        credentials['accessKeyId'],
-        credentials['secretAccessKey']
+        credentials['access_key_id'],
+        credentials['secret_access_key']
       )
     end
 

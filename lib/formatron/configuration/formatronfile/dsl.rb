@@ -12,7 +12,7 @@ class Formatron
           instance_eval File.read(file), file
         end
 
-        def bootstrap(name = nil, bucket = nil, &block)
+        def bootstrap(name: nil, bucket: nil, &block)
           @name = name unless name.nil?
           @bucket = bucket unless bucket.nil?
           @bootstrap = block if block_given?

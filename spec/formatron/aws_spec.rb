@@ -2,17 +2,21 @@ require 'spec_helper'
 require 'formatron/aws'
 
 describe Formatron::AWS do
+  region = 'region'
+  access_key_id = 'access_key_id'
+  secret_access_key = 'secret_access_key'
+
   before(:each) do
     aws_credentials = instance_double('Aws::Credentials')
     aws_credentials_class = class_double('Aws::Credentials').as_stubbed_const
     expect(aws_credentials_class).to receive(:new).with(
-      'access_key_id',
-      'secret_access_key'
+      access_key_id,
+      secret_access_key
     ).once { aws_credentials }
     @s3_client = instance_double('Aws::S3::Client')
     s3_client_class = class_double('Aws::S3::Client').as_stubbed_const
     expect(s3_client_class).to receive(:new).with(
-      region: 'region',
+      region: region,
       signature_version: 'v4',
       credentials: aws_credentials
     ).once { @s3_client }
@@ -21,12 +25,12 @@ describe Formatron::AWS do
       'Aws::CloudFormation::Client'
     ).as_stubbed_const
     expect(cloudformation_client_class).to receive(:new).with(
-      region: 'region',
+      region: region,
       credentials: aws_credentials
     ).once { @cloudformation_client }
   end
 
-  context 'with a valid credentials json file' do
+  context 'with credentials' do
     include FakeFS::SpecHelpers
 
     before(:each) do
@@ -35,25 +39,38 @@ describe Formatron::AWS do
         File.join('test', 'credentials.json'),
         <<-EOH.gsub(/^\s{8}/, '')
           {
-            "region": "region",
-            "accessKeyId": "access_key_id",
-            "secretAccessKey": "secret_access_key"
+            "region": "#{region}",
+            "access_key_id": "#{access_key_id}",
+            "secret_access_key": "#{secret_access_key}"
           }
         EOH
       )
-    end
-
-    it 'should initialize the S3 and CloudFormation clients' do
-      aws = Formatron::AWS.new(
+      @aws = Formatron::AWS.new(
         File.join('test', 'credentials.json')
       )
-      expect(aws.s3_client).to equal(@s3_client)
-      expect(aws.cloudformation_client).to equal(@cloudformation_client)
     end
-  end
 
-  describe '#upload' do
-    skip 'it should do something' do
+    describe '#upload' do
+      content = 'content'
+      bucket = 'bucket'
+      key = 'key'
+      kms_key = 'kms_key'
+
+      it 'should encrypt and upload the given content to S3' do
+        expect(@s3_client).to receive(:put_object).once.with(
+          bucket: bucket,
+          key: key,
+          body: content,
+          server_side_encryption: 'aws:kms',
+          ssekms_key_id: kms_key
+        )
+        @aws.upload(
+          kms_key,
+          bucket,
+          key,
+          content
+        )
+      end
     end
   end
 end
