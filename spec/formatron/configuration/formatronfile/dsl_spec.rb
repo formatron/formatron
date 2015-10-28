@@ -6,15 +6,17 @@ describe Formatron::Configuration::Formatronfile::DSL do
 
   file = 'Formatronfile'
   target = 'target'
-  config = {}
+  config = {
+    'bucket' => 'bucket'
+  }
 
   before(:each) do
     File.write(
       file,
-      <<-EOH.gsub(/^ {8}/, '')
+      <<-'EOH'.gsub(/^ {8}/, '')
         bootstrap(
-          name: 'name',
-          bucket: 'bucket'
+          name: "#{target}",
+          bucket: "#{config['bucket']}"
         ) do
           'bootstrap'
         end
@@ -35,13 +37,13 @@ describe Formatron::Configuration::Formatronfile::DSL do
 
   describe '#name' do
     it 'should set the name property' do
-      expect(@dsl.name).to eql 'name'
+      expect(@dsl.name).to eql target
     end
   end
 
   describe '#bucket' do
     it 'should set the bucket property' do
-      expect(@dsl.bucket).to eql 'bucket'
+      expect(@dsl.bucket).to eql config['bucket']
     end
   end
 end
