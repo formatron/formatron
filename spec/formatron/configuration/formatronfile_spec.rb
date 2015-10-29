@@ -61,6 +61,12 @@ describe Formatron::Configuration::Formatronfile do
     end
   end
 
+  describe '#target' do
+    it 'should return the target of the configuration' do
+      expect(@formatronfile.target).to eql target
+    end
+  end
+
   describe '#name' do
     it 'should return the name of the configuration' do
       expect(@formatronfile.name).to eql name

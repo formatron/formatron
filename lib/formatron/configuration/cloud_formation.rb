@@ -4,9 +4,10 @@ class Formatron
     module CloudFormation
       # exports params to CloudFormation ERB template
       class Template
-        attr_reader :name, :bucket, :configuration
+        attr_reader :target, :name, :bucket, :configuration
 
-        def initialize(name:, bucket:, configuration:)
+        def initialize(target:, name:, bucket:, configuration:)
+          @target = target
           @name = name
           @bucket = bucket
           @configuration = configuration
@@ -19,6 +20,7 @@ class Formatron
         erb.filename = template
         erb_template = erb.def_class Template, 'render()'
         erb_template.new(
+          target: formatronfile.target,
           name: formatronfile.name,
           bucket: formatronfile.bucket,
           configuration: formatronfile.bootstrap

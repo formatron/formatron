@@ -7,12 +7,14 @@ class Formatron
     class Formatronfile
       attr_reader(
         :bootstrap,
+        :target,
         :name,
         :bucket,
         :kms_key
       )
 
       def initialize(aws:, config:, target:, directory:)
+        @target = target
         _initialize_dsl(
           aws: aws,
           config: config,
