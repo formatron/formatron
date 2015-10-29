@@ -34,9 +34,11 @@ class Formatron
       allow(@formatronfile).to receive(:bucket) { bucket }
       allow(@formatronfile).to receive(:protected?) { protect }
       allow(@formatronfile).to receive(:kms_key) { kms_key }
-      allow(@formatronfile).to receive(
-        :cloud_formation_template
-      ) { cloud_formation_template }
+
+      @cloud_formation = class_double(
+        'Formatron::Configuration::CloudFormation'
+      ).as_stubbed_const
+      allow(@cloud_formation).to receive(:template) { cloud_formation_template }
 
       @aws = instance_double('Formatron::AWS')
 
@@ -100,9 +102,11 @@ class Formatron
         expect(@configuration.cloud_formation_template(targets[0])).to eql(
           cloud_formation_template
         )
-        expect(@formatronfile).to have_received(
-          :cloud_formation_template
-        ).once.with no_args
+        expect(@cloud_formation).to have_received(
+          :template
+        ).once.with(
+          @formatronfile
+        )
       end
     end
   end

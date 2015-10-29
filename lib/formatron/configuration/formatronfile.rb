@@ -1,6 +1,5 @@
 require_relative 'formatronfile/dsl'
 require_relative 'formatronfile/bootstrap'
-require_relative 'formatronfile/cloud_formation'
 
 class Formatron
   class Configuration
@@ -8,7 +7,6 @@ class Formatron
     class Formatronfile
       attr_reader(
         :bootstrap,
-        :cloud_formation_template,
         :name,
         :bucket,
         :kms_key
@@ -22,8 +20,6 @@ class Formatron
           directory: directory
         )
         _initialize_bootstrap unless @dsl.bootstrap.nil?
-        @cloud_formation_template =
-          CloudFormation.template self
       end
 
       def protected?

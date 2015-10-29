@@ -53,10 +53,6 @@ describe Formatron::Configuration::Formatronfile do
       target: target,
       directory: directory
     )
-
-    expect(@cloud_formation).to have_received(:template).once.with(
-      @formatronfile
-    )
   end
 
   describe '#bootstrap' do
@@ -86,14 +82,6 @@ describe Formatron::Configuration::Formatronfile do
   describe '#kms_key' do
     it 'should return the KMS key for the configuration' do
       expect(@formatronfile.kms_key).to eql kms_key
-    end
-  end
-
-  describe '#cloud_formation_template' do
-    it 'should return the CloudFormation template for the configuration' do
-      expect(
-        @formatronfile.cloud_formation_template
-      ).to eql cloud_formation_template
     end
   end
 end
