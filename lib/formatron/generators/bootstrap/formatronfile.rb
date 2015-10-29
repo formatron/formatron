@@ -25,6 +25,7 @@ class Formatron
         def self._content(params)
           template = File.join(
             File.dirname(File.expand_path(__FILE__)),
+            File.basename(__FILE__, '.rb'),
             'Formatronfile.erb'
           )
           erb = ERB.new File.read(template)
