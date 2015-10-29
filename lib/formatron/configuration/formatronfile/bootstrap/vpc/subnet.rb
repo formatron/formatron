@@ -1,4 +1,4 @@
-require_relative 'subnet/dsl'
+require_relative 'subnet/acl'
 
 class Formatron
   class Configuration
@@ -8,28 +8,30 @@ class Formatron
           # Subnet configuration
           class Subnet
             attr_reader(
-              :availability_zone,
-              :cidr,
-              :source_ips
+              :acl
             )
 
-            def initialize(scope, block)
-              @dsl = DSL.new(
-                scope,
-                block
-              )
-              _initialize_properties
+            def availability_zone(value = nil)
+              @availability_zone = value unless value.nil?
+              @availability_zone
             end
 
-            def _initialize_properties
-              @availability_zone = @dsl.availability_zone
-              @cidr = @dsl.cidr
-              @source_ips = @dsl.source_ips
+            def cidr(value = nil)
+              @cidr = value unless value.nil?
+              @cidr
             end
 
-            private(
-              :_initialize_properties
-            )
+            def public(value = nil)
+              unless value.nil?
+                if value
+                  @acl = ACL.new
+                  yield @acl if block_given?
+                else
+                  @acl = nil
+                end
+              end
+              !@acl.nil?
+            end
           end
         end
       end

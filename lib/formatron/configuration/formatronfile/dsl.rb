@@ -1,24 +1,47 @@
+require_relative 'bootstrap'
+
 class Formatron
   class Configuration
     class Formatronfile
       # DSL for the Formatronfile
       class DSL
         attr_reader(
-          :name,
-          :bucket
+          :config,
+          :target,
+          :dependencies
         )
 
-        def initialize(scope, file)
-          scope.each do |key, value|
-            self.class.send(:define_method, key, proc { value })
-          end
+        def initialize(aws:, config:, target:, file:)
+          @aws = aws
+          @config = config
+          @target = target
+          @dependencies = {}
           instance_eval File.read(file), file
         end
 
-        def bootstrap(name: nil, bucket: nil, &block)
-          @name = name unless name.nil?
-          @bucket = bucket unless bucket.nil?
-          @bootstrap = block if block_given?
+        def name(value = nil)
+          @name = value unless value.nil?
+          @name
+        end
+
+        def bucket(value = nil)
+          @bucket = value unless value.nil?
+          @bucket
+        end
+
+        def depends(dependency)
+          @dependencies[dependency] = Dependency.new(
+            @aws,
+            @bucket,
+            @target,
+            @name,
+            dependency
+          )
+        end
+
+        def bootstrap
+          @bootstrap ||= Bootstrap.new
+          yield @bootstrap if block_given?
           @bootstrap
         end
       end

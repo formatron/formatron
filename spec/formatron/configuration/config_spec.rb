@@ -51,7 +51,10 @@ describe Formatron::Configuration::Config do
        'from the config directory' do
       targets.each do |target|
         expect(
-          Formatron::Configuration::Config.target(directory, target)
+          Formatron::Configuration::Config.target(
+            directory: directory,
+            target: target
+          )
         ).to eql merged_config[target]
       end
     end

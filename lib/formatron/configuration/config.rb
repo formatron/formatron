@@ -17,7 +17,7 @@ class Formatron
         end
       end
 
-      def self.target(directory, target)
+      def self.target(directory:, target:)
         Reader.read(
           File.join(directory, CONFIG_DIR, DEFAULT_CONFIG),
           DEFAULT_JSON

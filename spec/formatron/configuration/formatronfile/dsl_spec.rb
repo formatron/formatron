@@ -1,51 +1,103 @@
 require 'spec_helper'
 require 'formatron/configuration/formatronfile/dsl'
 
-describe Formatron::Configuration::Formatronfile::DSL do
-  include FakeFS::SpecHelpers
+class Formatron
+  class Configuration
+    # namespacing for tests
+    class Formatronfile
+      describe DSL do
+        include FakeFS::SpecHelpers
 
-  file = 'Formatronfile'
-  target = 'target'
-  config = {
-    'bucket' => 'bucket'
-  }
+        file = 'Formatronfile'
+        target = 'target'
+        config = {}
 
-  before(:each) do
-    File.write(
-      file,
-      <<-'EOH'.gsub(/^ {8}/, '')
-        bootstrap(
-          name: "#{target}",
-          bucket: "#{config['bucket']}"
-        ) do
-          'bootstrap'
+        before(:each) do
+          aws = instance_double 'Formatron::AWS'
+
+          File.write(
+            file,
+            <<-'EOH'.gsub(/^ {8}/, '')
+              name 'name'
+              bucket 'bucket'
+              depends 'dependency1'
+              depends 'dependency2'
+              bootstrap do |bootstrap|
+                bootstrap.test(
+                  target,
+                  config,
+                  dependencies
+                )
+              end
+            EOH
+          )
+
+          dependency_class = class_double(
+            'Formatron::Configuration::Formatronfile::Dependency'
+          ).as_stubbed_const
+          @dependencies = {
+            'dependency1' => instance_double(
+              'Formatron::Configuration::Formatronfile::Dependency'
+            ),
+            'dependency2' => instance_double(
+              'Formatron::Configuration::Formatronfile::Dependency'
+            )
+          }
+          @dependencies.each do |key, instance|
+            expect(dependency_class).to receive(:new).once.with(
+              aws,
+              'bucket',
+              target,
+              'name',
+              key
+            ) { instance }
+          end
+
+          bootstrap_class = class_double(
+            'Formatron::Configuration::Formatronfile::Bootstrap'
+          ).as_stubbed_const
+          @bootstrap = double
+          expect(bootstrap_class).to receive(:new).once.with(
+            no_args
+          ) { @bootstrap }
+          expect(@bootstrap). to receive(:test).once.with(
+            target,
+            config,
+            @dependencies
+          )
+
+          @dsl = Formatron::Configuration::Formatronfile::DSL.new(
+            aws: aws,
+            target: target,
+            config: config,
+            file: file
+          )
         end
-      EOH
-    )
-    @dsl = Formatron::Configuration::Formatronfile::DSL.new(
-      {
-        target: target,
-        config: config
-      },
-      file
-    )
-  end
 
-  describe '#bootstrap' do
-    it 'should set the bootstrap property' do
-      expect(@dsl.bootstrap.call).to eql 'bootstrap'
-    end
-  end
+        describe '#depends' do
+          it 'should add to the dependencies hash' do
+            expect(@dsl.dependencies).to eql @dependencies
+          end
+        end
 
-  describe '#name' do
-    it 'should set the name property' do
-      expect(@dsl.name).to eql target
-    end
-  end
+        describe '#bootstrap' do
+          it 'should set the bootstrap property' do
+            expect(@dsl.bootstrap).to eql @bootstrap
+          end
+        end
 
-  describe '#bucket' do
-    it 'should set the bucket property' do
-      expect(@dsl.bucket).to eql config['bucket']
+        describe '#name' do
+          it 'should set the name property' do
+            expect(@dsl.name).to eql 'name'
+          end
+        end
+
+        describe '#bucket' do
+          it 'should set the bucket property' do
+            expect(@dsl.bucket).to eql 'bucket'
+          end
+        end
+      end
     end
   end
 end

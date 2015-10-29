@@ -46,15 +46,15 @@ class Formatron
     end
 
     def _load(target)
-      @configs[target] ||= Config.target @directory, target
-      scope = {
-        target: target,
-        config: @configs[target]
-      }
+      @configs[target] ||= Config.target(
+        directory: @directory,
+        target: target
+      )
       @formatronfiles[target] ||= Formatronfile.new(
-        @aws,
-        scope,
-        @directory
+        aws: @aws,
+        config: @configs[target],
+        target: target,
+        directory: @directory
       )
     end
 

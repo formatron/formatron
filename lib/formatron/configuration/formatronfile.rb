@@ -14,10 +14,14 @@ class Formatron
         :kms_key
       )
 
-      def initialize(aws, scope, directory)
-        @aws = aws
-        _initialize_dsl scope, directory
-        _initialize_bootstrap scope unless @dsl.bootstrap.nil?
+      def initialize(aws:, config:, target:, directory:)
+        _initialize_dsl(
+          aws: aws,
+          config: config,
+          target: target,
+          directory: directory
+        )
+        _initialize_bootstrap unless @dsl.bootstrap.nil?
         @cloud_formation_template =
           CloudFormation.template self
       end
@@ -26,23 +30,19 @@ class Formatron
         @protect
       end
 
-      def _initialize_dsl(scope, directory)
+      def _initialize_dsl(aws:, config:, target:, directory:)
         @dsl = DSL.new(
-          scope,
-          File.join(directory, 'Formatronfile')
+          aws: aws,
+          config: config,
+          target: target,
+          file: File.join(directory, 'Formatronfile')
         )
         @name = @dsl.name
         @bucket = @dsl.bucket
       end
 
-      def _initialize_bootstrap(scope)
-        bootstrap_scope = scope.clone
-        bootstrap_scope[:name] = @name
-        bootstrap_scope[:bucket] = @bucket
-        @bootstrap = Bootstrap.new(
-          bootstrap_scope,
-          @dsl.bootstrap
-        )
+      def _initialize_bootstrap
+        @bootstrap = @dsl.bootstrap
         _initialize_properties @bootstrap
       end
 

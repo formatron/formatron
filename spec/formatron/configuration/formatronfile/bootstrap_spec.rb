@@ -4,148 +4,110 @@ require 'formatron/configuration/formatronfile/bootstrap'
 class Formatron
   class Configuration
     # namespacing for tests
-    # rubocop:disable Metrics/ClassLength
     class Formatronfile
       describe Bootstrap do
-        target = 'target'
-        config = {}
-        name = 'name'
-        bucket = 'bucket'
-        block = proc do
-          'bootstrap'
-        end
-        protect = true
-        kms_key = 'kms_key'
-        hosted_zone_id = 'hosted_zone_id'
-        ec2_block = proc do
-          'ec2'
-        end
-        vpc_block = proc do
-          'vpc'
-        end
-
         before(:each) do
-          @dsl_class = class_double(
-            'Formatron::Configuration::Formatronfile::Bootstrap::DSL'
-          ).as_stubbed_const
-          @dsl = instance_double(
-            'Formatron::Configuration::Formatronfile::Bootstrap::DSL'
-          )
-          expect(@dsl_class).to receive(:new).once.with(
-            {
-              target: target,
-              config: config,
-              name: name,
-              bucket: bucket
-            },
-            block
-          ) { @dsl }
-
-          allow(@dsl).to receive(:protect) { protect }
-          allow(@dsl).to receive(:kms_key) { kms_key }
-          allow(@dsl).to receive(:hosted_zone_id) { hosted_zone_id }
-          allow(@dsl).to receive(:ec2) { ec2_block }
-          allow(@dsl).to receive(:vpc) { vpc_block }
-
-          @ec2_class = class_double(
-            'Formatron::Configuration::Formatronfile::Bootstrap::EC2'
-          ).as_stubbed_const
-          @ec2 = instance_double(
-            'Formatron::Configuration::Formatronfile::Bootstrap::EC2'
-          )
-          expect(@ec2_class).to receive(:new).once.with(
-            {
-              target: target,
-              config: config,
-              name: name,
-              bucket: bucket,
-              kms_key: kms_key,
-              protect: protect,
-              hosted_zone_id: hosted_zone_id
-            },
-            ec2_block
-          ) { @ec2 }
-
-          @vpc_class = class_double(
-            'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
-          ).as_stubbed_const
-          @vpc = instance_double(
-            'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
-          )
-          expect(@vpc_class).to receive(:new).once.with(
-            {
-              target: target,
-              config: config,
-              name: name,
-              bucket: bucket,
-              kms_key: kms_key,
-              protect: protect,
-              hosted_zone_id: hosted_zone_id
-            },
-            vpc_block
-          ) { @vpc }
-
-          @bootstrap = Bootstrap.new(
-            {
-              target: target,
-              config: config,
-              name: name,
-              bucket: bucket
-            },
-            block
-          )
+          @bootstrap = Bootstrap.new
         end
 
         describe '#protect' do
-          it 'should return whether the configuration should be ' \
+          it 'should set whether the configuration should be ' \
              'protected from accidental deployment, etc' do
-            expect(@bootstrap.protect).to eql protect
+            expect(@bootstrap.protect).to be_nil
+            @bootstrap.protect true
+            expect(@bootstrap.protect).to eql true
           end
         end
 
         describe '#kms_key' do
-          it 'should return the KMS key' do
-            expect(@bootstrap.kms_key).to eql kms_key
+          it 'should set the KMS key' do
+            expect(@bootstrap.kms_key).to be_nil
+            @bootstrap.kms_key 'kms_key'
+            expect(@bootstrap.kms_key).to eql 'kms_key'
           end
         end
 
         describe '#hosted_zone_id' do
-          it 'should return the Route53 public hosted zone ID' do
-            expect(@bootstrap.hosted_zone_id).to eql hosted_zone_id
+          it 'should set the Route53 public hosted zone ID' do
+            expect(@bootstrap.hosted_zone_id).to be_nil
+            @bootstrap.hosted_zone_id 'hosted_zone_id'
+            expect(@bootstrap.hosted_zone_id).to eql 'hosted_zone_id'
           end
         end
 
         describe '#ec2' do
-          it 'should return the EC2 configuration' do
+          before :each do
+            @ec2 = double
+            allow(Bootstrap::EC2).to receive(:new) { @ec2 }
+            allow(@ec2).to receive :test
+          end
+
+          it 'should set the EC2 configuration and yield to the EC2 block' do
+            @bootstrap.ec2(&:test)
             expect(@bootstrap.ec2).to eql @ec2
+            expect(@ec2).to have_received(:test).once.with no_args
           end
         end
 
         describe '#vpc' do
-          it 'should return the VPC configuration' do
+          before :each do
+            @vpc = double
+            allow(Bootstrap::VPC).to receive(:new) { @vpc }
+            allow(@vpc).to receive :test
+          end
+
+          it 'should set the VPC configuration and yield to the VPC block' do
+            @bootstrap.vpc(&:test)
             expect(@bootstrap.vpc).to eql @vpc
+            expect(@vpc).to have_received(:test).once.with no_args
           end
         end
 
         describe '#bastion' do
-          skip 'should return the bastion instance configuration' do
+          before :each do
+            @bastion = double
+            allow(Bootstrap::Bastion).to receive(:new) { @bastion }
+            allow(@bastion).to receive :test
+          end
+
+          it 'should set the bastion instance configuration and ' \
+             'yield to the bastion block' do
+            @bootstrap.bastion(&:test)
             expect(@bootstrap.bastion).to eql @bastion
+            expect(@bastion).to have_received(:test).once.with no_args
           end
         end
 
         describe '#nat' do
-          skip 'should return the NAT instance configuration' do
+          before :each do
+            @nat = double
+            allow(Bootstrap::NAT).to receive(:new) { @nat }
+            allow(@nat).to receive :test
+          end
+
+          it 'should set the NAT instance configuration and ' \
+             'yield to the NAT block' do
+            @bootstrap.nat(&:test)
             expect(@bootstrap.nat).to eql @nat
+            expect(@nat).to have_received(:test).once.with no_args
           end
         end
 
         describe '#chef_server' do
-          skip 'should return the Chef Server instance configuration' do
+          before :each do
+            @chef_server = double
+            allow(Bootstrap::ChefServer).to receive(:new) { @chef_server }
+            allow(@chef_server).to receive :test
+          end
+
+          it 'should set the Chef Server instance configuration and ' \
+             'yield to the Chef Server block' do
+            @bootstrap.chef_server(&:test)
             expect(@bootstrap.chef_server).to eql @chef_server
+            expect(@chef_server).to have_received(:test).once.with no_args
           end
         end
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

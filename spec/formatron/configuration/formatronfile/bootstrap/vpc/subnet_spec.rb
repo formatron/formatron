@@ -8,81 +8,85 @@ class Formatron
         # namespacing for tests
         class VPC
           describe Subnet do
-            target = 'target'
-            config = {}
-            name = 'name'
-            bucket = 'bucket'
-            protect = true
-            kms_key = 'kms_key'
-            hosted_zone_id = 'hosted_zone_id'
-            cidr = 'cidr'
-            subnet_name = 'subnet_name'
-            block = proc do
-              'subnet'
-            end
-            availability_zone = 'availability_zone'
-            subnet_cidr = 'subnet_cidr'
-            make_public = 'make_public'
-
             before(:each) do
-              @dsl_class = class_double(
-                'Formatron::Configuration::Formatronfile' \
-                '::Bootstrap::VPC::Subnet::DSL'
-              ).as_stubbed_const
-              @dsl = instance_double(
-                'Formatron::Configuration::Formatronfile' \
-                '::Bootstrap::VPC::Subnet::DSL'
-              )
-              expect(@dsl_class).to receive(:new).once.with(
-                {
-                  target: target,
-                  config: config,
-                  name: name,
-                  bucket: bucket,
-                  protect: protect,
-                  kms_key: kms_key,
-                  hosted_zone_id: hosted_zone_id,
-                  cidr: cidr,
-                  subnet_name: subnet_name
-                },
-                block
-              ) { @dsl }
-
-              allow(@dsl).to receive(:availability_zone) { availability_zone }
-              allow(@dsl).to receive(:cidr) { subnet_cidr }
-              allow(@dsl).to receive(:source_ips) { make_public }
-
-              @subnet = Subnet.new(
-                {
-                  target: target,
-                  config: config,
-                  name: name,
-                  bucket: bucket,
-                  protect: protect,
-                  kms_key: kms_key,
-                  hosted_zone_id: hosted_zone_id,
-                  cidr: cidr,
-                  subnet_name: subnet_name
-                },
-                block
-              )
+              @subnet = Subnet.new
             end
 
             describe '#availability_zone' do
-              it 'should return the availability zone' do
-                expect(@subnet.availability_zone).to eql availability_zone
+              it 'should set the availability zone' do
+                expect(@subnet.availability_zone).to be_nil
+                @subnet.availability_zone 'a'
+                expect(@subnet.availability_zone).to eql 'a'
               end
             end
 
             describe '#cidr' do
-              it 'should return the subnet cidr' do
-                expect(@subnet.cidr).to eql subnet_cidr
+              it 'should set the subnet cidr' do
+                expect(@subnet.cidr).to be_nil
+                @subnet.cidr '1'
+                expect(@subnet.cidr).to eql '1'
               end
             end
 
-            describe '#source_ips' do
-              it 'should return the source IPs' do
-                expect(@subnet.source_ips).to eql make_public
+            describe '#public' do
+              before :each do
+                acl_class = class_double(
+                  'Formatron::Configuration::Formatronfile' \
+                  '::Bootstrap::VPC::Subnet::ACL'
+                ).as_stubbed_const
+                @acl = instance_double(
+                  'Formatron::Configuration::Formatronfile' \
+                  '::Bootstrap::VPC::Subnet::ACL'
+                )
+                allow(acl_class).to receive(:new) { @acl }
+                allow(@acl).to receive :source_ip
+              end
+
+              context 'when set to false' do
+                before :each do
+                  @subnet.public false do |acl|
+                    acl.source_ip '1'
+                  end
+                end
+
+                it 'should set the ACL to nil and flag as not public' do
+                  expect(@subnet.acl).to be_nil
+                  expect(@subnet.public).to eql false
+                end
+
+                it 'should ignore the ACL block' do
+                  expect(@acl).to_not have_received :source_ip
+                end
+              end
+
+              context 'when set to true' do
+                context 'with an ACL block' do
+                  before :each do
+                    @subnet.public true do |acl|
+                      acl.source_ip '1'
+                    end
+                  end
+
+                  it 'should set the ACL and flag as public' do
+                    expect(@subnet.acl).to eql @acl
+                    expect(@subnet.public).to eql true
+                  end
+
+                  it 'should yield to the ACL block' do
+                    expect(@acl).to have_received(:source_ip).once.with '1'
+                  end
+                end
+
+                context 'without an ACL block' do
+                  before :each do
+                    @subnet.public true
+                  end
+
+                  it 'should set the ACL and flag as public' do
+                    expect(@subnet.acl).to eql @acl
+                    expect(@subnet.public).to eql true
+                  end
+                end
               end
             end
           end

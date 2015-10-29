@@ -1,4 +1,3 @@
-require_relative 'vpc/dsl'
 require_relative 'vpc/subnet'
 
 class Formatron
@@ -7,41 +6,23 @@ class Formatron
       class Bootstrap
         # VPC configuration
         class VPC
-          attr_reader(
-            :cidr,
-            :subnets
-          )
+          attr_reader :subnets
 
-          def initialize(scope, block)
-            @dsl = DSL.new(
-              scope,
-              block
-            )
-            _initialize_properties scope
-          end
-
-          def _initialize_properties(scope)
-            @cidr = @dsl.cidr
-            _initialize_subnets scope
-          end
-
-          def _initialize_subnets(scope)
+          def initialize
             @subnets = {}
-            subnet_scope = scope.clone
-            subnet_scope[:vpc_cidr] = @cidr
-            @dsl.subnets.each do |key, subnet|
-              subnet_scope[:subnet_name] = key
-              @subnets[key] = Subnet.new(
-                subnet_scope,
-                subnet
-              )
-            end
           end
 
-          private(
-            :_initialize_properties,
-            :_initialize_subnets
-          )
+          def cidr(value = nil)
+            @cidr = value unless value.nil?
+            @cidr
+          end
+
+          def subnet(name)
+            subnet = Subnet.new
+            @subnets[name] = subnet
+            yield subnet
+            subnet
+          end
         end
       end
     end

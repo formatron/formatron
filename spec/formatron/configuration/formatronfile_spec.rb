@@ -15,10 +15,6 @@ describe Formatron::Configuration::Formatronfile do
   before(:each) do
     aws = instance_double('Formatron::AWS')
 
-    bootstrap_block = proc do
-      'bootstrap'
-    end
-
     dsl_class = class_double(
       'Formatron::Configuration::Formatronfile::DSL'
     ).as_stubbed_const
@@ -26,31 +22,19 @@ describe Formatron::Configuration::Formatronfile do
       'Formatron::Configuration::Formatronfile::DSL'
     )
     expect(dsl_class).to receive(:new).once.with(
-      {
-        target: target,
-        config: config
-      },
-      File.join(directory, 'Formatronfile')
+      aws: aws,
+      config: config,
+      target: target,
+      file: File.join(directory, 'Formatronfile')
     ) { dsl }
-    allow(dsl).to receive(:bootstrap) { bootstrap_block }
     allow(dsl).to receive(:name) { name }
     allow(dsl).to receive(:bucket) { bucket }
 
-    bootstrap_class = class_double(
-      'Formatron::Configuration::Formatronfile::Bootstrap'
-    ).as_stubbed_const
     @bootstrap = instance_double(
       'Formatron::Configuration::Formatronfile::Bootstrap'
     )
-    expect(bootstrap_class).to receive(:new).once.with(
-      {
-        target: target,
-        config: config,
-        name: name,
-        bucket: bucket
-      },
-      bootstrap_block
-    ) { @bootstrap }
+    allow(dsl).to receive(:bootstrap) { @bootstrap }
+
     expect(@bootstrap).to receive(:protect).once.with(
       no_args
     ) { protect }
@@ -64,12 +48,10 @@ describe Formatron::Configuration::Formatronfile do
     allow(@cloud_formation).to receive(:template) { cloud_formation_template }
 
     @formatronfile = Formatron::Configuration::Formatronfile.new(
-      aws,
-      {
-        target: target,
-        config: config
-      },
-      directory
+      aws: aws,
+      config: config,
+      target: target,
+      directory: directory
     )
 
     expect(@cloud_formation).to have_received(:template).once.with(
