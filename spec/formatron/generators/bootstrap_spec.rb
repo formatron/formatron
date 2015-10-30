@@ -120,7 +120,7 @@ describe Formatron::Generators::Bootstrap do
           end
 
           configuration.chef_server do |chef_server|
-            chef_server.subnet 'private_1'
+            chef_server.subnet 'management_1'
             chef_server.sub_domain config['chef_server']['sub_domain']
             chef_server.instance_cookbook 'chef_server_instance'
             chef_server.organization '#{params[:chef_server][:organization]}'

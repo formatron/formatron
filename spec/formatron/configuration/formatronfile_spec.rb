@@ -11,7 +11,7 @@ describe Formatron::Configuration::Formatronfile do
   protect = false
   kms_key = 'kms_key'
   bucket = 'bucket'
-  cloud_formation_template = 'cloud_formation_template'
+  bootstrap_template = 'bootstrap_template'
 
   before(:each) do
     aws = instance_double('Formatron::AWS')
@@ -44,10 +44,11 @@ describe Formatron::Configuration::Formatronfile do
       no_args
     ) { kms_key }
 
-    @cloud_formation = class_double(
-      'Formatron::Configuration::Formatronfile::CloudFormation'
+    @bootstrap_template = class_double(
+      'Formatron::Configuration::Formatronfile' \
+      '::CloudFormation::BootstrapTemplate'
     ).as_stubbed_const
-    allow(@cloud_formation).to receive(:template) { cloud_formation_template }
+    allow(@bootstrap_template).to receive(:json) { bootstrap_template }
 
     @formatronfile = Formatron::Configuration::Formatronfile.new(
       aws: aws,
@@ -57,9 +58,16 @@ describe Formatron::Configuration::Formatronfile do
     )
   end
 
-  describe '#bootstrap' do
-    it 'should return the bootstrap configuration' do
-      expect(@formatronfile.bootstrap).to eql @bootstrap
+  describe '#cloud_formation_template' do
+    it 'should return the CloudFormation template JSON' do
+      expect(@formatronfile.cloud_formation_template).to eql bootstrap_template
+      expect(@bootstrap_template).to have_received(:json).once.with(
+        region: region,
+        bucket: bucket,
+        target: target,
+        name: name,
+        bootstrap: @bootstrap
+      )
     end
   end
 

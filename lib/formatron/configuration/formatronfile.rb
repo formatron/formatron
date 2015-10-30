@@ -1,4 +1,5 @@
 require_relative 'formatronfile/dsl'
+require_relative 'formatronfile/cloud_formation/bootstrap_template'
 
 class Formatron
   class Configuration
@@ -9,11 +10,12 @@ class Formatron
         :name,
         :bucket,
         :kms_key,
-        :bootstrap
+        :cloud_formation_template
       )
 
       def initialize(aws:, config:, target:, directory:)
         @target = target
+        @region = aws.region
         _initialize_dsl(
           aws: aws,
           config: config,
@@ -39,8 +41,14 @@ class Formatron
       end
 
       def _initialize_bootstrap
-        @bootstrap = @dsl.bootstrap
-        _initialize_properties @bootstrap
+        @cloud_formation_template = CloudFormation::BootstrapTemplate.json(
+          region: @region,
+          bucket: @bucket,
+          target: @target,
+          name: @name,
+          bootstrap: @dsl.bootstrap
+        )
+        _initialize_properties @dsl.bootstrap
       end
 
       def _initialize_properties(source)
