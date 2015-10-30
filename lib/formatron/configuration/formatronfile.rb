@@ -9,6 +9,7 @@ class Formatron
         :target,
         :name,
         :bucket,
+        :prefix,
         :kms_key,
         :cloud_formation_template
       )
@@ -54,6 +55,7 @@ class Formatron
       def _initialize_properties(source)
         @kms_key = source.kms_key
         @protect = source.protect
+        @prefix = source.prefix
       end
 
       private(

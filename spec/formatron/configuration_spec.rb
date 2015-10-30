@@ -3,6 +3,7 @@ require 'formatron/aws'
 require 'formatron/configuration'
 
 # namespacing for tests
+# rubocop:disable Metrics/ClassLength
 class Formatron
   describe Configuration do
     directory = 'test/configuration'
@@ -13,6 +14,7 @@ class Formatron
     cloud_formation_template = 'cloud_formation_template'
     protect = true
     name = 'name'
+    prefix = 'protected'
     kms_key = 'kms_key'
     bucket = 'bucket'
 
@@ -33,6 +35,7 @@ class Formatron
       allow(@formatronfile).to receive(:name) { name }
       allow(@formatronfile).to receive(:bucket) { bucket }
       allow(@formatronfile).to receive(:protected?) { protect }
+      allow(@formatronfile).to receive(:prefix) { prefix }
       allow(@formatronfile).to receive(:kms_key) { kms_key }
       allow(@formatronfile).to receive(
         :cloud_formation_template
@@ -75,6 +78,13 @@ class Formatron
       end
     end
 
+    describe '#prefix' do
+      it 'should return the prefix from the Formatronfile' do
+        expect(@configuration.prefix(targets[0])).to eql prefix
+        expect(@formatronfile).to have_received(:prefix).once.with no_args
+      end
+    end
+
     describe '#kms_key' do
       it 'should return the KMS key from the Formatronfile' do
         expect(@configuration.kms_key(targets[0])).to eql kms_key
@@ -109,3 +119,4 @@ class Formatron
     end
   end
 end
+# rubocop:enable Metrics/ClassLength

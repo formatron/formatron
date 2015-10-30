@@ -30,6 +30,15 @@ class Formatron
       )
     end
 
+    def deploy_stack(stack_name:, template_url:)
+      puts stack_name
+      puts template_url
+    end
+
+    def delete_stack(stack_name)
+      puts stack_name
+    end
+
     def _create_aws_credentials
       @aws_credentials = Aws::Credentials.new(
         @credentials['access_key_id'],

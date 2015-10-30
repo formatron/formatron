@@ -10,6 +10,14 @@ class Formatron
           @bootstrap = Bootstrap.new
         end
 
+        describe '#prefix' do
+          it 'should set the prefix to be used for namespacing ' do
+            expect(@bootstrap.prefix).to be_nil
+            @bootstrap.prefix 'prefix'
+            expect(@bootstrap.prefix).to eql 'prefix'
+          end
+        end
+
         describe '#protect' do
           it 'should set whether the configuration should be ' \
              'protected from accidental deployment, etc' do

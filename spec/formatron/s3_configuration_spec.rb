@@ -24,9 +24,9 @@ describe Formatron::S3Configuration do
   describe '::deploy' do
     it 'should upload the JSON configuration to S3' do
       expect(@s3_path).to receive(:path).once.with(
-        @configuration,
-        target,
-        'config.json'
+        configuration: @configuration,
+        target: target,
+        sub_path: 'config.json'
       ) { key }
       expect(@configuration).to receive(:kms_key).once.with(
         target
@@ -54,9 +54,9 @@ describe Formatron::S3Configuration do
   describe '::destroy' do
     it 'should delete the JSON configuration from S3' do
       expect(@s3_path).to receive(:path).once.with(
-        @configuration,
-        target,
-        'config.json'
+        configuration: @configuration,
+        target: target,
+        sub_path: 'config.json'
       ) { key }
       expect(@configuration).to receive(:bucket).once.with(
         target
