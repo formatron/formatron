@@ -21,15 +21,16 @@ class Formatron
               @cidr
             end
 
-            def public(value = nil)
-              unless value.nil?
-                if value
-                  @acl = ACL.new
-                  yield @acl if block_given?
-                else
-                  @acl = nil
-                end
+            def public(value)
+              if value
+                @acl = ACL.new
+                yield @acl if block_given?
+              else
+                @acl = nil
               end
+            end
+
+            def public?
               !@acl.nil?
             end
           end

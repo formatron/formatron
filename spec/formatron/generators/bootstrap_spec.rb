@@ -87,7 +87,7 @@ describe Formatron::Generators::Bootstrap do
           configuration.vpc do |vpc|
             vpc.cidr '10.0.0.0/24'
 
-            vpc.subnet 'management_1' do |subnet|
+            vpc.subnet 'management1' do |subnet|
               subnet.availability_zone '#{params[:availability_zone]}'
               subnet.cidr '10.0.0.0/16'
               subnet.public true do |acl|
@@ -95,32 +95,32 @@ describe Formatron::Generators::Bootstrap do
               end
             end
 
-            vpc.subnet 'public_1' do |subnet|
+            vpc.subnet 'public1' do |subnet|
               subnet.availability_zone '#{params[:availability_zone]}'
               subnet.cidr '10.0.1.0/16'
               subnet.public true
             end
 
-            vpc.subnet 'private_1' do |subnet|
+            vpc.subnet 'private1' do |subnet|
               subnet.availability_zone '#{params[:availability_zone]}'
               subnet.cidr '10.0.2.0/16'
             end
           end
 
           configuration.bastion do |bastion|
-            bastion.subnet 'management_1'
+            bastion.subnet 'management1'
             bastion.sub_domain config['bastion']['sub_domain']
             bastion.instance_cookbook 'bastion_instance'
           end
 
           configuration.nat do |nat|
-            nat.subnet 'public_1'
+            nat.subnet 'public1'
             nat.sub_domain config['nat']['sub_domain']
             nat.instance_cookbook 'nat_instance'
           end
 
           configuration.chef_server do |chef_server|
-            chef_server.subnet 'management_1'
+            chef_server.subnet 'management1'
             chef_server.sub_domain config['chef_server']['sub_domain']
             chef_server.instance_cookbook 'chef_server_instance'
             chef_server.organization '#{params[:chef_server][:organization]}'

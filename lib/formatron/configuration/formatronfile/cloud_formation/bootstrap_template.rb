@@ -3,15 +3,20 @@ require 'json'
 
 class Formatron
   class Configuration
-    module CloudFormation
-      # Generates CloudFormation bootstrap template JSON
-      module BootstrapTemplate
-        def self.json(region:, bucket:, target:, name:, bootstrap:)
-          puts region
-          puts bucket
-          puts bootstrap
-          template = Template.create "bootstrap-#{name}-#{target}"
-          "#{JSON.pretty_generate template}\n"
+    class Formatronfile
+      module CloudFormation
+        # Generates CloudFormation bootstrap template JSON
+        module BootstrapTemplate
+          def self.json(region:, bucket:, target:, name:, bootstrap:)
+            puts region
+            puts bucket
+            template = Template.create "bootstrap-#{name}-#{target}"
+            Template.add_vpc(
+              template: template,
+              vpc: bootstrap.vpc
+            )
+            "#{JSON.pretty_generate template}\n"
+          end
         end
       end
     end

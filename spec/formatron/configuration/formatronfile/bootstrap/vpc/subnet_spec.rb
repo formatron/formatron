@@ -51,7 +51,7 @@ class Formatron
 
                 it 'should set the ACL to nil and flag as not public' do
                   expect(@subnet.acl).to be_nil
-                  expect(@subnet.public).to eql false
+                  expect(@subnet.public?).to eql false
                 end
 
                 it 'should ignore the ACL block' do
@@ -69,7 +69,7 @@ class Formatron
 
                   it 'should set the ACL and flag as public' do
                     expect(@subnet.acl).to eql @acl
-                    expect(@subnet.public).to eql true
+                    expect(@subnet.public?).to eql true
                   end
 
                   it 'should yield to the ACL block' do
@@ -84,7 +84,7 @@ class Formatron
 
                   it 'should set the ACL and flag as public' do
                     expect(@subnet.acl).to eql @acl
-                    expect(@subnet.public).to eql true
+                    expect(@subnet.public?).to eql true
                   end
                 end
               end
