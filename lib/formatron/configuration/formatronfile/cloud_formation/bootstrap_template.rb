@@ -10,7 +10,9 @@ class Formatron
           def self.json(region:, bucket:, target:, name:, bootstrap:)
             puts region
             puts bucket
-            template = Template.create "bootstrap-#{name}-#{target}"
+            template = Template.create(
+              "bootstrap-#{name}-#{target}"
+            )
             Template.add_vpc(
               template: template,
               vpc: bootstrap.vpc
