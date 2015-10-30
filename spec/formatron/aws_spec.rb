@@ -50,6 +50,12 @@ describe Formatron::AWS do
       )
     end
 
+    describe '#region' do
+      it 'should return the region' do
+        expect(@aws.region).to eql region
+      end
+    end
+
     describe '#upload' do
       content = 'content'
       bucket = 'bucket'

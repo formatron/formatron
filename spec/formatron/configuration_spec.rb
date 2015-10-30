@@ -105,6 +105,7 @@ class Formatron
         expect(@cloud_formation).to have_received(
           :template
         ).once.with(
+          @aws,
           @formatronfile
         )
       end

@@ -1,16 +1,15 @@
 require_relative 'formatronfile/dsl'
-require_relative 'formatronfile/bootstrap'
 
 class Formatron
   class Configuration
     # Processes the Formatronfile in the context of the given target
     class Formatronfile
       attr_reader(
-        :bootstrap,
         :target,
         :name,
         :bucket,
-        :kms_key
+        :kms_key,
+        :bootstrap
       )
 
       def initialize(aws:, config:, target:, directory:)

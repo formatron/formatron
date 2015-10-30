@@ -45,11 +45,10 @@ class Formatron
           }
           @dependencies.each do |key, instance|
             expect(dependency_class).to receive(:new).once.with(
-              aws,
-              'bucket',
-              target,
-              'name',
-              key
+              aws: aws,
+              bucket: 'bucket',
+              target: target,
+              name: key
             ) { instance }
           end
 

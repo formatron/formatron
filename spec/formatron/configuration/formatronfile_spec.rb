@@ -3,6 +3,7 @@ require 'formatron/aws'
 require 'formatron/configuration/formatronfile'
 
 describe Formatron::Configuration::Formatronfile do
+  region = 'region'
   target = 'target1'
   config = {}
   directory = 'test/configuration'
@@ -14,6 +15,7 @@ describe Formatron::Configuration::Formatronfile do
 
   before(:each) do
     aws = instance_double('Formatron::AWS')
+    allow(aws).to receive(:region) { region }
 
     dsl_class = class_double(
       'Formatron::Configuration::Formatronfile::DSL'

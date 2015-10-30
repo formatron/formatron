@@ -3,14 +3,14 @@ require 'aws-sdk'
 class Formatron
   # shared AWS clients
   class AWS
-    attr_reader :s3_client, :cloudformation_client
+    attr_reader :region
 
     def initialize(credentials_json)
-      credentials = JSON.parse(File.read(credentials_json))
-      region = credentials['region']
-      aws_credentials = _create_aws_credentials(credentials)
-      _create_s3_client aws_credentials, region
-      _create_cloudformation_client aws_credentials, region
+      @credentials = JSON.parse(File.read(credentials_json))
+      @region = @credentials['region']
+      _create_aws_credentials
+      _create_s3_client
+      _create_cloudformation_client
     end
 
     def upload(kms_key, bucket, key, content)
@@ -30,25 +30,25 @@ class Formatron
       )
     end
 
-    def _create_aws_credentials(credentials)
-      ::Aws::Credentials.new(
-        credentials['access_key_id'],
-        credentials['secret_access_key']
+    def _create_aws_credentials
+      @aws_credentials = Aws::Credentials.new(
+        @credentials['access_key_id'],
+        @credentials['secret_access_key']
       )
     end
 
-    def _create_s3_client(aws_credentials, region)
+    def _create_s3_client
       @s3_client = ::Aws::S3::Client.new(
-        region: region,
+        region: @region,
         signature_version: 'v4',
-        credentials: aws_credentials
+        credentials: @aws_credentials
       )
     end
 
-    def _create_cloudformation_client(aws_credentials, region)
+    def _create_cloudformation_client
       @cloudformation_client = ::Aws::CloudFormation::Client.new(
-        region: region,
-        credentials: aws_credentials
+        region: @region,
+        credentials: @aws_credentials
       )
     end
 

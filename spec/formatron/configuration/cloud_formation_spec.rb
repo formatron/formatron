@@ -8,6 +8,7 @@ class Formatron
     describe CloudFormation do
       include FakeFS::SpecHelpers
 
+      region = 'region'
       target = 'target'
       name = 'name'
       bucket = 'bucket'
@@ -28,12 +29,17 @@ class Formatron
           File.write(
             File.join(dir, 'bootstrap.json.erb'),
             <<-EOH.gsub(/^ {14}/, '')
+              <%= region %>
               <%= target %>
               <%= name %>
               <%= bucket %>
               <%= configuration %>
             EOH
           )
+          @aws = instance_double(
+            'Formatron::AWS'
+          )
+          allow(@aws).to receive(:region) { region }
           @formatronfile = instance_double(
             'Formatron::Configuration::Formatronfile'
           )
@@ -48,9 +54,11 @@ class Formatron
              'a Formatron configuration' do
             expect(
               CloudFormation.template(
+                @aws,
                 @formatronfile
               )
             ).to eql <<-EOH.gsub(/^ {14}/, '')
+              #{region}
               #{target}
               #{name}
               #{bucket}

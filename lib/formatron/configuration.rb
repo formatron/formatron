@@ -71,6 +71,7 @@ class Formatron
 
     def _load_cloud_formation_template(target)
       @cloud_formation_templates[target] ||= CloudFormation.template(
+        @aws,
         @formatronfiles[target]
       )
     end

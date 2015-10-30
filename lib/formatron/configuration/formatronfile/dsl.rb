@@ -1,4 +1,5 @@
 require_relative 'bootstrap'
+require_relative 'dependency'
 
 class Formatron
   class Configuration
@@ -31,11 +32,10 @@ class Formatron
 
         def depends(dependency)
           @dependencies[dependency] = Dependency.new(
-            @aws,
-            @bucket,
-            @target,
-            @name,
-            dependency
+            aws: @aws,
+            bucket: @bucket,
+            target: @target,
+            name: dependency
           )
         end
 
