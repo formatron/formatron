@@ -41,9 +41,9 @@ class Formatron
           cloud_formation_template
         )
         S3CloudFormationTemplate.deploy(
-          @aws,
-          @configuration,
-          target
+          aws: @aws,
+          configuration: @configuration,
+          target: target
         )
       end
     end
@@ -63,9 +63,9 @@ class Formatron
           key
         )
         S3CloudFormationTemplate.destroy(
-          @aws,
-          @configuration,
-          target
+          aws: @aws,
+          configuration: @configuration,
+          target: target
         )
       end
     end

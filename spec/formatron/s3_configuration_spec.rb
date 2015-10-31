@@ -44,9 +44,9 @@ describe Formatron::S3Configuration do
         config.to_json
       )
       Formatron::S3Configuration.deploy(
-        @aws,
-        @configuration,
-        target
+        aws: @aws,
+        configuration: @configuration,
+        target: target
       )
     end
   end
@@ -66,9 +66,9 @@ describe Formatron::S3Configuration do
         key
       )
       Formatron::S3Configuration.destroy(
-        @aws,
-        @configuration,
-        target
+        aws: @aws,
+        configuration: @configuration,
+        target: target
       )
     end
   end

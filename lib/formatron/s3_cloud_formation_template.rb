@@ -3,7 +3,7 @@ class Formatron
   module S3CloudFormationTemplate
     FILE_NAME = 'cloud_formation_template.json'
 
-    def self.deploy(aws, configuration, target)
+    def self.deploy(aws:, configuration:, target:)
       aws.upload_file(
         configuration.kms_key(target),
         configuration.bucket(target),
@@ -16,7 +16,7 @@ class Formatron
       )
     end
 
-    def self.destroy(aws, configuration, target)
+    def self.destroy(aws:, configuration:, target:)
       aws.delete_file(
         configuration.bucket(target),
         S3Path.path(

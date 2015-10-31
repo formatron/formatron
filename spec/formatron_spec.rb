@@ -76,25 +76,25 @@ describe Formatron do
 
     it 'should upload the configuration to S3' do
       expect(@s3_configuration).to have_received(:deploy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
 
     it 'should upload the CloudFormation template to S3' do
       expect(@s3_cloud_formation_template).to have_received(:deploy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
 
     it 'should deploy the CloudFormation stack' do
       expect(@cloud_formation_stack).to have_received(:deploy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
   end
@@ -111,9 +111,9 @@ describe Formatron do
 
     it 'should provision the instances with Chef' do
       expect(@chef_instances).to have_received(:provision).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
   end
@@ -145,33 +145,33 @@ describe Formatron do
 
     it 'should delete the configuration from S3' do
       expect(@s3_configuration).to have_received(:destroy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
 
     it 'should delete the CloudFormation template from S3' do
       expect(@s3_cloud_formation_template).to have_received(:destroy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
 
     it 'should destroy the CloudFormation stack' do
       expect(@cloud_formation_stack).to have_received(:destroy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
 
     it 'should cleanup the Chef Server configuration for the instances' do
       expect(@chef_instances).to have_received(:destroy).once.with(
-        @aws,
-        @configuration,
-        'target1'
+        aws: @aws,
+        configuration: @configuration,
+        target: 'target1'
       )
     end
   end

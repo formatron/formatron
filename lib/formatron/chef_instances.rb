@@ -1,10 +1,16 @@
 class Formatron
   # manage the instance provisioning with Chef
   module ChefInstances
-    def self.provision(_aws, _formatronfile, _target)
+    def self.provision(aws:, configuration:, target:)
+      puts aws
+      puts configuration
+      puts target
     end
 
-    def self.destroy(_aws, _formatronfile, _target)
+    def self.destroy(aws:, configuration:, target:)
+      puts aws
+      puts configuration
+      puts target
     end
   end
 end
