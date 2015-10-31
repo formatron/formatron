@@ -6,7 +6,7 @@ class Formatron
     FILE_NAME = 'config.json'
 
     def self.deploy(aws, configuration, target)
-      aws.upload(
+      aws.upload_file(
         configuration.kms_key(target),
         configuration.bucket(target),
         S3Path.path(
@@ -19,7 +19,7 @@ class Formatron
     end
 
     def self.destroy(aws, configuration, target)
-      aws.delete(
+      aws.delete_file(
         configuration.bucket(target),
         S3Path.path(
           configuration: configuration,

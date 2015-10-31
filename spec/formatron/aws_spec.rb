@@ -56,7 +56,7 @@ describe Formatron::AWS do
       end
     end
 
-    describe '#upload' do
+    describe '#upload_file' do
       content = 'content'
       bucket = 'bucket'
       key = 'key'
@@ -70,7 +70,7 @@ describe Formatron::AWS do
           server_side_encryption: 'aws:kms',
           ssekms_key_id: kms_key
         )
-        @aws.upload(
+        @aws.upload_file(
           kms_key,
           bucket,
           key,
@@ -79,7 +79,7 @@ describe Formatron::AWS do
       end
     end
 
-    describe '#delete' do
+    describe '#delete_file' do
       bucket = 'bucket'
       key = 'key'
 
@@ -88,10 +88,96 @@ describe Formatron::AWS do
           bucket: bucket,
           key: key
         )
-        @aws.delete(
+        @aws.delete_file(
           bucket,
           key
         )
+      end
+    end
+
+    describe '#deploy_stack' do
+      stack_name = 'stack_name'
+      template_url = 'template_url'
+
+      context 'when the stack has not yet been created' do
+        it 'should create the stack' do
+          expect(@cloudformation_client).to receive(:create_stack).once.with(
+            stack_name: stack_name,
+            template_url: template_url,
+            capabilities: ['CAPABILITY_IAM'],
+            on_failure: 'DO_NOTHING'
+          )
+          @aws.deploy_stack(
+            stack_name: stack_name,
+            template_url: template_url
+          )
+        end
+      end
+
+      context 'when the stack already exists' do
+        it 'should create the stack' do
+          expect(@cloudformation_client).to receive(:create_stack).once.with(
+            stack_name: stack_name,
+            template_url: template_url,
+            capabilities: ['CAPABILITY_IAM'],
+            on_failure: 'DO_NOTHING'
+          ) do
+            fail Aws::CloudFormation::Errors::AlreadyExistsException.new(
+              nil,
+              'exists'
+            )
+          end
+          expect(@cloudformation_client).to receive(:update_stack).once.with(
+            stack_name: stack_name,
+            template_url: template_url,
+            capabilities: ['CAPABILITY_IAM']
+          )
+          @aws.deploy_stack(
+            stack_name: stack_name,
+            template_url: template_url
+          )
+        end
+      end
+
+      context 'when an update contains no changes' do
+        it 'should create the stack' do
+          expect(@cloudformation_client).to receive(:create_stack).once.with(
+            stack_name: stack_name,
+            template_url: template_url,
+            capabilities: ['CAPABILITY_IAM'],
+            on_failure: 'DO_NOTHING'
+          ) do
+            fail Aws::CloudFormation::Errors::AlreadyExistsException.new(
+              nil,
+              'exists'
+            )
+          end
+          expect(@cloudformation_client).to receive(:update_stack).once.with(
+            stack_name: stack_name,
+            template_url: template_url,
+            capabilities: ['CAPABILITY_IAM']
+          ) do
+            fail Aws::CloudFormation::Errors::ValidationError.new(
+              nil,
+              'No updates are to be performed.'
+            )
+          end
+          @aws.deploy_stack(
+            stack_name: stack_name,
+            template_url: template_url
+          )
+        end
+      end
+    end
+
+    describe '#delete_stack' do
+      stack_name = 'stack_name'
+
+      it 'should delete the stack' do
+        expect(@cloudformation_client).to receive(:delete_stack).once.with(
+          stack_name: stack_name
+        )
+        @aws.delete_stack stack_name
       end
     end
   end

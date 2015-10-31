@@ -10,7 +10,6 @@ class Formatron
       # bootstrap configuration
       class Bootstrap
         %i(
-          prefix
           protect
           kms_key
           hosted_zone_id

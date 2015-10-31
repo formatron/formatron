@@ -5,6 +5,8 @@ class Formatron
   class AWS
     attr_reader :region
 
+    CAPABILITIES = ['CAPABILITY_IAM']
+
     def initialize(credentials_json)
       @credentials = JSON.parse(File.read(credentials_json))
       @region = @credentials['region']
@@ -13,7 +15,7 @@ class Formatron
       _create_cloudformation_client
     end
 
-    def upload(kms_key, bucket, key, content)
+    def upload_file(kms_key, bucket, key, content)
       @s3_client.put_object(
         bucket: bucket,
         key: key,
@@ -23,7 +25,7 @@ class Formatron
       )
     end
 
-    def delete(bucket, key)
+    def delete_file(bucket, key)
       @s3_client.delete_object(
         bucket: bucket,
         key: key
@@ -31,12 +33,32 @@ class Formatron
     end
 
     def deploy_stack(stack_name:, template_url:)
-      puts stack_name
-      puts template_url
+      @cloudformation_client.create_stack(
+        stack_name: stack_name,
+        template_url: template_url,
+        capabilities: CAPABILITIES,
+        on_failure: 'DO_NOTHING'
+      )
+    rescue Aws::CloudFormation::Errors::AlreadyExistsException
+      _update_stack stack_name: stack_name, template_url: template_url
+    end
+
+    def _update_stack(stack_name:, template_url:)
+      @cloudformation_client.update_stack(
+        stack_name: stack_name,
+        template_url: template_url,
+        capabilities: CAPABILITIES
+      )
+    rescue Aws::CloudFormation::Errors::ValidationError => error
+      raise error unless error.message.eql?(
+        'No updates are to be performed.'
+      )
     end
 
     def delete_stack(stack_name)
-      puts stack_name
+      @cloudformation_client.delete_stack(
+        stack_name: stack_name
+      )
     end
 
     def _create_aws_credentials
@@ -64,7 +86,8 @@ class Formatron
     private(
       :_create_aws_credentials,
       :_create_s3_client,
-      :_create_cloudformation_client
+      :_create_cloudformation_client,
+      :_update_stack
     )
   end
 end

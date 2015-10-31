@@ -37,7 +37,7 @@ describe Formatron::S3Configuration do
       expect(@configuration).to receive(:config).once.with(
         target
       ) { config }
-      expect(@aws).to receive(:upload).once.with(
+      expect(@aws).to receive(:upload_file).once.with(
         kms_key,
         bucket,
         key,
@@ -61,7 +61,7 @@ describe Formatron::S3Configuration do
       expect(@configuration).to receive(:bucket).once.with(
         target
       ) { bucket }
-      expect(@aws).to receive(:delete).once.with(
+      expect(@aws).to receive(:delete_file).once.with(
         bucket,
         key
       )

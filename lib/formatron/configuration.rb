@@ -26,11 +26,6 @@ class Formatron
       @formatronfiles[target].name
     end
 
-    def prefix(target)
-      _load target
-      @formatronfiles[target].prefix
-    end
-
     def kms_key(target)
       _load target
       @formatronfiles[target].kms_key

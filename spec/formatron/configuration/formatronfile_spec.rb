@@ -3,7 +3,6 @@ require 'formatron/aws'
 require 'formatron/configuration/formatronfile'
 
 describe Formatron::Configuration::Formatronfile do
-  prefix = 'prefix'
   region = 'region'
   target = 'target1'
   config = {}
@@ -38,15 +37,8 @@ describe Formatron::Configuration::Formatronfile do
     )
     allow(dsl).to receive(:bootstrap) { @bootstrap }
 
-    expect(@bootstrap).to receive(:protect).once.with(
-      no_args
-    ) { protect }
-    expect(@bootstrap).to receive(:kms_key).once.with(
-      no_args
-    ) { kms_key }
-    expect(@bootstrap).to receive(:prefix).once.with(
-      no_args
-    ) { prefix }
+    allow(@bootstrap).to receive(:protect) { protect }
+    allow(@bootstrap).to receive(:kms_key) { kms_key }
 
     @bootstrap_template = class_double(
       'Formatron::Configuration::Formatronfile' \
@@ -90,12 +82,6 @@ describe Formatron::Configuration::Formatronfile do
   describe '#bucket' do
     it 'should return the S3 bucket for the configuration' do
       expect(@formatronfile.bucket).to eql bucket
-    end
-  end
-
-  describe '#prefix' do
-    it 'should return whether the prefix used for namespacing' do
-      expect(@formatronfile.prefix).to eql prefix
     end
   end
 

@@ -34,7 +34,7 @@ class Formatron
         expect(@configuration).to receive(:cloud_formation_template).once.with(
           target
         ) { cloud_formation_template }
-        expect(@aws).to receive(:upload).once.with(
+        expect(@aws).to receive(:upload_file).once.with(
           kms_key,
           bucket,
           key,
@@ -58,7 +58,7 @@ class Formatron
         expect(@configuration).to receive(:bucket).once.with(
           target
         ) { bucket }
-        expect(@aws).to receive(:delete).once.with(
+        expect(@aws).to receive(:delete_file).once.with(
           bucket,
           key
         )
