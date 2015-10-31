@@ -14,7 +14,7 @@ class Formatron
           target: target,
           sub_path: FILE_NAME
         ),
-        configuration.config(target).to_json
+        "#{JSON.pretty_generate(configuration.config(target))}\n"
       )
     end
 

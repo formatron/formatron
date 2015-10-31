@@ -41,7 +41,7 @@ describe Formatron::S3Configuration do
         kms_key,
         bucket,
         key,
-        config.to_json
+        "#{JSON.pretty_generate(config)}\n"
       )
       Formatron::S3Configuration.deploy(
         aws: @aws,
