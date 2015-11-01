@@ -109,10 +109,8 @@ class Formatron
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
-          # rubocop:disable Metrics/AbcSize
           def self.add_nat(template:, bootstrap:, bucket:, config_key:)
             resources = _resources template
-            outputs = _outputs template
             resources[:natRole] = {
               Type: 'AWS::IAM::Role',
               Properties: {
@@ -200,14 +198,7 @@ class Formatron
             }
             resources[:natInstance] = {
             }
-            outputs[:natInstance] = {
-              Value: { Ref: 'natInstance' }
-            }
-            outputs[:natSecurityGroup] = {
-              Value: { Ref: 'natSecurityGroup' }
-            }
           end
-          # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/MethodLength
 
           def self._resources(template)

@@ -375,14 +375,6 @@ class Formatron
                   },
                   natInstance: {
                   }
-                },
-                Outputs: {
-                  natInstance: {
-                    Value: { Ref: 'natInstance' }
-                  },
-                  natSecurityGroup: {
-                    Value: { Ref: 'natSecurityGroup' }
-                  }
                 }
               )
             end
