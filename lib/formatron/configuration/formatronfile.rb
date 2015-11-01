@@ -7,6 +7,8 @@ class Formatron
     # Processes the Formatronfile in the context of the given target
     class Formatronfile
       attr_reader(
+        :hosted_zone_id,
+        :hosted_zone_name,
         :target,
         :name,
         :bucket,
@@ -15,14 +17,11 @@ class Formatron
       )
 
       def initialize(aws:, config:, target:, directory:)
+        @aws = aws
         @target = target
-        @region = aws.region
-        _initialize_dsl(
-          aws: aws,
-          config: config,
-          target: target,
-          directory: directory
-        )
+        @config = config
+        @directory = directory
+        _initialize_dsl
         _initialize_bootstrap unless @dsl.bootstrap.nil?
       end
 
@@ -30,32 +29,38 @@ class Formatron
         @protect
       end
 
-      def _initialize_dsl(aws:, config:, target:, directory:)
+      def _initialize_dsl
         @dsl = DSL.new(
-          aws: aws,
-          config: config,
-          target: target,
-          file: File.join(directory, 'Formatronfile')
+          aws: @aws,
+          config: @config,
+          target: @target,
+          file: File.join(@directory, 'Formatronfile')
         )
         @name = @dsl.name
         @bucket = @dsl.bucket
       end
 
+      # rubocop:disable Metrics/MethodLength
       def _initialize_bootstrap
+        _initialize_properties @dsl.bootstrap
         @cloud_formation_template = CloudFormation::BootstrapTemplate.json(
           bootstrap: @dsl.bootstrap,
+          hosted_zone_id: @hosted_zone_id,
+          hosted_zone_name: @hosted_zone_name,
           bucket: @bucket,
           config_key: S3Configuration.key(
-            target: target,
-            name: name
+            target: @target,
+            name: @name
           )
         )
-        _initialize_properties @dsl.bootstrap
       end
+      # rubocop:enable Metrics/MethodLength
 
       def _initialize_properties(source)
         @kms_key = source.kms_key
         @protect = source.protect
+        @hosted_zone_id = source.hosted_zone_id
+        @hosted_zone_name = @aws.hosted_zone_name @hosted_zone_id
       end
 
       private(

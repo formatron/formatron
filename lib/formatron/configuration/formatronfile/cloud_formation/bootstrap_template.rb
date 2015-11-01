@@ -7,12 +7,27 @@ class Formatron
       module CloudFormation
         # Generates CloudFormation bootstrap template JSON
         module BootstrapTemplate
-          def self.json(bootstrap:, bucket:, config_key:)
+          # rubocop:disable Metrics/MethodLength
+          def self.json(
+            hosted_zone_id:,
+            hosted_zone_name:,
+            bootstrap:,
+            bucket:,
+            config_key:
+          )
             template = _create_template
-            _add_vpc template, bootstrap
-            _add_nat template, bootstrap, bucket, config_key
+            _add_vpc template, hosted_zone_name, bootstrap
+            _add_nat(
+              template,
+              hosted_zone_id,
+              hosted_zone_name,
+              bootstrap,
+              bucket,
+              config_key
+            )
             "#{JSON.pretty_generate template}\n"
           end
+          # rubocop:enable Metrics/MethodLength
 
           def self._create_template
             Template.create(
@@ -20,14 +35,23 @@ class Formatron
             )
           end
 
-          def self._add_vpc(template, bootstrap)
+          def self._add_vpc(template, _hosted_zone_name, bootstrap)
             Template.add_vpc(
               template: template,
               vpc: bootstrap.vpc
             )
           end
 
-          def self._add_nat(template, bootstrap, bucket, config_key)
+          # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/ParameterLists
+          def self._add_nat(
+            template,
+            _hosted_zone_id,
+            _hosted_zone_name,
+            bootstrap,
+            bucket,
+            config_key
+          )
             Template.add_nat(
               template: template,
               bootstrap: bootstrap,
@@ -35,6 +59,8 @@ class Formatron
               config_key: config_key
             )
           end
+          # rubocop:enable Metrics/ParameterLists
+          # rubocop:enable Metrics/MethodLength
 
           private_class_method(
             :_create_template,

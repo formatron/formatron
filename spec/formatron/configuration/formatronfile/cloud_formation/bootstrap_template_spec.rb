@@ -9,6 +9,8 @@ class Formatron
       module CloudFormation
         describe BootstrapTemplate do
           before :each do
+            @hosted_zone_id = 'hosted_zone_id'
+            @hosted_zone_name = 'hosted_zone_name'
             @region = 'region'
             @bucket = 'bucket'
             @target = 'target'
@@ -49,6 +51,8 @@ class Formatron
             it 'should return the JSON CloudFormation template' do
               expect(
                 BootstrapTemplate.json(
+                  hosted_zone_id: @hosted_zone_id,
+                  hosted_zone_name: @hosted_zone_name,
                   bucket: @bucket,
                   config_key: @config_key,
                   bootstrap: @bootstrap

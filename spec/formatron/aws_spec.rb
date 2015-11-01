@@ -28,6 +28,14 @@ describe Formatron::AWS do
       region: region,
       credentials: aws_credentials
     ).once { @cloudformation_client }
+    @route53_client = instance_double('Aws::Route53::Client')
+    route53_client_class = class_double(
+      'Aws::Route53::Client'
+    ).as_stubbed_const
+    expect(route53_client_class).to receive(:new).with(
+      region: region,
+      credentials: aws_credentials
+    ).once { @route53_client }
   end
 
   context 'with credentials' do
@@ -178,6 +186,18 @@ describe Formatron::AWS do
           stack_name: stack_name
         )
         @aws.delete_stack stack_name
+      end
+    end
+
+    describe '#hosted_zone_name' do
+      hosted_zone_id = 'hosted_zone_id'
+      hosted_zone_name = 'hosted_zone_name'
+
+      it 'should return the Route53 hosted zone name for the given ID' do
+        expect(@route53_client).to receive(:get_hosted_zone).once.with(
+          id: hosted_zone_id
+        ) { Route53GetHostedZoneResponse.new hosted_zone_name }
+        expect(@aws.hosted_zone_name(hosted_zone_id)).to eql hosted_zone_name
       end
     end
   end

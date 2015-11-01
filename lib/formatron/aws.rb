@@ -13,6 +13,7 @@ class Formatron
       _create_aws_credentials
       _create_s3_client
       _create_cloudformation_client
+      _create_route53_client
     end
 
     def upload_file(kms_key:, bucket:, key:, content:)
@@ -41,6 +42,12 @@ class Formatron
       )
     rescue Aws::CloudFormation::Errors::AlreadyExistsException
       _update_stack stack_name: stack_name, template_url: template_url
+    end
+
+    def hosted_zone_name(hosted_zone_id)
+      @route53_client.get_hosted_zone(
+        id: hosted_zone_id
+      ).hosted_zone.name
     end
 
     def _update_stack(stack_name:, template_url:)
@@ -83,10 +90,18 @@ class Formatron
       )
     end
 
+    def _create_route53_client
+      @route53_client = ::Aws::Route53::Client.new(
+        region: @region,
+        credentials: @aws_credentials
+      )
+    end
+
     private(
       :_create_aws_credentials,
       :_create_s3_client,
       :_create_cloudformation_client,
+      :_create_route53_client,
       :_update_stack
     )
   end

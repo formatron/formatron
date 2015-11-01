@@ -13,10 +13,15 @@ describe Formatron::Configuration::Formatronfile do
   kms_key = 'kms_key'
   bucket = 'bucket'
   bootstrap_template = 'bootstrap_template'
+  hosted_zone_id = 'hosted_zone_id'
+  hosted_zone_name = 'hosted_zone_name'
 
   before(:each) do
     aws = instance_double('Formatron::AWS')
     allow(aws).to receive(:region) { region }
+    expect(aws).to receive(:hosted_zone_name).once.with(
+      hosted_zone_id
+    ) { hosted_zone_name }
 
     dsl_class = class_double(
       'Formatron::Configuration::Formatronfile::DSL'
@@ -40,6 +45,7 @@ describe Formatron::Configuration::Formatronfile do
 
     allow(@bootstrap).to receive(:protect) { protect }
     allow(@bootstrap).to receive(:kms_key) { kms_key }
+    allow(@bootstrap).to receive(:hosted_zone_id) { hosted_zone_id }
 
     @bootstrap_template = class_double(
       'Formatron::Configuration::Formatronfile' \
@@ -68,6 +74,8 @@ describe Formatron::Configuration::Formatronfile do
         target: target
       )
       expect(@bootstrap_template).to have_received(:json).once.with(
+        hosted_zone_id: hosted_zone_id,
+        hosted_zone_name: hosted_zone_name,
         bootstrap: @bootstrap,
         bucket: bucket,
         config_key: config_key
@@ -90,6 +98,20 @@ describe Formatron::Configuration::Formatronfile do
   describe '#bucket' do
     it 'should return the S3 bucket for the configuration' do
       expect(@formatronfile.bucket).to eql bucket
+    end
+  end
+
+  describe '#hosted_zone_name' do
+    it 'should return the Route53 public hosted ' \
+       'zone name of the configuration' do
+      expect(@formatronfile.hosted_zone_name).to eql hosted_zone_name
+    end
+  end
+
+  describe '#hosted_zone_id' do
+    it 'should return the Route53 public hosted ' \
+       'zone ID of the configuration' do
+      expect(@formatronfile.hosted_zone_id).to eql hosted_zone_id
     end
   end
 
