@@ -3,27 +3,43 @@ class Formatron
   module S3CloudFormationTemplate
     FILE_NAME = 'cloud_formation_template.json'
 
-    def self.deploy(aws:, configuration:, target:)
+    # rubocop:disable Metrics/ParameterLists
+    # rubocop:disable Metrics/MethodLength
+    def self.deploy(
+      aws:, kms_key:, bucket:, name:, target:, cloud_formation_template:
+    )
       aws.upload_file(
-        configuration.kms_key(target),
-        configuration.bucket(target),
-        S3Path.path(
-          configuration: configuration,
+        kms_key: kms_key,
+        bucket: bucket,
+        key: S3Path.key(
+          name: name,
           target: target,
-          sub_path: FILE_NAME
+          sub_key: FILE_NAME
         ),
-        configuration.cloud_formation_template(target)
+        content: cloud_formation_template
+      )
+    end
+    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/ParameterLists
+
+    def self.destroy(aws:, bucket:, name:, target:)
+      aws.delete_file(
+        bucket: bucket,
+        key: S3Path.key(
+          name: name,
+          target: target,
+          sub_key: FILE_NAME
+        )
       )
     end
 
-    def self.destroy(aws:, configuration:, target:)
-      aws.delete_file(
-        configuration.bucket(target),
-        S3Path.path(
-          configuration: configuration,
-          target: target,
-          sub_path: FILE_NAME
-        )
+    def self.url(region:, bucket:, name:, target:)
+      S3Path.url(
+        region: region,
+        bucket: bucket,
+        name: name,
+        target: target,
+        sub_key: FILE_NAME
       )
     end
   end

@@ -108,6 +108,108 @@ class Formatron
           # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/MethodLength
 
+          # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/AbcSize
+          def self.add_nat(template:, bootstrap:, bucket:, config_key:)
+            resources = _resources template
+            outputs = _outputs template
+            resources[:natRole] = {
+              Type: 'AWS::IAM::Role',
+              Properties: {
+                AssumeRolePolicyDocument: {
+                  Version: '2012-10-17',
+                  Statement: [{
+                    Effect: 'Allow',
+                    Principal: { 'Service': ['ec2.amazonaws.com'] },
+                    Action: ['sts:AssumeRole']
+                  }]
+                },
+                Path: '/'
+              }
+            }
+            resources[:natInstanceProfile] = {
+              Type: 'AWS::IAM::InstanceProfile',
+              Properties: {
+                Path: '/',
+                Roles: [
+                  { Ref: 'natRole' }
+                ]
+              }
+            }
+            resources[:natPolicy] = {
+              Type: 'AWS::IAM::Policy',
+              Properties: {
+                Roles: [{ 'Ref': 'natRole' }],
+                PolicyName: 'natPolicy',
+                PolicyDocument: {
+                  Version: '2012-10-17',
+                  Statement: [{
+                    Action: ['s3:GetObject'],
+                    Effect: 'Allow',
+                    Resource: [
+                      "arn:aws:s3:::#{bucket}>/#{config_key}"
+                    ]
+                  }, {
+                    Effect: 'Allow',
+                    Action: [
+                      'kms:Decrypt'
+                    ],
+                    Resource: "arn:aws:kms:::key/#{bootstrap.kms_key}"
+                  }]
+                }
+              }
+            }
+            resources[:natSecurityGroup] = {
+              Type: 'AWS::EC2::SecurityGroup',
+              Properties: {
+                GroupDescription: 'NAT security group',
+                VpcId: { Ref: 'vpc' },
+                SecurityGroupEgress: [{
+                  CidrIp: '0.0.0.0/0',
+                  IpProtocol: 'tcp',
+                  FromPort: '0',
+                  ToPort: '65535'
+                }, {
+                  CidrIp: '0.0.0.0/0',
+                  IpProtocol: 'udp',
+                  FromPort: '0',
+                  ToPort: '65535'
+                }, {
+                  CidrIp: '0.0.0.0/0',
+                  IpProtocol: 'icmp',
+                  FromPort: '-1',
+                  ToPort: '-1'
+                }],
+                SecurityGroupIngress: [{
+                  CidrIp: "#{bootstrap.vpc.cidr}",
+                  IpProtocol: 'tcp',
+                  FromPort: '0',
+                  ToPort: '65535'
+                }, {
+                  CidrIp: "#{bootstrap.vpc.cidr}",
+                  IpProtocol: 'udp',
+                  FromPort: '0',
+                  ToPort: '65535'
+                }, {
+                  CidrIp: "#{bootstrap.vpc.cidr}",
+                  IpProtocol: 'icmp',
+                  FromPort: '-1',
+                  ToPort: '-1'
+                }]
+              }
+            }
+            resources[:natInstance] = {
+            }
+            outputs[:natInstance] = {
+              Value: { Ref: 'natInstance' }
+            }
+            outputs[:natSecurityGroup] = {
+              Value: { Ref: 'natSecurityGroup' }
+            }
+          end
+          # rubocop:enable Metrics/AbcSize
+          # rubocop:enable Metrics/MethodLength
+
           def self._resources(template)
             template[:Resources] ||= {}
           end

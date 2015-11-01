@@ -1,25 +1,24 @@
 class Formatron
   # defines the S3 bucket keys for consistency
   module S3Path
-    def self.path(configuration:, target:, sub_path:)
+    def self.key(name:, target:, sub_key:)
       File.join _base_path(
-        configuration: configuration,
+        name: name,
         target: target
-      ), sub_path
+      ), sub_key
     end
 
-    def self.url(region:, configuration:, target:, sub_path:)
-      key = path(
-        configuration: configuration,
+    def self.url(region:, bucket:, name:, target:, sub_key:)
+      key = key(
+        name: name,
         target: target,
-        sub_path: sub_path
+        sub_key: sub_key
       )
-      bucket = configuration.bucket target
       "https://s3-#{region}.amazonaws.com/#{bucket}/#{key}"
     end
 
-    def self._base_path(configuration:, target:)
-      File.join target, configuration.name(target)
+    def self._base_path(name:, target:)
+      File.join target, name
     end
 
     private_class_method(

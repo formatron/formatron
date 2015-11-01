@@ -15,7 +15,7 @@ class Formatron
       _create_cloudformation_client
     end
 
-    def upload_file(kms_key, bucket, key, content)
+    def upload_file(kms_key:, bucket:, key:, content:)
       @s3_client.put_object(
         bucket: bucket,
         key: key,
@@ -25,7 +25,7 @@ class Formatron
       )
     end
 
-    def delete_file(bucket, key)
+    def delete_file(bucket:, key:)
       @s3_client.delete_object(
         bucket: bucket,
         key: key

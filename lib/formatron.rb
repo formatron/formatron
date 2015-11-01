@@ -7,6 +7,7 @@ require 'formatron/cloud_formation_stack'
 require 'formatron/chef_instances'
 
 # manages a Formatron stack
+# rubocop:disable Metrics/ClassLength
 class Formatron
   def initialize(credentials, directory)
     @aws = AWS.new credentials
@@ -22,9 +23,14 @@ class Formatron
   end
 
   def deploy(target)
-    _deploy_configuration target
-    _deploy_template target
-    _deploy_stack target
+    kms_key = @configuration.kms_key target
+    bucket = @configuration.bucket target
+    name = @configuration.name target
+    config = @configuration.config target
+    cloud_formation_template = @configuration.cloud_formation_template target
+    _deploy_configuration kms_key, bucket, name, target, config
+    _deploy_template kms_key, bucket, name, target, cloud_formation_template
+    _deploy_stack bucket, name, target
   end
 
   def provision(target)
@@ -36,56 +42,67 @@ class Formatron
   end
 
   def destroy(target)
-    _destroy_configuration target
-    _destroy_template target
-    _destroy_stack target
+    bucket = @configuration.bucket target
+    name = @configuration.name target
+    _destroy_configuration bucket, name, target
+    _destroy_template bucket, name, target
+    _destroy_stack name, target
     _destroy_instances target
   end
 
-  def _deploy_configuration(target)
+  def _deploy_configuration(kms_key, bucket, name, target, config)
     S3Configuration.deploy(
       aws: @aws,
-      configuration: @configuration,
-      target: target
+      kms_key: kms_key,
+      bucket: bucket,
+      name: name,
+      target: target,
+      config: config
     )
   end
 
-  def _deploy_template(target)
+  def _deploy_template(kms_key, bucket, name, target, cloud_formation_template)
     S3CloudFormationTemplate.deploy(
       aws: @aws,
-      configuration: @configuration,
-      target: target
+      kms_key: kms_key,
+      bucket: bucket,
+      name: name,
+      target: target,
+      cloud_formation_template: cloud_formation_template
     )
   end
 
-  def _deploy_stack(target)
+  def _deploy_stack(bucket, name, target)
     CloudFormationStack.deploy(
       aws: @aws,
-      configuration: @configuration,
+      bucket: bucket,
+      name: name,
       target: target
     )
   end
 
-  def _destroy_configuration(target)
+  def _destroy_configuration(bucket, name, target)
     S3Configuration.destroy(
       aws: @aws,
-      configuration: @configuration,
+      bucket: bucket,
+      name: name,
       target: target
     )
   end
 
-  def _destroy_template(target)
+  def _destroy_template(bucket, name, target)
     S3CloudFormationTemplate.destroy(
       aws: @aws,
-      configuration: @configuration,
+      bucket: bucket,
+      name: name,
       target: target
     )
   end
 
-  def _destroy_stack(target)
+  def _destroy_stack(name, target)
     CloudFormationStack.destroy(
       aws: @aws,
-      configuration: @configuration,
+      name: name,
       target: target
     )
   end
@@ -108,3 +125,4 @@ class Formatron
     :_destroy_instances
   )
 end
+# rubocop:enable Metrics/ClassLength

@@ -5,27 +5,35 @@ class Formatron
   module S3Configuration
     FILE_NAME = 'config.json'
 
-    def self.deploy(aws:, configuration:, target:)
+    # rubocop:disable Metrics/ParameterLists
+    def self.deploy(aws:, kms_key:, bucket:, name:, target:, config:)
       aws.upload_file(
-        configuration.kms_key(target),
-        configuration.bucket(target),
-        S3Path.path(
-          configuration: configuration,
-          target: target,
-          sub_path: FILE_NAME
+        kms_key: kms_key,
+        bucket: bucket,
+        key: key(
+          name: name,
+          target: target
         ),
-        "#{JSON.pretty_generate(configuration.config(target))}\n"
+        content: "#{JSON.pretty_generate(config)}\n"
+      )
+    end
+    # rubocop:enable Metrics/ParameterLists
+
+    def self.destroy(aws:, bucket:, name:, target:)
+      aws.delete_file(
+        bucket: bucket,
+        key: key(
+          name: name,
+          target: target
+        )
       )
     end
 
-    def self.destroy(aws:, configuration:, target:)
-      aws.delete_file(
-        configuration.bucket(target),
-        S3Path.path(
-          configuration: configuration,
-          target: target,
-          sub_path: FILE_NAME
-        )
+    def self.key(name:, target:)
+      S3Path.key(
+        name: name,
+        target: target,
+        sub_key: FILE_NAME
       )
     end
   end

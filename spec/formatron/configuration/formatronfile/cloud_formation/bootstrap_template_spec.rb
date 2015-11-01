@@ -14,10 +14,13 @@ class Formatron
             @target = 'target'
             @name = 'name'
             @vpc = 'vpc'
+            @nat = 'nat'
+            @config_key = 'config_key'
             @bootstrap = instance_double(
               'Formatron::Configuration::Formatronfile::Bootstrap'
             )
             allow(@bootstrap).to receive(:vpc) { @vpc }
+            allow(@bootstrap).to receive(:nat) { @nat }
 
             template_module = class_double(
               'Formatron::Configuration::Formatronfile' \
@@ -31,22 +34,34 @@ class Formatron
             allow(template_module).to receive(:add_vpc) do |template:, vpc:|
               template[:vpc] = vpc
             end
+            allow(template_module).to receive(
+              :add_nat
+            ) do |template:, bootstrap:, bucket:, config_key:|
+              template[:nat] = {
+                bootstrap: bootstrap.nat,
+                bucket: bucket,
+                config_key: config_key
+              }
+            end
           end
 
           describe '#json' do
             it 'should return the JSON CloudFormation template' do
               expect(
                 BootstrapTemplate.json(
-                  region: @region,
                   bucket: @bucket,
-                  target: @target,
-                  name: @name,
+                  config_key: @config_key,
                   bootstrap: @bootstrap
                 )
               ).to eql <<-EOH.gsub(/^ {16}/, '')
                 {
-                  "description": "bootstrap-#{@name}-#{@target}",
-                  "vpc": "#{@vpc}"
+                  "description": "formatron-bootstrap",
+                  "vpc": "#{@vpc}",
+                  "nat": {
+                    "bootstrap": "#{@nat}",
+                    "bucket": "#{@bucket}",
+                    "config_key": "#{@config_key}"
+                  }
                 }
               EOH
             end

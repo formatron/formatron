@@ -7,6 +7,11 @@ describe Formatron do
   credentials = 'test/credentials'
 
   before(:each) do
+    @kms_key = 'kms_key'
+    @name = 'name'
+    @bucket = 'bucket'
+    @config = 'config'
+    @cloud_formation_template = 'cloud_formation_template'
     @aws_class = class_double(
       'Formatron::AWS'
     ).as_stubbed_const
@@ -18,6 +23,13 @@ describe Formatron do
     ).as_stubbed_const
     @configuration = instance_double('Formatron::Configuration')
     allow(@configuration_class).to receive(:new) { @configuration }
+    allow(@configuration).to receive(:kms_key) { @kms_key }
+    allow(@configuration).to receive(:name) { @name }
+    allow(@configuration).to receive(:bucket) { @bucket }
+    allow(@configuration).to receive(:config) { @config }
+    allow(@configuration).to receive(
+      :cloud_formation_template
+    ) { @cloud_formation_template }
 
     @formatron = Formatron.new(
       credentials,
@@ -75,25 +87,42 @@ describe Formatron do
     end
 
     it 'should upload the configuration to S3' do
+      expect(@configuration).to have_received(:kms_key).once.with('target1')
+      expect(@configuration).to have_received(:bucket).once.with('target1')
+      expect(@configuration).to have_received(:name).once.with('target1')
+      expect(@configuration).to have_received(:config).once.with('target1')
       expect(@s3_configuration).to have_received(:deploy).once.with(
         aws: @aws,
-        configuration: @configuration,
-        target: 'target1'
+        kms_key: @kms_key,
+        bucket: @bucket,
+        name: @name,
+        target: 'target1',
+        config: @config
       )
     end
 
     it 'should upload the CloudFormation template to S3' do
+      expect(@configuration).to have_received(:kms_key).once.with('target1')
+      expect(@configuration).to have_received(:bucket).once.with('target1')
+      expect(@configuration).to have_received(:name).once.with('target1')
+      expect(@configuration).to have_received(
+        :cloud_formation_template
+      ).once.with('target1')
       expect(@s3_cloud_formation_template).to have_received(:deploy).once.with(
         aws: @aws,
-        configuration: @configuration,
-        target: 'target1'
+        kms_key: @kms_key,
+        bucket: @bucket,
+        name: @name,
+        target: 'target1',
+        cloud_formation_template: @cloud_formation_template
       )
     end
 
     it 'should deploy the CloudFormation stack' do
       expect(@cloud_formation_stack).to have_received(:deploy).once.with(
         aws: @aws,
-        configuration: @configuration,
+        bucket: @bucket,
+        name: @name,
         target: 'target1'
       )
     end
@@ -144,17 +173,23 @@ describe Formatron do
     end
 
     it 'should delete the configuration from S3' do
+      expect(@configuration).to have_received(:bucket).once.with('target1')
+      expect(@configuration).to have_received(:name).once.with('target1')
       expect(@s3_configuration).to have_received(:destroy).once.with(
         aws: @aws,
-        configuration: @configuration,
+        bucket: @bucket,
+        name: @name,
         target: 'target1'
       )
     end
 
     it 'should delete the CloudFormation template from S3' do
+      expect(@configuration).to have_received(:bucket).once.with('target1')
+      expect(@configuration).to have_received(:name).once.with('target1')
       expect(@s3_cloud_formation_template).to have_received(:destroy).once.with(
         aws: @aws,
-        configuration: @configuration,
+        bucket: @bucket,
+        name: @name,
         target: 'target1'
       )
     end
@@ -162,7 +197,7 @@ describe Formatron do
     it 'should destroy the CloudFormation stack' do
       expect(@cloud_formation_stack).to have_received(:destroy).once.with(
         aws: @aws,
-        configuration: @configuration,
+        name: @name,
         target: 'target1'
       )
     end

@@ -5,14 +5,16 @@ require 'formatron/s3_cloud_formation_template'
 class Formatron
   describe S3CloudFormationTemplate do
     target = 'target'
+    name = 'name'
     kms_key = 'kms_key'
     bucket = 'bucket'
     cloud_formation_template = 'cloud_formation_template'
     key = 'key'
+    url = 'url'
+    region = 'region'
 
     before(:each) do
       @aws = instance_double 'Formatron::AWS'
-      @configuration = instance_double 'Formatron::Configuration'
       @s3_path = class_double(
         'Formatron::S3Path'
       ).as_stubbed_const
@@ -20,53 +22,65 @@ class Formatron
 
     describe '::deploy' do
       it 'should upload the CloudFormation template to S3' do
-        expect(@s3_path).to receive(:path).once.with(
-          configuration: @configuration,
+        expect(@s3_path).to receive(:key).once.with(
+          name: name,
           target: target,
-          sub_path: 'cloud_formation_template.json'
+          sub_key: 'cloud_formation_template.json'
         ) { key }
-        expect(@configuration).to receive(:kms_key).once.with(
-          target
-        ) { kms_key }
-        expect(@configuration).to receive(:bucket).once.with(
-          target
-        ) { bucket }
-        expect(@configuration).to receive(:cloud_formation_template).once.with(
-          target
-        ) { cloud_formation_template }
         expect(@aws).to receive(:upload_file).once.with(
-          kms_key,
-          bucket,
-          key,
-          cloud_formation_template
+          kms_key: kms_key,
+          bucket: bucket,
+          key: key,
+          content: cloud_formation_template
         )
         S3CloudFormationTemplate.deploy(
           aws: @aws,
-          configuration: @configuration,
-          target: target
+          kms_key: kms_key,
+          bucket: bucket,
+          name: name,
+          target: target,
+          cloud_formation_template: cloud_formation_template
         )
       end
     end
 
     describe '::destroy' do
       it 'should delete the CloudFormation template from S3' do
-        expect(@s3_path).to receive(:path).once.with(
-          configuration: @configuration,
+        expect(@s3_path).to receive(:key).once.with(
+          name: name,
           target: target,
-          sub_path: 'cloud_formation_template.json'
+          sub_key: 'cloud_formation_template.json'
         ) { key }
-        expect(@configuration).to receive(:bucket).once.with(
-          target
-        ) { bucket }
         expect(@aws).to receive(:delete_file).once.with(
-          bucket,
-          key
+          bucket: bucket,
+          key: key
         )
         S3CloudFormationTemplate.destroy(
           aws: @aws,
-          configuration: @configuration,
+          bucket: bucket,
+          name: name,
           target: target
         )
+      end
+    end
+
+    describe '::url' do
+      it 'should return the S3 url to the CloudFormation template' do
+        expect(@s3_path).to receive(:url).once.with(
+          region: region,
+          bucket: bucket,
+          name: name,
+          target: target,
+          sub_key: 'cloud_formation_template.json'
+        ) { url }
+        expect(
+          S3CloudFormationTemplate.url(
+            region: region,
+            bucket: bucket,
+            name: name,
+            target: target
+          )
+        ).to eql url
       end
     end
   end

@@ -10,27 +10,19 @@ class Formatron
     target = 'target'
     name = 'name'
     bucket = 'bucket'
-    sub_path = 'sub_path'
+    sub_key = 'sub_key'
 
-    before(:each) do
-      @aws = instance_double 'Formatron::AWS'
-      @configuration = instance_double 'Formatron::Configuration'
-    end
-
-    describe '::path' do
-      it 'should create a standard path including the ' \
+    describe '::key' do
+      it 'should create a standard key including the ' \
           'configuration name and target' do
-        expect(@configuration).to receive(:name).once.with(
-          target
-        ) { name }
         expect(
-          S3Path.path(
-            configuration: @configuration,
+          S3Path.key(
+            name: name,
             target: target,
-            sub_path: sub_path
+            sub_key: sub_key
           )
         ).to eql(
-          File.join(target, name, sub_path)
+          File.join(target, name, sub_key)
         )
       end
     end
@@ -38,26 +30,21 @@ class Formatron
     describe '::url' do
       it 'should create a standard url including the ' \
           'configuration name and target' do
-        expect(@configuration).to receive(:name).twice.with(
-          target
-        ) { name }
-        expect(@configuration).to receive(:bucket).once.with(
-          target
-        ) { bucket }
-        path = S3Path.path(
-          configuration: @configuration,
+        key = S3Path.key(
+          name: name,
           target: target,
-          sub_path: sub_path
+          sub_key: sub_key
         )
         expect(
           S3Path.url(
             region: region,
-            configuration: @configuration,
+            bucket: bucket,
+            name: name,
             target: target,
-            sub_path: sub_path
+            sub_key: sub_key
           )
         ).to eql(
-          "https://s3-#{region}.amazonaws.com/#{bucket}/#{path}"
+          "https://s3-#{region}.amazonaws.com/#{bucket}/#{key}"
         )
       end
     end

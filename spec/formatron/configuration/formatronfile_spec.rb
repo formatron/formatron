@@ -6,6 +6,7 @@ describe Formatron::Configuration::Formatronfile do
   region = 'region'
   target = 'target1'
   config = {}
+  config_key = 'config_key'
   directory = 'test/configuration'
   name = 'name'
   protect = false
@@ -46,6 +47,11 @@ describe Formatron::Configuration::Formatronfile do
     ).as_stubbed_const
     allow(@bootstrap_template).to receive(:json) { bootstrap_template }
 
+    @s3_configuration = class_double(
+      'Formatron::S3Configuration'
+    ).as_stubbed_const
+    allow(@s3_configuration).to receive(:key) { config_key }
+
     @formatronfile = Formatron::Configuration::Formatronfile.new(
       aws: aws,
       config: config,
@@ -57,12 +63,14 @@ describe Formatron::Configuration::Formatronfile do
   describe '#cloud_formation_template' do
     it 'should return the CloudFormation template JSON' do
       expect(@formatronfile.cloud_formation_template).to eql bootstrap_template
-      expect(@bootstrap_template).to have_received(:json).once.with(
-        region: region,
-        bucket: bucket,
-        target: target,
+      expect(@s3_configuration).to have_received(:key).once.with(
         name: name,
-        bootstrap: @bootstrap
+        target: target
+      )
+      expect(@bootstrap_template).to have_received(:json).once.with(
+        bootstrap: @bootstrap,
+        bucket: bucket,
+        config_key: config_key
       )
     end
   end

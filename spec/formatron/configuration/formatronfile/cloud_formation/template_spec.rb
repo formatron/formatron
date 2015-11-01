@@ -257,6 +257,136 @@ class Formatron
               end
             end
           end
+
+          describe '::add_nat' do
+            before :each do
+              @bucket = 'bucket'
+              @config_key = 'config_key'
+              @kms_key = 'kms_key'
+              @cidr = 'cidr'
+              @bootstrap = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap'
+              )
+              allow(@bootstrap).to receive(:kms_key) { @kms_key }
+              @vpc = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
+              )
+              allow(@bootstrap).to receive(:vpc) { @vpc }
+              allow(@vpc).to receive(:cidr) { @cidr }
+              @nat = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::NAT'
+              )
+            end
+
+            it 'should add the NAT resources to the template' do
+              template = {}
+              Template.add_nat(
+                template: template,
+                bootstrap: @bootstrap,
+                bucket: @bucket,
+                config_key: @config_key
+              )
+              expect(template).to eql(
+                Resources: {
+                  natRole: {
+                    Type: 'AWS::IAM::Role',
+                    Properties: {
+                      AssumeRolePolicyDocument: {
+                        Version: '2012-10-17',
+                        Statement: [{
+                          Effect: 'Allow',
+                          Principal: { 'Service': ['ec2.amazonaws.com'] },
+                          Action: ['sts:AssumeRole']
+                        }]
+                      },
+                      Path: '/'
+                    }
+                  },
+                  natInstanceProfile: {
+                    Type: 'AWS::IAM::InstanceProfile',
+                    Properties: {
+                      Path: '/',
+                      Roles: [
+                        { Ref: 'natRole' }
+                      ]
+                    }
+                  },
+                  natPolicy: {
+                    Type: 'AWS::IAM::Policy',
+                    Properties: {
+                      Roles: [{ 'Ref': 'natRole' }],
+                      PolicyName: 'natPolicy',
+                      PolicyDocument: {
+                        Version: '2012-10-17',
+                        Statement: [{
+                          Action: ['s3:GetObject'],
+                          Effect: 'Allow',
+                          Resource: [
+                            "arn:aws:s3:::#{@bucket}>/#{@config_key}"
+                          ]
+                        }, {
+                          Effect: 'Allow',
+                          Action: [
+                            'kms:Decrypt'
+                          ],
+                          Resource: "arn:aws:kms:::key/#{@kms_key}"
+                        }]
+                      }
+                    }
+                  },
+                  natSecurityGroup: {
+                    Type: 'AWS::EC2::SecurityGroup',
+                    Properties: {
+                      GroupDescription: 'NAT security group',
+                      VpcId: { Ref: 'vpc' },
+                      SecurityGroupEgress: [{
+                        CidrIp: '0.0.0.0/0',
+                        IpProtocol: 'tcp',
+                        FromPort: '0',
+                        ToPort: '65535'
+                      }, {
+                        CidrIp: '0.0.0.0/0',
+                        IpProtocol: 'udp',
+                        FromPort: '0',
+                        ToPort: '65535'
+                      }, {
+                        CidrIp: '0.0.0.0/0',
+                        IpProtocol: 'icmp',
+                        FromPort: '-1',
+                        ToPort: '-1'
+                      }],
+                      SecurityGroupIngress: [{
+                        CidrIp: "#{@cidr}",
+                        IpProtocol: 'tcp',
+                        FromPort: '0',
+                        ToPort: '65535'
+                      }, {
+                        CidrIp: "#{@cidr}",
+                        IpProtocol: 'udp',
+                        FromPort: '0',
+                        ToPort: '65535'
+                      }, {
+                        CidrIp: "#{@cidr}",
+                        IpProtocol: 'icmp',
+                        FromPort: '-1',
+                        ToPort: '-1'
+                      }]
+                    }
+                  },
+                  natInstance: {
+                  }
+                },
+                Outputs: {
+                  natInstance: {
+                    Value: { Ref: 'natInstance' }
+                  },
+                  natSecurityGroup: {
+                    Value: { Ref: 'natSecurityGroup' }
+                  }
+                }
+              )
+            end
+          end
         end
       end
       # rubocop:enable Metrics/ModuleLength

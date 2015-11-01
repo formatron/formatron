@@ -71,10 +71,10 @@ describe Formatron::AWS do
           ssekms_key_id: kms_key
         )
         @aws.upload_file(
-          kms_key,
-          bucket,
-          key,
-          content
+          kms_key: kms_key,
+          bucket: bucket,
+          key: key,
+          content: content
         )
       end
     end
@@ -89,8 +89,8 @@ describe Formatron::AWS do
           key: key
         )
         @aws.delete_file(
-          bucket,
-          key
+          bucket: bucket,
+          key: key
         )
       end
     end

@@ -7,35 +7,33 @@ class Formatron
   describe CloudFormationStack do
     before(:each) do
       @region = 'region'
+      @bucket = 'bucket'
       @name = 'name'
       @target = 'target'
       @url = 'url'
       @aws = instance_double 'Formatron::AWS'
       allow(@aws).to receive(:region) { @region }
-      @configuration = instance_double 'Formatron::Configuration'
-      @s3_path = class_double(
-        'Formatron::S3Path'
+      @s3_cloud_formation_template = class_double(
+        'Formatron::S3CloudFormationTemplate'
       ).as_stubbed_const
     end
 
     describe '::deploy' do
       it 'should create the CloudFormation stack' do
-        expect(@s3_path).to receive(:url).once.with(
+        expect(@s3_cloud_formation_template).to receive(:url).once.with(
           region: @region,
-          configuration: @configuration,
-          target: @target,
-          sub_path: S3CloudFormationTemplate::FILE_NAME
+          bucket: @bucket,
+          name: @name,
+          target: @target
         ) { @url }
-        expect(@configuration).to receive(:name).once.with(
-          @target
-        ) { @name }
         expect(@aws).to receive(:deploy_stack).once.with(
           stack_name: "#{@name}-#{@target}",
           template_url: @url
         )
         CloudFormationStack.deploy(
           aws: @aws,
-          configuration: @configuration,
+          bucket: @bucket,
+          name: @name,
           target: @target
         )
       end
@@ -43,15 +41,12 @@ class Formatron
 
     describe '::destroy' do
       it 'should delete the CloudFormation stack' do
-        expect(@configuration).to receive(:name).once.with(
-          @target
-        ) { @name }
         expect(@aws).to receive(:delete_stack).once.with(
           "#{@name}-#{@target}"
         )
         CloudFormationStack.destroy(
           aws: @aws,
-          configuration: @configuration,
+          name: @name,
           target: @target
         )
       end

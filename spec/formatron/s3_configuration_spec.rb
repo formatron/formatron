@@ -8,6 +8,7 @@ describe Formatron::S3Configuration do
   target = 'target'
   kms_key = 'kms_key'
   bucket = 'bucket'
+  name = 'name'
   config = {
     'param' => 'param'
   }
@@ -15,7 +16,6 @@ describe Formatron::S3Configuration do
 
   before(:each) do
     @aws = instance_double 'Formatron::AWS'
-    @configuration = instance_double 'Formatron::Configuration'
     @s3_path = class_double(
       'Formatron::S3Path'
     ).as_stubbed_const
@@ -23,53 +23,61 @@ describe Formatron::S3Configuration do
 
   describe '::deploy' do
     it 'should upload the JSON configuration to S3' do
-      expect(@s3_path).to receive(:path).once.with(
-        configuration: @configuration,
+      expect(@s3_path).to receive(:key).once.with(
+        name: name,
         target: target,
-        sub_path: 'config.json'
+        sub_key: 'config.json'
       ) { key }
-      expect(@configuration).to receive(:kms_key).once.with(
-        target
-      ) { kms_key }
-      expect(@configuration).to receive(:bucket).once.with(
-        target
-      ) { bucket }
-      expect(@configuration).to receive(:config).once.with(
-        target
-      ) { config }
       expect(@aws).to receive(:upload_file).once.with(
-        kms_key,
-        bucket,
-        key,
-        "#{JSON.pretty_generate(config)}\n"
+        kms_key: kms_key,
+        bucket: bucket,
+        key: key,
+        content: "#{JSON.pretty_generate(config)}\n"
       )
       Formatron::S3Configuration.deploy(
         aws: @aws,
-        configuration: @configuration,
-        target: target
+        kms_key: kms_key,
+        bucket: bucket,
+        name: name,
+        target: target,
+        config: config
       )
     end
   end
 
   describe '::destroy' do
     it 'should delete the JSON configuration from S3' do
-      expect(@s3_path).to receive(:path).once.with(
-        configuration: @configuration,
+      expect(@s3_path).to receive(:key).once.with(
+        name: name,
         target: target,
-        sub_path: 'config.json'
+        sub_key: 'config.json'
       ) { key }
-      expect(@configuration).to receive(:bucket).once.with(
-        target
-      ) { bucket }
       expect(@aws).to receive(:delete_file).once.with(
-        bucket,
-        key
+        bucket: bucket,
+        key: key
       )
       Formatron::S3Configuration.destroy(
         aws: @aws,
-        configuration: @configuration,
+        bucket: bucket,
+        name: name,
         target: target
       )
+    end
+  end
+
+  describe '::key' do
+    it 'should return the S3 key to the config file' do
+      expect(@s3_path).to receive(:key).once.with(
+        name: name,
+        target: target,
+        sub_key: 'config.json'
+      ) { key }
+      expect(
+        Formatron::S3Configuration.key(
+          name: name,
+          target: target
+        )
+      ).to eql key
     end
   end
 end
