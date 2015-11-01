@@ -21,6 +21,54 @@ class Formatron
             end
           end
 
+          describe '::add_private_hosted_zone' do
+            before :each do
+              @hosted_zone_name = 'hosted_zone_name'
+              @region = 'region'
+            end
+
+            it 'should add the Route53 private hosted zone resource' do
+              template = {}
+              Template.add_private_hosted_zone(
+                template: template,
+                hosted_zone_name: @hosted_zone_name,
+                region: @region
+              )
+              expect(template).to eql(
+                Resources: {
+                  privateHostedZone: {
+                    Type: 'AWS::Route53::HostedZone',
+                    Properties: {
+                      HostedZoneConfig: {
+                        Comment: {
+                          'Fn::Join'.to_sym => [
+                            '', [
+                              # rubocop:disable Metrics/LineLength
+                              'Private Hosted Zone for CloudFormation Stack: ', {
+                                # rubocop:enable Metrics/LineLength
+                                'Ref': 'AWS::StackName'
+                              }
+                            ]
+                          ]
+                        }
+                      },
+                      Name: @hosted_zone_name,
+                      VPCs: [{
+                        VPCId: { 'Ref': 'vpc' },
+                        VPCRegion: @region
+                      }]
+                    }
+                  }
+                },
+                Outputs: {
+                  privateHostedZone: {
+                    Value: { Ref: 'privateHostedZone' }
+                  }
+                }
+              )
+            end
+          end
+
           describe '::add_vpc' do
             before :each do
               @cidr = 'cidr'
@@ -260,6 +308,8 @@ class Formatron
 
           describe '::add_nat' do
             before :each do
+              @hosted_zone_id = 'hosted_zone_id'
+              @hosted_zone_name = 'hosted_zone_name'
               @bucket = 'bucket'
               @config_key = 'config_key'
               @kms_key = 'kms_key'
@@ -282,6 +332,8 @@ class Formatron
               template = {}
               Template.add_nat(
                 template: template,
+                hosted_zone_id: @hosted_zone_id,
+                hosted_zone_name: @hosted_zone_name,
                 bootstrap: @bootstrap,
                 bucket: @bucket,
                 config_key: @config_key

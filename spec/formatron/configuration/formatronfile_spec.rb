@@ -74,6 +74,7 @@ describe Formatron::Configuration::Formatronfile do
         target: target
       )
       expect(@bootstrap_template).to have_received(:json).once.with(
+        region: region,
         hosted_zone_id: hosted_zone_id,
         hosted_zone_name: hosted_zone_name,
         bootstrap: @bootstrap,

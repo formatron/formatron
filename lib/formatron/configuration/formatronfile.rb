@@ -44,6 +44,7 @@ class Formatron
       def _initialize_bootstrap
         _initialize_properties @dsl.bootstrap
         @cloud_formation_template = CloudFormation::BootstrapTemplate.json(
+          region: @aws.region,
           bootstrap: @dsl.bootstrap,
           hosted_zone_id: @hosted_zone_id,
           hosted_zone_name: @hosted_zone_name,

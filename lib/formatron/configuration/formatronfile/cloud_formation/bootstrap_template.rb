@@ -8,7 +8,9 @@ class Formatron
         # Generates CloudFormation bootstrap template JSON
         module BootstrapTemplate
           # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/ParameterLists
           def self.json(
+            region:,
             hosted_zone_id:,
             hosted_zone_name:,
             bootstrap:,
@@ -16,7 +18,8 @@ class Formatron
             config_key:
           )
             template = _create_template
-            _add_vpc template, hosted_zone_name, bootstrap
+            _add_private_hosted_zone template, hosted_zone_name, region
+            _add_vpc template, bootstrap
             _add_nat(
               template,
               hosted_zone_id,
@@ -27,6 +30,7 @@ class Formatron
             )
             "#{JSON.pretty_generate template}\n"
           end
+          # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
           def self._create_template
@@ -35,7 +39,15 @@ class Formatron
             )
           end
 
-          def self._add_vpc(template, _hosted_zone_name, bootstrap)
+          def self._add_private_hosted_zone(template, hosted_zone_name, region)
+            Template.add_private_hosted_zone(
+              template: template,
+              hosted_zone_name: hosted_zone_name,
+              region: region
+            )
+          end
+
+          def self._add_vpc(template, bootstrap)
             Template.add_vpc(
               template: template,
               vpc: bootstrap.vpc
@@ -46,14 +58,16 @@ class Formatron
           # rubocop:disable Metrics/ParameterLists
           def self._add_nat(
             template,
-            _hosted_zone_id,
-            _hosted_zone_name,
+            hosted_zone_id,
+            hosted_zone_name,
             bootstrap,
             bucket,
             config_key
           )
             Template.add_nat(
               template: template,
+              hosted_zone_id: hosted_zone_id,
+              hosted_zone_name: hosted_zone_name,
               bootstrap: bootstrap,
               bucket: bucket,
               config_key: config_key

@@ -13,6 +13,38 @@ class Formatron
           end
 
           # rubocop:disable Metrics/MethodLength
+          def self.add_private_hosted_zone(
+            template:,
+            hosted_zone_name:,
+            region:
+          )
+            resources = _resources template
+            outputs = _outputs template
+            resources[:privateHostedZone] = {
+              Type: 'AWS::Route53::HostedZone',
+              Properties: {
+                HostedZoneConfig: {
+                  Comment: _join(
+                    [
+                      'Private Hosted Zone for CloudFormation Stack: ',
+                      _ref('AWS::StackName')
+                    ]
+                  )
+                },
+                Name: hosted_zone_name,
+                VPCs: [{
+                  VPCId: { 'Ref': 'vpc' },
+                  VPCRegion: region
+                }]
+              }
+            }
+            outputs[:privateHostedZone] = {
+              Value: _ref('privateHostedZone')
+            }
+          end
+          # rubocop:enable Metrics/MethodLength
+
+          # rubocop:disable Metrics/MethodLength
           # rubocop:disable Metrics/AbcSize
           def self.add_vpc(template:, vpc:)
             resources = _resources template
@@ -109,7 +141,18 @@ class Formatron
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
-          def self.add_nat(template:, bootstrap:, bucket:, config_key:)
+          # rubocop:disable Metrics/ParameterLists
+          # rubocop:disable Metrics/AbcSize
+          def self.add_nat(
+            template:,
+            hosted_zone_id:,
+            hosted_zone_name:,
+            bootstrap:,
+            bucket:,
+            config_key:
+          )
+            puts hosted_zone_name
+            puts hosted_zone_id
             resources = _resources template
             resources[:natRole] = {
               Type: 'AWS::IAM::Role',
@@ -199,6 +242,8 @@ class Formatron
             resources[:natInstance] = {
             }
           end
+          # rubocop:enable Metrics/AbcSize
+          # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
           def self._resources(template)
@@ -213,10 +258,19 @@ class Formatron
             { Ref: logical_id }
           end
 
+          def self._join(items)
+            {
+              'Fn::Join'.to_sym => [
+                '', items
+              ]
+            }
+          end
+
           private_class_method(
             :_resources,
             :_outputs,
-            :_ref
+            :_ref,
+            :_join
           )
         end
         # rubocop:enable Metrics/ModuleLength

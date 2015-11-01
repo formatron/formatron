@@ -33,24 +33,41 @@ class Formatron
                 description: description
               }
             end
-            allow(template_module).to receive(:add_vpc) do |template:, vpc:|
+            allow(template_module).to receive(
+              :add_vpc
+            ) do |template:, vpc:|
               template[:vpc] = vpc
             end
             allow(template_module).to receive(
+              :add_private_hosted_zone
+            ) do |template:, region:, hosted_zone_name:|
+              template[:private_hosted_zone] = {
+                hosted_zone_name: hosted_zone_name,
+                region: region
+              }
+            end
+            # rubocop:disable Metrics/ParameterLists
+            allow(template_module).to receive(
               :add_nat
-            ) do |template:, bootstrap:, bucket:, config_key:|
+            # rubocop:disable Metrics/LineLength
+            ) do |template:, hosted_zone_id:, hosted_zone_name:, bootstrap:, bucket:, config_key:|
+              # rubocop:enable Metrics/LineLength
               template[:nat] = {
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
                 bootstrap: bootstrap.nat,
                 bucket: bucket,
                 config_key: config_key
               }
             end
+            # rubocop:enable Metrics/ParameterLists
           end
 
           describe '#json' do
             it 'should return the JSON CloudFormation template' do
               expect(
                 BootstrapTemplate.json(
+                  region: @region,
                   hosted_zone_id: @hosted_zone_id,
                   hosted_zone_name: @hosted_zone_name,
                   bucket: @bucket,
@@ -60,8 +77,14 @@ class Formatron
               ).to eql <<-EOH.gsub(/^ {16}/, '')
                 {
                   "description": "formatron-bootstrap",
+                  "private_hosted_zone": {
+                    "hosted_zone_name": "#{@hosted_zone_name}",
+                    "region": "#{@region}"
+                  },
                   "vpc": "#{@vpc}",
                   "nat": {
+                    "hosted_zone_id": "#{@hosted_zone_id}",
+                    "hosted_zone_name": "#{@hosted_zone_name}",
                     "bootstrap": "#{@nat}",
                     "bucket": "#{@bucket}",
                     "config_key": "#{@config_key}"
