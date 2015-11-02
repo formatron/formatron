@@ -1,6 +1,9 @@
 require_relative 'template/resources/route53'
 require_relative 'template/resources/ec2'
 require_relative 'template/resources/iam'
+require_relative 'template/resources/cloud_formation'
+require_relative 'scripts'
+require 'formatron/aws'
 
 class Formatron
   class Configuration
@@ -9,6 +12,7 @@ class Formatron
         # Generates CloudFormation template JSON
         # rubocop:disable Metrics/ModuleLength
         module Template
+          REGION_MAP = 'regionMap'
           PRIVATE_HOSTED_ZONE = 'privateHostedZone'
           VPC = 'vpc'
           INTERNET_GATEWAY = 'internetGateway'
@@ -24,6 +28,10 @@ class Formatron
           NAT_INSTANCE_PROFILE = 'natInstanceProfile'
           NAT_POLICY = 'natPolicy'
           NAT_SECURITY_GROUP = 'natSecurityGroup'
+          NAT_WAIT_CONDITION_HANDLE = 'natWaitConditionHandle'
+          NAT_WAIT_CONDITION = 'natWaitCondition'
+          NAT_PUBLIC_RECORD_SET = 'natPublicRecordSet'
+          NAT_PRIVATE_RECORD_SET = 'natPrivateRecordSet'
 
           def self.create(description)
             {
@@ -32,22 +40,23 @@ class Formatron
             }
           end
 
-          # rubocop:disable Metrics/MethodLength
+          def self.add_region_map(template:)
+            mappings = _mappings template
+            mappings[REGION_MAP] = Formatron::AWS::REGIONS
+          end
+
           def self.add_private_hosted_zone(
             template:,
-            hosted_zone_name:,
-            region:
+            hosted_zone_name:
           )
             resources = _resources template
             outputs = _outputs template
             resources[PRIVATE_HOSTED_ZONE] = Resources::Route53.hosted_zone(
               name: hosted_zone_name,
-              region: region,
               vpc: VPC
             )
             outputs[PRIVATE_HOSTED_ZONE] = output ref(PRIVATE_HOSTED_ZONE)
           end
-          # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
           # rubocop:disable Metrics/AbcSize
@@ -173,8 +182,53 @@ class Formatron
                 to_port: '-1'
               }]
             )
-            resources[NAT_INSTANCE] = {
-            }
+            resources[NAT_INSTANCE] = Resources::EC2.instance(
+              scripts: [
+                Scripts.hostname(
+                  sub_domain: bootstrap.nat.sub_domain,
+                  hosted_zone_name: hosted_zone_name
+                ),
+                Scripts.nat(
+                  cidr: bootstrap.vpc.cidr
+                )
+              ],
+              instance_profile: NAT_INSTANCE_PROFILE,
+              availability_zone: bootstrap.vpc.subnets[
+                bootstrap.nat.subnet
+              ].availability_zone,
+              instance_type: 't2.micro',
+              key_name: bootstrap.ec2.key_pair,
+              subnet: ref("#{bootstrap.nat.subnet}#{SUBNET}"),
+              associate_public_ip_address: bootstrap.vpc.subnets[
+                bootstrap.nat.subnet
+              ].public?,
+              name: 'nat',
+              wait_condition_handle: NAT_WAIT_CONDITION_HANDLE,
+              security_group: NAT_SECURITY_GROUP,
+              logical_id: NAT_INSTANCE,
+              source_dest_check: false
+            )
+            resources[NAT_WAIT_CONDITION_HANDLE] =
+              Resources::CloudFormation.wait_condition_handle
+            resources[NAT_WAIT_CONDITION] =
+              Resources::CloudFormation.wait_condition(
+                instance: NAT_INSTANCE,
+                wait_condition_handle: NAT_WAIT_CONDITION_HANDLE
+              )
+            resources[NAT_PUBLIC_RECORD_SET] = Resources::Route53.record_set(
+              hosted_zone_id: hosted_zone_id,
+              sub_domain: bootstrap.nat.sub_domain,
+              hosted_zone_name: hosted_zone_name,
+              instance: NAT_INSTANCE,
+              attribute: 'PublicIp'
+            )
+            resources[NAT_PRIVATE_RECORD_SET] = Resources::Route53.record_set(
+              hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
+              sub_domain: bootstrap.nat.sub_domain,
+              hosted_zone_name: hosted_zone_name,
+              instance: NAT_INSTANCE,
+              attribute: 'PrivateIp'
+            )
           end
           # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/ParameterLists
@@ -188,15 +242,43 @@ class Formatron
             template[:Outputs] ||= {}
           end
 
-          def self.ref(logical_id)
-            { Ref: logical_id }
+          def self._mappings(template)
+            template[:Mappings] ||= {}
           end
 
-          def self.join(items)
+          def self.ref(logical_id)
             {
-              'Fn::Join'.to_sym => [
+              Ref: logical_id
+            }
+          end
+
+          def self.join(*items)
+            {
+              'Fn::Join' => [
                 '', items
               ]
+            }
+          end
+
+          def self.find_in_map(map, key, property)
+            {
+              'Fn::FindInMap' => [
+                map,
+                key,
+                property
+              ]
+            }
+          end
+
+          def self.base_64(value)
+            {
+              'Fn::Base64' => value
+            }
+          end
+
+          def self.get_attribute(resource, attribute)
+            {
+              'Fn::GetAtt' => [resource, attribute]
             }
           end
 
@@ -208,7 +290,8 @@ class Formatron
 
           private_class_method(
             :_resources,
-            :_outputs
+            :_outputs,
+            :_mappings
           )
         end
         # rubocop:enable Metrics/ModuleLength

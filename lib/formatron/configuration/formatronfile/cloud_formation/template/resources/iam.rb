@@ -17,7 +17,7 @@ class Formatron
                       Version: '2012-10-17',
                       Statement: [{
                         Effect: 'Allow',
-                        Principal: { 'Service': ['ec2.amazonaws.com'] },
+                        Principal: { Service: ['ec2.amazonaws.com'] },
                         Action: ['sts:AssumeRole']
                       }]
                     },
@@ -32,9 +32,7 @@ class Formatron
                   Type: 'AWS::IAM::InstanceProfile',
                   Properties: {
                     Path: '/',
-                    Roles: [
-                      { Ref: role }
-                    ]
+                    Roles: [Template.ref(role)]
                   }
                 }
               end
@@ -44,7 +42,7 @@ class Formatron
                 {
                   Type: 'AWS::IAM::Policy',
                   Properties: {
-                    Roles: [{ 'Ref': role }],
+                    Roles: [Template.ref(role)],
                     PolicyName: name,
                     PolicyDocument: {
                       Version: '2012-10-17',

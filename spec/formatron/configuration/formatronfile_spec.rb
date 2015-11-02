@@ -3,7 +3,6 @@ require 'formatron/aws'
 require 'formatron/configuration/formatronfile'
 
 describe Formatron::Configuration::Formatronfile do
-  region = 'region'
   target = 'target1'
   config = {}
   config_key = 'config_key'
@@ -18,7 +17,6 @@ describe Formatron::Configuration::Formatronfile do
 
   before(:each) do
     aws = instance_double('Formatron::AWS')
-    allow(aws).to receive(:region) { region }
     expect(aws).to receive(:hosted_zone_name).once.with(
       hosted_zone_id
     ) { hosted_zone_name }
@@ -74,7 +72,6 @@ describe Formatron::Configuration::Formatronfile do
         target: target
       )
       expect(@bootstrap_template).to have_received(:json).once.with(
-        region: region,
         hosted_zone_id: hosted_zone_id,
         hosted_zone_name: hosted_zone_name,
         bootstrap: @bootstrap,

@@ -85,11 +85,11 @@ describe Formatron::Generators::Bootstrap do
           end
 
           configuration.vpc do |vpc|
-            vpc.cidr '10.0.0.0/24'
+            vpc.cidr '10.0.0.0/16'
 
             vpc.subnet 'management1' do |subnet|
               subnet.availability_zone '#{params[:availability_zone]}'
-              subnet.cidr '10.0.0.0/16'
+              subnet.cidr '10.0.0.0/24'
               subnet.public true do |acl|
                 acl.source_ip '#{ip}'
               end
@@ -97,13 +97,13 @@ describe Formatron::Generators::Bootstrap do
 
             vpc.subnet 'public1' do |subnet|
               subnet.availability_zone '#{params[:availability_zone]}'
-              subnet.cidr '10.0.1.0/16'
+              subnet.cidr '10.0.1.0/24'
               subnet.public true
             end
 
             vpc.subnet 'private1' do |subnet|
               subnet.availability_zone '#{params[:availability_zone]}'
-              subnet.cidr '10.0.2.0/16'
+              subnet.cidr '10.0.2.0/24'
             end
           end
 

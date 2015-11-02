@@ -8,9 +8,7 @@ class Formatron
         # Generates CloudFormation bootstrap template JSON
         module BootstrapTemplate
           # rubocop:disable Metrics/MethodLength
-          # rubocop:disable Metrics/ParameterLists
           def self.json(
-            region:,
             hosted_zone_id:,
             hosted_zone_name:,
             bootstrap:,
@@ -18,7 +16,8 @@ class Formatron
             config_key:
           )
             template = _create_template
-            _add_private_hosted_zone template, hosted_zone_name, region
+            _add_region_map template
+            _add_private_hosted_zone template, hosted_zone_name
             _add_vpc template, bootstrap
             _add_nat(
               template,
@@ -30,7 +29,6 @@ class Formatron
             )
             "#{JSON.pretty_generate template}\n"
           end
-          # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
           def self._create_template
@@ -39,11 +37,16 @@ class Formatron
             )
           end
 
-          def self._add_private_hosted_zone(template, hosted_zone_name, region)
+          def self._add_region_map(template)
+            Template.add_region_map(
+              template: template
+            )
+          end
+
+          def self._add_private_hosted_zone(template, hosted_zone_name)
             Template.add_private_hosted_zone(
               template: template,
-              hosted_zone_name: hosted_zone_name,
-              region: region
+              hosted_zone_name: hosted_zone_name
             )
           end
 

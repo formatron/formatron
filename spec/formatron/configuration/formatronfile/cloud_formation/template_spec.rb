@@ -21,6 +21,14 @@ class Formatron
               'Formatron::Configuration::Formatronfile' \
               '::CloudFormation::Template::Resources::IAM'
             ).as_stubbed_const
+            @cloud_formation = class_double(
+              'Formatron::Configuration::Formatronfile' \
+              '::CloudFormation::Template::Resources::CloudFormation'
+            ).as_stubbed_const
+            @scripts = class_double(
+              'Formatron::Configuration::Formatronfile' \
+              '::CloudFormation::Scripts'
+            ).as_stubbed_const
           end
 
           describe '::create' do
@@ -36,22 +44,40 @@ class Formatron
             end
           end
 
+          describe '::add_region_map' do
+            it 'should add the region map for AMIs, etc' do
+              template = {}
+              regions = {
+                'region1' => {
+                  ami: 'ami1'
+                },
+                'region2' => {
+                  ami: 'ami2'
+                }
+              }
+              stub_const('Formatron::AWS::REGIONS', regions)
+              Template.add_region_map template: template
+              expect(template).to eql(
+                Mappings: {
+                  'regionMap' => regions
+                }
+              )
+            end
+          end
+
           describe '::add_private_hosted_zone' do
             it 'should add the Route53 private hosted zone resource' do
               template = {}
               hosted_zone_name = 'hosted_zone_name'
-              region = 'region'
               vpc = 'vpc'
               hosted_zone = 'hosted_zone'
               expect(@route53).to receive(:hosted_zone).once.with(
                 name: hosted_zone_name,
-                region: region,
                 vpc: vpc
               ) { hosted_zone }
               Template.add_private_hosted_zone(
                 template: template,
-                hosted_zone_name: hosted_zone_name,
-                region: region
+                hosted_zone_name: hosted_zone_name
               )
               expect(template).to eql(
                 Resources: {
@@ -303,10 +329,25 @@ class Formatron
             before :each do
               @hosted_zone_id = 'hosted_zone_id'
               @hosted_zone_name = 'hosted_zone_name'
+              @sub_domain = 'sub_domain'
               @bucket = 'bucket'
               @config_key = 'config_key'
               @kms_key = 'kms_key'
               @cidr = 'cidr'
+              @availability_zone = 'availability_zone'
+              @subnet_name = 'subnet_name'
+              @key_pair = 'key_pair'
+              @subnet = instance_double(
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::VPC::Subnet'
+              )
+              @bootstrap_ec2 = instance_double(
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::EC2'
+              )
+              @subnets = {
+                "#{@subnet_name}" => @subnet
+              }
               @bootstrap = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap'
               )
@@ -315,10 +356,20 @@ class Formatron
                 'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
               )
               allow(@bootstrap).to receive(:vpc) { @vpc }
+              allow(@bootstrap).to receive(:ec2) { @bootstrap_ec2 }
+              allow(@bootstrap_ec2).to receive(:key_pair) { @key_pair }
               allow(@vpc).to receive(:cidr) { @cidr }
+              allow(@vpc).to receive(:subnets) { @subnets }
               @nat = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap::NAT'
               )
+              allow(@bootstrap).to receive(:nat) { @nat }
+              allow(@nat).to receive(:subnet) { @subnet_name }
+              allow(@nat).to receive(:sub_domain) { @sub_domain }
+              allow(@subnet).to receive(:public?) { true }
+              allow(@subnet).to receive(
+                :availability_zone
+              ) { @availability_zone }
             end
 
             it 'should add the NAT resources to the template' do
@@ -380,6 +431,62 @@ class Formatron
                   to_port: '-1'
                 }]
               ) { security_group }
+              hostname_sh = 'hostname_sh'
+              expect(@scripts).to receive(:hostname).once.with(
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name
+              ) { hostname_sh }
+              nat_sh = 'nat_sh'
+              expect(@scripts).to receive(:nat).once.with(
+                cidr: @cidr
+              ) { nat_sh }
+              instance = 'instance'
+              expect(@ec2).to receive(:instance).once.with(
+                scripts: [
+                  hostname_sh,
+                  nat_sh
+                ],
+                instance_profile: 'natInstanceProfile',
+                availability_zone: @availability_zone,
+                instance_type: 't2.micro',
+                key_name: @key_pair,
+                subnet: { Ref: "#{@subnet_name}Subnet" },
+                associate_public_ip_address: true,
+                name: 'nat',
+                wait_condition_handle: 'natWaitConditionHandle',
+                security_group: 'natSecurityGroup',
+                logical_id: 'natInstance',
+                source_dest_check: false
+              ) { instance }
+              wait_condition_handle = 'wait_condition_handle'
+              expect(@cloud_formation).to receive(
+                :wait_condition_handle
+              ).once.with(
+                no_args
+              ) { wait_condition_handle }
+              wait_condition = 'wait_condition'
+              expect(@cloud_formation).to receive(
+                :wait_condition
+              ).once.with(
+                wait_condition_handle: 'natWaitConditionHandle',
+                instance: 'natInstance'
+              ) { wait_condition }
+              public_record_set = 'public_record_set'
+              expect(@route53).to receive(:record_set).once.with(
+                hosted_zone_id: @hosted_zone_id,
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name,
+                instance: 'natInstance',
+                attribute: 'PublicIp'
+              ) { public_record_set }
+              private_record_set = 'private_record_set'
+              expect(@route53).to receive(:record_set).once.with(
+                hosted_zone_id: { Ref: 'privateHostedZone' },
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name,
+                instance: 'natInstance',
+                attribute: 'PrivateIp'
+              ) { private_record_set }
               Template.add_nat(
                 template: template,
                 hosted_zone_id: @hosted_zone_id,
@@ -394,8 +501,11 @@ class Formatron
                   'natInstanceProfile' => instance_profile,
                   'natPolicy' => policy,
                   'natSecurityGroup' => security_group,
-                  'natInstance' => {
-                  }
+                  'natInstance' => instance,
+                  'natWaitConditionHandle' => wait_condition_handle,
+                  'natWaitCondition' => wait_condition,
+                  'natPublicRecordSet' => public_record_set,
+                  'natPrivateRecordSet' => private_record_set
                 }
               )
             end

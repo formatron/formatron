@@ -2,8 +2,39 @@ require 'aws-sdk'
 
 class Formatron
   # shared AWS clients
+  # rubocop:disable Metrics/ClassLength
   class AWS
     attr_reader :region
+
+    REGIONS = {
+      'us-east-1' => {
+        ami: 'ami-ff02509a'
+      },
+      'us-west-2' => {
+        ami: 'ami-8ee605bd'
+      },
+      'us-west-1' => {
+        ami: 'ami-198a495d'
+      },
+      'eu-west-1' => {
+        ami: 'ami-37360a40'
+      },
+      'eu-central-1' => {
+        ami: 'ami-46272b5b'
+      },
+      'ap-southeast-1' => {
+        ami: 'ami-42170410'
+      },
+      'ap-southeast-2' => {
+        ami: 'ami-6d6c2657'
+      },
+      'ap-northeast-1' => {
+        ami: 'ami-402e4c40'
+      },
+      'sa-east-1' => {
+        ami: 'ami-1f4bda02'
+      }
+    }
 
     CAPABILITIES = ['CAPABILITY_IAM']
 
@@ -105,4 +136,5 @@ class Formatron
       :_update_stack
     )
   end
+  # rubocop:enable Metrics/ClassLength
 end

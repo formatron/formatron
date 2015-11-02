@@ -13,12 +13,10 @@ class Formatron
               describe '::hosted_zone' do
                 it 'should return a HostedZone resource' do
                   name = 'name'
-                  region = 'region'
                   vpc = 'vpc'
                   expect(
                     Route53.hosted_zone(
                       name: name,
-                      region: region,
                       vpc: vpc
                     )
                   ).to eql(
@@ -26,12 +24,12 @@ class Formatron
                     Properties: {
                       HostedZoneConfig: {
                         Comment: {
-                          'Fn::Join'.to_sym => [
+                          'Fn::Join' => [
                             '', [
                               # rubocop:disable Metrics/LineLength
                               'Private Hosted Zone for CloudFormation Stack: ', {
                                 # rubocop:enable Metrics/LineLength
-                                'Ref': 'AWS::StackName'
+                                Ref: 'AWS::StackName'
                               }
                             ]
                           ]
@@ -39,9 +37,39 @@ class Formatron
                       },
                       Name: name,
                       VPCs: [{
-                        VPCId: { 'Ref': vpc },
-                        VPCRegion: region
+                        VPCId: { Ref: vpc },
+                        VPCRegion: { Ref: 'AWS::Region' }
                       }]
+                    }
+                  )
+                end
+              end
+
+              describe '::record_set' do
+                it 'should return a RecordSet resource' do
+                  hosted_zone_id = 'hosted_zone_id'
+                  sub_domain = 'sub_domain'
+                  hosted_zone_name = 'hosted_zone_name'
+                  instance = 'instance'
+                  attribute = 'attribute'
+                  expect(
+                    Route53.record_set(
+                      hosted_zone_id: hosted_zone_id,
+                      sub_domain: sub_domain,
+                      hosted_zone_name: hosted_zone_name,
+                      instance: instance,
+                      attribute: attribute
+                    )
+                  ).to eql(
+                    Type: 'AWS::Route53::RecordSet',
+                    Properties: {
+                      HostedZoneId: hosted_zone_id,
+                      Name: "#{sub_domain}.#{hosted_zone_name}",
+                      ResourceRecords: [
+                        { 'Fn::GetAtt' => [instance, attribute] }
+                      ],
+                      TTL: '900',
+                      Type: 'A'
                     }
                   )
                 end

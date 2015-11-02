@@ -11,13 +11,13 @@ class Formatron
           before :each do
             @hosted_zone_id = 'hosted_zone_id'
             @hosted_zone_name = 'hosted_zone_name'
-            @region = 'region'
             @bucket = 'bucket'
             @target = 'target'
             @name = 'name'
             @vpc = 'vpc'
             @nat = 'nat'
             @config_key = 'config_key'
+            @region_map = 'region_map'
             @bootstrap = instance_double(
               'Formatron::Configuration::Formatronfile::Bootstrap'
             )
@@ -34,17 +34,19 @@ class Formatron
               }
             end
             allow(template_module).to receive(
+              :add_region_map
+            ) do |template:|
+              template[:region_map] = @region_map
+            end
+            allow(template_module).to receive(
               :add_vpc
             ) do |template:, vpc:|
               template[:vpc] = vpc
             end
             allow(template_module).to receive(
               :add_private_hosted_zone
-            ) do |template:, region:, hosted_zone_name:|
-              template[:private_hosted_zone] = {
-                hosted_zone_name: hosted_zone_name,
-                region: region
-              }
+            ) do |template:, hosted_zone_name:|
+              template[:private_hosted_zone] = hosted_zone_name
             end
             # rubocop:disable Metrics/ParameterLists
             allow(template_module).to receive(
@@ -67,7 +69,6 @@ class Formatron
             it 'should return the JSON CloudFormation template' do
               expect(
                 BootstrapTemplate.json(
-                  region: @region,
                   hosted_zone_id: @hosted_zone_id,
                   hosted_zone_name: @hosted_zone_name,
                   bucket: @bucket,
@@ -77,10 +78,8 @@ class Formatron
               ).to eql <<-EOH.gsub(/^ {16}/, '')
                 {
                   "description": "formatron-bootstrap",
-                  "private_hosted_zone": {
-                    "hosted_zone_name": "#{@hosted_zone_name}",
-                    "region": "#{@region}"
-                  },
+                  "region_map": "#{@region_map}",
+                  "private_hosted_zone": "#{@hosted_zone_name}",
                   "vpc": "#{@vpc}",
                   "nat": {
                     "hosted_zone_id": "#{@hosted_zone_id}",

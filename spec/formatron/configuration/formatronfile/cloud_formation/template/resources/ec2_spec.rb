@@ -130,7 +130,14 @@ class Formatron
                     Properties: {
                       VpcId: { Ref: vpc },
                       CidrBlock: cidr,
-                      AvailabilityZone: availability_zone
+                      AvailabilityZone: {
+                        'Fn::Join' => [
+                          '', [
+                            { Ref: 'AWS::Region' },
+                            availability_zone
+                          ]
+                        ]
+                      }
                     }
                   )
                 end
@@ -253,6 +260,135 @@ class Formatron
                       IpProtocol: protocol,
                       FromPort: from_port,
                       ToPort: to_port
+                    }
+                  )
+                end
+              end
+
+              describe '::instance' do
+                it 'should return an Instance resource' do
+                  hostname_sh = 'hostname_sh'
+                  nat_sh = 'nat_sh'
+                  scripts = [
+                    hostname_sh,
+                    nat_sh
+                  ]
+                  instance_profile = 'instance_profile'
+                  availability_zone = 'availability_zone'
+                  instance_type = 'instance_type'
+                  key_name = 'key_name'
+                  subnet = 'subnet'
+                  associate_public_ip_address = 'associate_public_ip_address'
+                  name = 'name'
+                  wait_condition_handle = 'wait_condition_handle'
+                  security_group = 'security_group'
+                  logical_id = 'logical_id'
+                  source_dest_check = 'source_dest_check'
+                  expect(
+                    EC2.instance(
+                      scripts: scripts,
+                      instance_profile: instance_profile,
+                      availability_zone: availability_zone,
+                      instance_type: instance_type,
+                      key_name: key_name,
+                      subnet: subnet,
+                      associate_public_ip_address: associate_public_ip_address,
+                      name: name,
+                      wait_condition_handle: wait_condition_handle,
+                      security_group: security_group,
+                      logical_id: logical_id,
+                      source_dest_check: source_dest_check
+                    )
+                  ).to eql(
+                    Type: 'AWS::EC2::Instance',
+                    Metadata: {
+                      Comment1: 'Create setup scripts',
+                      'AWS::CloudFormation::Init' => {
+                        config: {
+                          files: {
+                            '/tmp/formatron/script-0.sh' => {
+                              content: hostname_sh,
+                              mode: '000755',
+                              owner: 'root',
+                              group: 'root'
+                            },
+                            '/tmp/formatron/script-1.sh' => {
+                              content: nat_sh,
+                              mode: '000755',
+                              owner: 'root',
+                              group: 'root'
+                            }
+                          }
+                        }
+                      }
+                    },
+                    Properties: {
+                      IamInstanceProfile: { Ref: instance_profile },
+                      AvailabilityZone: {
+                        'Fn::Join' => [
+                          '', [
+                            { Ref: 'AWS::Region' },
+                            availability_zone
+                          ]
+                        ]
+                      },
+                      ImageId: {
+                        'Fn::FindInMap' => [
+                          'regionMap',
+                          { Ref: 'AWS::Region' },
+                          'ami'
+                        ]
+                      },
+                      SourceDestCheck: source_dest_check,
+                      InstanceType: instance_type,
+                      KeyName: key_name,
+                      NetworkInterfaces: [{
+                        AssociatePublicIpAddress: associate_public_ip_address,
+                        DeviceIndex: '0',
+                        DeleteOnTermination: true,
+                        GroupSet: [{ Ref: security_group }],
+                        SubnetId: subnet
+                      }],
+                      Tags: [{
+                        Key: 'Name',
+                        Value: {
+                          'Fn::Join' => [
+                            '', [
+                              { Ref: 'AWS::StackName' },
+                              '-',
+                              name
+                            ]
+                          ]
+                        }
+                      }],
+                      UserData: {
+                        'Fn::Base64' => {
+                          'Fn::Join' => [
+                            '', [
+                              # rubocop:disable Metrics/LineLength
+                              "#!/bin/bash -v\n",
+                              "function error_exit\n",
+                              "{\n",
+                              "  cfn-signal -e 1 -r \"$1\" '", { Ref: wait_condition_handle }, "'\n",
+                              "  exit 1\n",
+                              "}\n",
+                              "apt-get -y update\n",
+                              "apt-get -y install python-setuptools\n",
+                              "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                              "export PATH=$PATH:/opt/aws/bin\n",
+                              'cfn-init --region ', { Ref: 'AWS::Region' },
+                              '    -v -s ', { Ref: 'AWS::StackName' }, " -r #{logical_id} ",
+                              " || error_exit 'Failed to run cfn-init'\n",
+                              "for file in /tmp/formatron/script-*.sh; do\n",
+                              "  $file || error_exit 'failed to run Formatron setup script: $file'\n",
+                              "done\n",
+                              "# If all went well, signal success\n",
+                              "cfn-signal -e $? -r 'Formatron instance configuration complete' '", { Ref: wait_condition_handle }, "'\n"
+                              # rubocop:enable Metrics/LineLength
+                            ]
+                          ]
+                        }
+                      }
                     }
                   )
                 end
