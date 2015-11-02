@@ -137,8 +137,6 @@ class Formatron
             bucket:,
             config_key:
           )
-            puts hosted_zone_name
-            puts hosted_zone_id
             resources = _resources template
             resources[NAT_ROLE] = Resources::IAM.role
             resources[NAT_INSTANCE_PROFILE] = Resources::IAM.instance_profile(
@@ -254,8 +252,6 @@ class Formatron
             bucket:,
             config_key:
           )
-            puts hosted_zone_name
-            puts hosted_zone_id
             resources = _resources template
             resources[BASTION_ROLE] = Resources::IAM.role
             resources[BASTION_INSTANCE_PROFILE] =
