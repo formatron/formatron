@@ -47,7 +47,7 @@ class Formatron
     def hosted_zone_name(hosted_zone_id)
       @route53_client.get_hosted_zone(
         id: hosted_zone_id
-      ).hosted_zone.name
+      ).hosted_zone.name.chomp '.'
     end
 
     def _update_stack(stack_name:, template_url:)

@@ -191,12 +191,13 @@ describe Formatron::AWS do
 
     describe '#hosted_zone_name' do
       hosted_zone_id = 'hosted_zone_id'
+      hosted_zone_name_with_dot = 'hosted_zone_name.'
       hosted_zone_name = 'hosted_zone_name'
 
       it 'should return the Route53 hosted zone name for the given ID' do
         expect(@route53_client).to receive(:get_hosted_zone).once.with(
           id: hosted_zone_id
-        ) { Route53GetHostedZoneResponse.new hosted_zone_name }
+        ) { Route53GetHostedZoneResponse.new hosted_zone_name_with_dot }
         expect(@aws.hosted_zone_name(hosted_zone_id)).to eql hosted_zone_name
       end
     end
