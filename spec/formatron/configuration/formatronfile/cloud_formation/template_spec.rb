@@ -8,6 +8,21 @@ class Formatron
       # rubocop:disable Metrics/ModuleLength
       module CloudFormation
         describe Template do
+          before :each do
+            @route53 = class_double(
+              'Formatron::Configuration::Formatronfile' \
+              '::CloudFormation::Template::Resources::Route53'
+            ).as_stubbed_const
+            @ec2 = class_double(
+              'Formatron::Configuration::Formatronfile' \
+              '::CloudFormation::Template::Resources::EC2'
+            ).as_stubbed_const
+            @iam = class_double(
+              'Formatron::Configuration::Formatronfile' \
+              '::CloudFormation::Template::Resources::IAM'
+            ).as_stubbed_const
+          end
+
           describe '::create' do
             before :each do
               @description = 'description'
@@ -22,46 +37,28 @@ class Formatron
           end
 
           describe '::add_private_hosted_zone' do
-            before :each do
-              @hosted_zone_name = 'hosted_zone_name'
-              @region = 'region'
-            end
-
             it 'should add the Route53 private hosted zone resource' do
               template = {}
+              hosted_zone_name = 'hosted_zone_name'
+              region = 'region'
+              vpc = 'vpc'
+              hosted_zone = 'hosted_zone'
+              expect(@route53).to receive(:hosted_zone).once.with(
+                name: hosted_zone_name,
+                region: region,
+                vpc: vpc
+              ) { hosted_zone }
               Template.add_private_hosted_zone(
                 template: template,
-                hosted_zone_name: @hosted_zone_name,
-                region: @region
+                hosted_zone_name: hosted_zone_name,
+                region: region
               )
               expect(template).to eql(
                 Resources: {
-                  privateHostedZone: {
-                    Type: 'AWS::Route53::HostedZone',
-                    Properties: {
-                      HostedZoneConfig: {
-                        Comment: {
-                          'Fn::Join'.to_sym => [
-                            '', [
-                              # rubocop:disable Metrics/LineLength
-                              'Private Hosted Zone for CloudFormation Stack: ', {
-                                # rubocop:enable Metrics/LineLength
-                                'Ref': 'AWS::StackName'
-                              }
-                            ]
-                          ]
-                        }
-                      },
-                      Name: @hosted_zone_name,
-                      VPCs: [{
-                        VPCId: { 'Ref': 'vpc' },
-                        VPCRegion: @region
-                      }]
-                    }
-                  }
+                  'privateHostedZone' => hosted_zone
                 },
                 Outputs: {
-                  privateHostedZone: {
+                  'privateHostedZone' => {
                     Value: { Ref: 'privateHostedZone' }
                   }
                 }
@@ -70,87 +67,74 @@ class Formatron
           end
 
           describe '::add_vpc' do
-            before :each do
-              @cidr = 'cidr'
-              @subnets = {
+            it 'should add the VPC resources to the template' do
+              cidr = 'cidr'
+              subnets = {
                 subnet1: 'subnet1',
                 subnet2: 'subnet2',
                 subnet3: 'subnet3'
               }
-              @vpc = instance_double(
+              vpc = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
               )
-              allow(@vpc).to receive(:cidr) { @cidr }
-              allow(@vpc).to receive(:subnets) { @subnets }
+              allow(vpc).to receive(:cidr) { cidr }
+              allow(vpc).to receive(:subnets) { subnets }
               allow(Template).to receive(
                 :add_subnet
               ) do |template:, name:, subnet:|
-                template["#{name}Subnet".to_sym] = subnet
+                template["#{name}Subnet"] = subnet
               end
-            end
-
-            it 'should add the VPC resources to the template' do
               template = {}
+              expect(@ec2).to receive(:vpc).once.with(cidr: cidr) { vpc }
+              internet_gateway = 'internet_gateway'
+              expect(@ec2).to receive(
+                :internet_gateway
+              ).once.with(no_args) { internet_gateway }
+              vpc_gateway_attachment = 'vpc_gateway_attachment'
+              expect(@ec2).to receive(
+                :vpc_gateway_attachment
+              ).once.with(
+                vpc: 'vpc',
+                gateway: 'internetGateway'
+              ) { vpc_gateway_attachment }
+              route_table = 'route_table'
+              expect(@ec2).to receive(
+                :route_table
+              ).twice.with(vpc: 'vpc') { route_table }
+              public_route = 'public_route'
+              expect(@ec2).to receive(
+                :route
+              ).once.with(
+                route_table: 'publicRouteTable',
+                vpc_gateway_attachment: 'vpcGatewayAttachment',
+                internet_gateway: 'internetGateway'
+              ) { public_route }
+              private_route = 'private_route'
+              expect(@ec2).to receive(
+                :route
+              ).once.with(
+                route_table: 'privateRouteTable',
+                instance: 'natInstance'
+              ) { private_route }
               Template.add_vpc(
                 template: template,
-                vpc: @vpc
+                vpc: vpc
               )
               expect(template).to eql(
-                subnet1Subnet: @subnets[:subnet1],
-                subnet2Subnet: @subnets[:subnet2],
-                subnet3Subnet: @subnets[:subnet3],
+                'subnet1Subnet' => subnets[:subnet1],
+                'subnet2Subnet' => subnets[:subnet2],
+                'subnet3Subnet' => subnets[:subnet3],
                 Resources: {
-                  vpc: {
-                    Type: 'AWS::EC2::VPC',
-                    Properties: {
-                      CidrBlock: @cidr,
-                      EnableDnsSupport: true,
-                      EnableDnsHostnames: true,
-                      InstanceTenancy: 'default'
-                    }
-                  },
-                  internetGateway: {
-                    Type: 'AWS::EC2::InternetGateway'
-                  },
-                  vpcGatewayAttachment: {
-                    Type: 'AWS::EC2::VPCGatewayAttachment',
-                    Properties: {
-                      InternetGatewayId: { Ref: 'internetGateway' },
-                      VpcId: { Ref: 'vpc' }
-                    }
-                  },
-                  publicRouteTable: {
-                    Type: 'AWS::EC2::RouteTable',
-                    Properties: {
-                      VpcId: { Ref: 'vpc' }
-                    }
-                  },
-                  publicRoute: {
-                    Type: 'AWS::EC2::Route',
-                    DependsOn: 'vpcGatewayAttachment',
-                    Properties: {
-                      RouteTableId: { Ref: 'publicRouteTable' },
-                      DestinationCidrBlock: '0.0.0.0/0',
-                      GatewayId: { Ref: 'internetGateway' }
-                    }
-                  },
-                  privateRouteTable: {
-                    Type: 'AWS::EC2::RouteTable',
-                    Properties: {
-                      VpcId: { Ref: 'vpc' }
-                    }
-                  },
-                  privateRoute: {
-                    Type: 'AWS::EC2::Route',
-                    Properties: {
-                      RouteTableId: { Ref: 'privateRouteTable' },
-                      DestinationCidrBlock: '0.0.0.0/0',
-                      InstanceId: { Ref: 'natInstance' }
-                    }
-                  }
+                  'vpc' => vpc,
+                  'internetGateway' => internet_gateway,
+                  'vpcGatewayAttachment' => vpc_gateway_attachment,
+                  'publicRouteTable' => route_table,
+                  'publicRoute' => public_route,
+                  'privateRouteTable' => route_table,
+                  'privateRoute' => private_route
                 },
                 Outputs: {
-                  vpc: {
+                  'vpc' => {
                     Value: { Ref: 'vpc' }
                   }
                 }
@@ -180,6 +164,21 @@ class Formatron
 
               it 'should add the subnet resources to the template' do
                 template = {}
+                subnet = 'subnet'
+                subnet_route_table_association =
+                  'subnet_route_table_association'
+                vpc = 'vpc'
+                expect(@ec2).to receive(:subnet).once.with(
+                  vpc: vpc,
+                  cidr: @cidr,
+                  availability_zone: @availability_zone
+                ) { subnet }
+                expect(@ec2).to receive(
+                  :subnet_route_table_association
+                ).once.with(
+                  route_table: 'privateRouteTable',
+                  subnet: "#{@name}Subnet"
+                ) { subnet_route_table_association }
                 Template.add_subnet(
                   template: template,
                   name: @name,
@@ -187,24 +186,12 @@ class Formatron
                 )
                 expect(template).to eql(
                   Resources: {
-                    "#{@name}Subnet".to_sym => {
-                      Type: 'AWS::EC2::Subnet',
-                      Properties: {
-                        VpcId: { Ref: 'vpc' },
-                        CidrBlock: @cidr,
-                        AvailabilityZone: @availability_zone
-                      }
-                    },
-                    "#{@name}SubnetRouteTableAssociation".to_sym => {
-                      Type: 'AWS::EC2::SubnetRouteTableAssociation',
-                      Properties: {
-                        RouteTableId: { Ref: 'privateRouteTable' },
-                        SubnetId: { Ref: "#{@name}Subnet" }
-                      }
-                    }
+                    "#{@name}Subnet" => subnet,
+                    "#{@name}SubnetRouteTableAssociation" =>
+                      subnet_route_table_association
                   },
                   Outputs: {
-                    "#{@name}Subnet".to_sym => {
+                    "#{@name}Subnet" => {
                       Value: { Ref: "#{@name}Subnet" }
                     }
                   }
@@ -229,6 +216,21 @@ class Formatron
 
                 it 'should add the subnet resources to the template' do
                   template = {}
+                  subnet = 'subnet'
+                  subnet_route_table_association =
+                    'subnet_route_table_association'
+                  vpc = 'vpc'
+                  expect(@ec2).to receive(:subnet).once.with(
+                    vpc: vpc,
+                    cidr: @cidr,
+                    availability_zone: @availability_zone
+                  ) { subnet }
+                  expect(@ec2).to receive(
+                    :subnet_route_table_association
+                  ).once.with(
+                    route_table: 'publicRouteTable',
+                    subnet: "#{@name}Subnet"
+                  ) { subnet_route_table_association }
                   Template.add_subnet(
                     template: template,
                     name: @name,
@@ -236,24 +238,12 @@ class Formatron
                   )
                   expect(template).to eql(
                     Resources: {
-                      "#{@name}Subnet".to_sym => {
-                        Type: 'AWS::EC2::Subnet',
-                        Properties: {
-                          VpcId: { Ref: 'vpc' },
-                          CidrBlock: @cidr,
-                          AvailabilityZone: @availability_zone
-                        }
-                      },
-                      "#{@name}SubnetRouteTableAssociation".to_sym => {
-                        Type: 'AWS::EC2::SubnetRouteTableAssociation',
-                        Properties: {
-                          RouteTableId: { Ref: 'publicRouteTable' },
-                          SubnetId: { Ref: "#{@name}Subnet" }
-                        }
-                      }
+                      "#{@name}Subnet" => subnet,
+                      "#{@name}SubnetRouteTableAssociation" =>
+                        subnet_route_table_association
                     },
                     Outputs: {
-                      "#{@name}Subnet".to_sym => {
+                      "#{@name}Subnet" => {
                         Value: { Ref: "#{@name}Subnet" }
                       }
                     }
@@ -272,6 +262,21 @@ class Formatron
 
                 skip 'should add the subnet resources to the template' do
                   template = {}
+                  subnet = 'subnet'
+                  subnet_route_table_association =
+                    'subnet_route_table_association'
+                  vpc = 'vpc'
+                  expect(@ec2).to receive(:subnet).once.with(
+                    vpc: vpc,
+                    cidr: @cidr,
+                    availability_zone: @availability_zone
+                  ) { subnet }
+                  expect(@ec2).to receive(
+                    :subnet_route_table_association
+                  ).once.with(
+                    route_table: 'publicRouteTable',
+                    subnet: "#{@name}Subnet"
+                  ) { subnet_route_table_association }
                   Template.add_subnet(
                     template: template,
                     name: @name,
@@ -279,24 +284,12 @@ class Formatron
                   )
                   expect(template).to eql(
                     Resources: {
-                      "#{@name}Subnet".to_sym => {
-                        Type: 'AWS::EC2::Subnet',
-                        Properties: {
-                          VpcId: { Ref: 'vpc' },
-                          CidrBlock: @cidr,
-                          AvailabilityZone: @availability_zone
-                        }
-                      },
-                      "#{@name}SubnetRouteTableAssociation".to_sym => {
-                        Type: 'AWS::EC2::SubnetRouteTableAssociation',
-                        Properties: {
-                          RouteTableId: { Ref: 'publicRouteTable' },
-                          SubnetId: { Ref: "#{@name}Subnet" }
-                        }
-                      }
+                      "#{@name}Subnet" => subnet,
+                      "#{@name}SubnetRouteTableAssociation" =>
+                        subnet_route_table_association
                     },
                     Outputs: {
-                      "#{@name}Subnet".to_sym => {
+                      "#{@name}Subnet" => {
                         Value: { Ref: "#{@name}Subnet" }
                       }
                     }
@@ -330,6 +323,63 @@ class Formatron
 
             it 'should add the NAT resources to the template' do
               template = {}
+              role = 'role'
+              expect(@iam).to receive(:role).once.with(
+                no_args
+              ) { role }
+              instance_profile = 'instance_profile'
+              expect(@iam).to receive(:instance_profile).once.with(
+                role: 'natRole'
+              ) { instance_profile }
+              policy = 'policy'
+              expect(@iam).to receive(:policy).once.with(
+                role: 'natRole',
+                name: 'natPolicy',
+                statements: [{
+                  actions: 's3:GetObject',
+                  resources: "arn:aws:s3:::#{@bucket}>/#{@config_key}"
+                }, {
+                  actions: 'kms:Decrypt',
+                  resources: "arn:aws:kms:::key/#{@kms_key}"
+                }]
+              ) { policy }
+              security_group = 'security_group'
+              expect(@ec2).to receive(:security_group).once.with(
+                group_description: 'NAT security group',
+                vpc: 'vpc',
+                egress: [{
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'udp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'icmp',
+                  from_port: '-1',
+                  to_port: '-1'
+                }],
+                ingress: [{
+                  cidr: @cidr,
+                  protocol: 'tcp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'udp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'icmp',
+                  from_port: '-1',
+                  to_port: '-1'
+                }]
+              ) { security_group }
               Template.add_nat(
                 template: template,
                 hosted_zone_id: @hosted_zone_id,
@@ -340,92 +390,11 @@ class Formatron
               )
               expect(template).to eql(
                 Resources: {
-                  natRole: {
-                    Type: 'AWS::IAM::Role',
-                    Properties: {
-                      AssumeRolePolicyDocument: {
-                        Version: '2012-10-17',
-                        Statement: [{
-                          Effect: 'Allow',
-                          Principal: { 'Service': ['ec2.amazonaws.com'] },
-                          Action: ['sts:AssumeRole']
-                        }]
-                      },
-                      Path: '/'
-                    }
-                  },
-                  natInstanceProfile: {
-                    Type: 'AWS::IAM::InstanceProfile',
-                    Properties: {
-                      Path: '/',
-                      Roles: [
-                        { Ref: 'natRole' }
-                      ]
-                    }
-                  },
-                  natPolicy: {
-                    Type: 'AWS::IAM::Policy',
-                    Properties: {
-                      Roles: [{ 'Ref': 'natRole' }],
-                      PolicyName: 'natPolicy',
-                      PolicyDocument: {
-                        Version: '2012-10-17',
-                        Statement: [{
-                          Action: ['s3:GetObject'],
-                          Effect: 'Allow',
-                          Resource: [
-                            "arn:aws:s3:::#{@bucket}>/#{@config_key}"
-                          ]
-                        }, {
-                          Effect: 'Allow',
-                          Action: [
-                            'kms:Decrypt'
-                          ],
-                          Resource: "arn:aws:kms:::key/#{@kms_key}"
-                        }]
-                      }
-                    }
-                  },
-                  natSecurityGroup: {
-                    Type: 'AWS::EC2::SecurityGroup',
-                    Properties: {
-                      GroupDescription: 'NAT security group',
-                      VpcId: { Ref: 'vpc' },
-                      SecurityGroupEgress: [{
-                        CidrIp: '0.0.0.0/0',
-                        IpProtocol: 'tcp',
-                        FromPort: '0',
-                        ToPort: '65535'
-                      }, {
-                        CidrIp: '0.0.0.0/0',
-                        IpProtocol: 'udp',
-                        FromPort: '0',
-                        ToPort: '65535'
-                      }, {
-                        CidrIp: '0.0.0.0/0',
-                        IpProtocol: 'icmp',
-                        FromPort: '-1',
-                        ToPort: '-1'
-                      }],
-                      SecurityGroupIngress: [{
-                        CidrIp: "#{@cidr}",
-                        IpProtocol: 'tcp',
-                        FromPort: '0',
-                        ToPort: '65535'
-                      }, {
-                        CidrIp: "#{@cidr}",
-                        IpProtocol: 'udp',
-                        FromPort: '0',
-                        ToPort: '65535'
-                      }, {
-                        CidrIp: "#{@cidr}",
-                        IpProtocol: 'icmp',
-                        FromPort: '-1',
-                        ToPort: '-1'
-                      }]
-                    }
-                  },
-                  natInstance: {
+                  'natRole' => role,
+                  'natInstanceProfile' => instance_profile,
+                  'natPolicy' => policy,
+                  'natSecurityGroup' => security_group,
+                  'natInstance' => {
                   }
                 }
               )
