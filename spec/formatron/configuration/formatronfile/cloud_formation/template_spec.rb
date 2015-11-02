@@ -510,6 +510,192 @@ class Formatron
               )
             end
           end
+
+          describe '::add_bastion' do
+            before :each do
+              @hosted_zone_id = 'hosted_zone_id'
+              @hosted_zone_name = 'hosted_zone_name'
+              @sub_domain = 'sub_domain'
+              @bucket = 'bucket'
+              @config_key = 'config_key'
+              @kms_key = 'kms_key'
+              @cidr = 'cidr'
+              @availability_zone = 'availability_zone'
+              @subnet_name = 'subnet_name'
+              @key_pair = 'key_pair'
+              @subnet = instance_double(
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::VPC::Subnet'
+              )
+              @bootstrap_ec2 = instance_double(
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::EC2'
+              )
+              @subnets = {
+                "#{@subnet_name}" => @subnet
+              }
+              @bootstrap = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap'
+              )
+              allow(@bootstrap).to receive(:kms_key) { @kms_key }
+              @vpc = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
+              )
+              allow(@bootstrap).to receive(:vpc) { @vpc }
+              allow(@bootstrap).to receive(:ec2) { @bootstrap_ec2 }
+              allow(@bootstrap_ec2).to receive(:key_pair) { @key_pair }
+              allow(@vpc).to receive(:cidr) { @cidr }
+              allow(@vpc).to receive(:subnets) { @subnets }
+              @bastion = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::Bastion'
+              )
+              allow(@bootstrap).to receive(:bastion) { @bastion }
+              allow(@bastion).to receive(:subnet) { @subnet_name }
+              allow(@bastion).to receive(:sub_domain) { @sub_domain }
+              allow(@subnet).to receive(:public?) { true }
+              allow(@subnet).to receive(
+                :availability_zone
+              ) { @availability_zone }
+            end
+
+            it 'should add the Bastion resources to the template' do
+              template = {}
+              role = 'role'
+              expect(@iam).to receive(:role).once.with(
+                no_args
+              ) { role }
+              instance_profile = 'instance_profile'
+              expect(@iam).to receive(:instance_profile).once.with(
+                role: 'bastionRole'
+              ) { instance_profile }
+              policy = 'policy'
+              expect(@iam).to receive(:policy).once.with(
+                role: 'bastionRole',
+                name: 'bastionPolicy',
+                statements: [{
+                  actions: 's3:GetObject',
+                  resources: "arn:aws:s3:::#{@bucket}>/#{@config_key}"
+                }, {
+                  actions: 'kms:Decrypt',
+                  resources: "arn:aws:kms:::key/#{@kms_key}"
+                }]
+              ) { policy }
+              security_group = 'security_group'
+              expect(@ec2).to receive(:security_group).once.with(
+                group_description: 'Bastion security group',
+                vpc: 'vpc',
+                egress: [{
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'udp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'icmp',
+                  from_port: '-1',
+                  to_port: '-1'
+                }],
+                ingress: [{
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '22',
+                  to_port: '22'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'tcp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'udp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'icmp',
+                  from_port: '-1',
+                  to_port: '-1'
+                }]
+              ) { security_group }
+              hostname_sh = 'hostname_sh'
+              expect(@scripts).to receive(:hostname).once.with(
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name
+              ) { hostname_sh }
+              instance = 'instance'
+              expect(@ec2).to receive(:instance).once.with(
+                scripts: [
+                  hostname_sh
+                ],
+                instance_profile: 'bastionInstanceProfile',
+                availability_zone: @availability_zone,
+                instance_type: 't2.micro',
+                key_name: @key_pair,
+                subnet: { Ref: "#{@subnet_name}Subnet" },
+                associate_public_ip_address: true,
+                name: 'bastion',
+                wait_condition_handle: 'bastionWaitConditionHandle',
+                security_group: 'bastionSecurityGroup',
+                logical_id: 'bastionInstance',
+                source_dest_check: false
+              ) { instance }
+              wait_condition_handle = 'wait_condition_handle'
+              expect(@cloud_formation).to receive(
+                :wait_condition_handle
+              ).once.with(
+                no_args
+              ) { wait_condition_handle }
+              wait_condition = 'wait_condition'
+              expect(@cloud_formation).to receive(
+                :wait_condition
+              ).once.with(
+                wait_condition_handle: 'bastionWaitConditionHandle',
+                instance: 'bastionInstance'
+              ) { wait_condition }
+              public_record_set = 'public_record_set'
+              expect(@route53).to receive(:record_set).once.with(
+                hosted_zone_id: @hosted_zone_id,
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name,
+                instance: 'bastionInstance',
+                attribute: 'PublicIp'
+              ) { public_record_set }
+              private_record_set = 'private_record_set'
+              expect(@route53).to receive(:record_set).once.with(
+                hosted_zone_id: { Ref: 'privateHostedZone' },
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name,
+                instance: 'bastionInstance',
+                attribute: 'PrivateIp'
+              ) { private_record_set }
+              Template.add_bastion(
+                template: template,
+                hosted_zone_id: @hosted_zone_id,
+                hosted_zone_name: @hosted_zone_name,
+                bootstrap: @bootstrap,
+                bucket: @bucket,
+                config_key: @config_key
+              )
+              expect(template).to eql(
+                Resources: {
+                  'bastionRole' => role,
+                  'bastionInstanceProfile' => instance_profile,
+                  'bastionPolicy' => policy,
+                  'bastionSecurityGroup' => security_group,
+                  'bastionInstance' => instance,
+                  'bastionWaitConditionHandle' => wait_condition_handle,
+                  'bastionWaitCondition' => wait_condition,
+                  'bastionPublicRecordSet' => public_record_set,
+                  'bastionPrivateRecordSet' => private_record_set
+                }
+              )
+            end
+          end
         end
       end
       # rubocop:enable Metrics/ModuleLength

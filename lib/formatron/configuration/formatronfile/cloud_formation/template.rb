@@ -21,9 +21,9 @@ class Formatron
           PUBLIC_ROUTE = 'publicRoute'
           PRIVATE_ROUTE_TABLE = 'privateRouteTable'
           PRIVATE_ROUTE = 'privateRoute'
-          NAT_INSTANCE = 'natInstance'
           SUBNET = 'Subnet'
           SUBNET_ROUTE_TABLE_ASSOCIATION = 'SubnetRouteTableAssociation'
+          NAT_INSTANCE = 'natInstance'
           NAT_ROLE = 'natRole'
           NAT_INSTANCE_PROFILE = 'natInstanceProfile'
           NAT_POLICY = 'natPolicy'
@@ -32,6 +32,15 @@ class Formatron
           NAT_WAIT_CONDITION = 'natWaitCondition'
           NAT_PUBLIC_RECORD_SET = 'natPublicRecordSet'
           NAT_PRIVATE_RECORD_SET = 'natPrivateRecordSet'
+          BASTION_INSTANCE = 'bastionInstance'
+          BASTION_ROLE = 'bastionRole'
+          BASTION_INSTANCE_PROFILE = 'bastionInstanceProfile'
+          BASTION_POLICY = 'bastionPolicy'
+          BASTION_SECURITY_GROUP = 'bastionSecurityGroup'
+          BASTION_WAIT_CONDITION_HANDLE = 'bastionWaitConditionHandle'
+          BASTION_WAIT_CONDITION = 'bastionWaitCondition'
+          BASTION_PUBLIC_RECORD_SET = 'bastionPublicRecordSet'
+          BASTION_PRIVATE_RECORD_SET = 'bastionPrivateRecordSet'
 
           def self.create(description)
             {
@@ -229,6 +238,128 @@ class Formatron
               instance: NAT_INSTANCE,
               attribute: 'PrivateIp'
             )
+          end
+          # rubocop:enable Metrics/AbcSize
+          # rubocop:enable Metrics/ParameterLists
+          # rubocop:enable Metrics/MethodLength
+
+          # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/ParameterLists
+          # rubocop:disable Metrics/AbcSize
+          def self.add_bastion(
+            template:,
+            hosted_zone_id:,
+            hosted_zone_name:,
+            bootstrap:,
+            bucket:,
+            config_key:
+          )
+            puts hosted_zone_name
+            puts hosted_zone_id
+            resources = _resources template
+            resources[BASTION_ROLE] = Resources::IAM.role
+            resources[BASTION_INSTANCE_PROFILE] =
+              Resources::IAM.instance_profile(
+                role: BASTION_ROLE
+              )
+            resources[BASTION_POLICY] = Resources::IAM.policy(
+              role: BASTION_ROLE,
+              name: BASTION_POLICY,
+              statements: [{
+                actions: 's3:GetObject',
+                resources: "arn:aws:s3:::#{bucket}>/#{config_key}"
+              }, {
+                actions: 'kms:Decrypt',
+                resources: "arn:aws:kms:::key/#{bootstrap.kms_key}"
+              }]
+            )
+            resources[BASTION_SECURITY_GROUP] = Resources::EC2.security_group(
+              group_description: 'Bastion security group',
+              vpc: VPC,
+              egress: [{
+                cidr: '0.0.0.0/0',
+                protocol: 'tcp',
+                from_port: '0',
+                to_port: '65535'
+              }, {
+                cidr: '0.0.0.0/0',
+                protocol: 'udp',
+                from_port: '0',
+                to_port: '65535'
+              }, {
+                cidr: '0.0.0.0/0',
+                protocol: 'icmp',
+                from_port: '-1',
+                to_port: '-1'
+              }],
+              ingress: [{
+                cidr: '0.0.0.0/0',
+                protocol: 'tcp',
+                from_port: '22',
+                to_port: '22'
+              }, {
+                cidr: bootstrap.vpc.cidr,
+                protocol: 'tcp',
+                from_port: '0',
+                to_port: '65535'
+              }, {
+                cidr: bootstrap.vpc.cidr,
+                protocol: 'udp',
+                from_port: '0',
+                to_port: '65535'
+              }, {
+                cidr: bootstrap.vpc.cidr,
+                protocol: 'icmp',
+                from_port: '-1',
+                to_port: '-1'
+              }]
+            )
+            resources[BASTION_INSTANCE] = Resources::EC2.instance(
+              scripts: [
+                Scripts.hostname(
+                  sub_domain: bootstrap.bastion.sub_domain,
+                  hosted_zone_name: hosted_zone_name
+                )
+              ],
+              instance_profile: BASTION_INSTANCE_PROFILE,
+              availability_zone: bootstrap.vpc.subnets[
+                bootstrap.bastion.subnet
+              ].availability_zone,
+              instance_type: 't2.micro',
+              key_name: bootstrap.ec2.key_pair,
+              subnet: ref("#{bootstrap.bastion.subnet}#{SUBNET}"),
+              associate_public_ip_address: bootstrap.vpc.subnets[
+                bootstrap.bastion.subnet
+              ].public?,
+              name: 'bastion',
+              wait_condition_handle: BASTION_WAIT_CONDITION_HANDLE,
+              security_group: BASTION_SECURITY_GROUP,
+              logical_id: BASTION_INSTANCE,
+              source_dest_check: false
+            )
+            resources[BASTION_WAIT_CONDITION_HANDLE] =
+              Resources::CloudFormation.wait_condition_handle
+            resources[BASTION_WAIT_CONDITION] =
+              Resources::CloudFormation.wait_condition(
+                instance: BASTION_INSTANCE,
+                wait_condition_handle: BASTION_WAIT_CONDITION_HANDLE
+              )
+            resources[BASTION_PUBLIC_RECORD_SET] =
+              Resources::Route53.record_set(
+                hosted_zone_id: hosted_zone_id,
+                sub_domain: bootstrap.bastion.sub_domain,
+                hosted_zone_name: hosted_zone_name,
+                instance: BASTION_INSTANCE,
+                attribute: 'PublicIp'
+              )
+            resources[BASTION_PRIVATE_RECORD_SET] =
+              Resources::Route53.record_set(
+                hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
+                sub_domain: bootstrap.bastion.sub_domain,
+                hosted_zone_name: hosted_zone_name,
+                instance: BASTION_INSTANCE,
+                attribute: 'PrivateIp'
+              )
           end
           # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/ParameterLists

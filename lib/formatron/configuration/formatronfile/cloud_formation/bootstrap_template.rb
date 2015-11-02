@@ -27,6 +27,14 @@ class Formatron
               bucket,
               config_key
             )
+            _add_bastion(
+              template,
+              hosted_zone_id,
+              hosted_zone_name,
+              bootstrap,
+              bucket,
+              config_key
+            )
             "#{JSON.pretty_generate template}\n"
           end
           # rubocop:enable Metrics/MethodLength
@@ -68,6 +76,28 @@ class Formatron
             config_key
           )
             Template.add_nat(
+              template: template,
+              hosted_zone_id: hosted_zone_id,
+              hosted_zone_name: hosted_zone_name,
+              bootstrap: bootstrap,
+              bucket: bucket,
+              config_key: config_key
+            )
+          end
+          # rubocop:enable Metrics/ParameterLists
+          # rubocop:enable Metrics/MethodLength
+
+          # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/ParameterLists
+          def self._add_bastion(
+            template,
+            hosted_zone_id,
+            hosted_zone_name,
+            bootstrap,
+            bucket,
+            config_key
+          )
+            Template.add_bastion(
               template: template,
               hosted_zone_id: hosted_zone_id,
               hosted_zone_name: hosted_zone_name,

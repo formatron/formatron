@@ -63,6 +63,21 @@ class Formatron
               }
             end
             # rubocop:enable Metrics/ParameterLists
+            # rubocop:disable Metrics/ParameterLists
+            allow(template_module).to receive(
+              :add_bastion
+            # rubocop:disable Metrics/LineLength
+            ) do |template:, hosted_zone_id:, hosted_zone_name:, bootstrap:, bucket:, config_key:|
+              # rubocop:enable Metrics/LineLength
+              template[:bastion] = {
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
+                bootstrap: bootstrap.nat,
+                bucket: bucket,
+                config_key: config_key
+              }
+            end
+            # rubocop:enable Metrics/ParameterLists
           end
 
           describe '#json' do
@@ -82,6 +97,13 @@ class Formatron
                   "private_hosted_zone": "#{@hosted_zone_name}",
                   "vpc": "#{@vpc}",
                   "nat": {
+                    "hosted_zone_id": "#{@hosted_zone_id}",
+                    "hosted_zone_name": "#{@hosted_zone_name}",
+                    "bootstrap": "#{@nat}",
+                    "bucket": "#{@bucket}",
+                    "config_key": "#{@config_key}"
+                  },
+                  "bastion": {
                     "hosted_zone_id": "#{@hosted_zone_id}",
                     "hosted_zone_name": "#{@hosted_zone_name}",
                     "bootstrap": "#{@nat}",
