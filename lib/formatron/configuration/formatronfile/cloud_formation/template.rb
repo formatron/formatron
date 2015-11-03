@@ -23,24 +23,59 @@ class Formatron
           PRIVATE_ROUTE = 'privateRoute'
           SUBNET = 'Subnet'
           SUBNET_ROUTE_TABLE_ASSOCIATION = 'SubnetRouteTableAssociation'
-          NAT_INSTANCE = 'natInstance'
-          NAT_ROLE = 'natRole'
-          NAT_INSTANCE_PROFILE = 'natInstanceProfile'
-          NAT_POLICY = 'natPolicy'
-          NAT_SECURITY_GROUP = 'natSecurityGroup'
-          NAT_WAIT_CONDITION_HANDLE = 'natWaitConditionHandle'
-          NAT_WAIT_CONDITION = 'natWaitCondition'
-          NAT_PUBLIC_RECORD_SET = 'natPublicRecordSet'
-          NAT_PRIVATE_RECORD_SET = 'natPrivateRecordSet'
-          BASTION_INSTANCE = 'bastionInstance'
-          BASTION_ROLE = 'bastionRole'
-          BASTION_INSTANCE_PROFILE = 'bastionInstanceProfile'
-          BASTION_POLICY = 'bastionPolicy'
-          BASTION_SECURITY_GROUP = 'bastionSecurityGroup'
-          BASTION_WAIT_CONDITION_HANDLE = 'bastionWaitConditionHandle'
-          BASTION_WAIT_CONDITION = 'bastionWaitCondition'
-          BASTION_PUBLIC_RECORD_SET = 'bastionPublicRecordSet'
-          BASTION_PRIVATE_RECORD_SET = 'bastionPrivateRecordSet'
+          INSTANCE = 'Instance'
+          ROLE = 'Role'
+          INSTANCE_PROFILE = 'InstanceProfile'
+          POLICY = 'Policy'
+          SECURITY_GROUP = 'SecurityGroup'
+          WAIT_CONDITION_HANDLE = 'WaitConditionHandle'
+          WAIT_CONDITION = 'WaitCondition'
+          PUBLIC_RECORD_SET = 'PublicRecordSet'
+          PRIVATE_RECORD_SET = 'PrivateRecordSet'
+          NAT = 'nat'
+          BASTION = 'bastion'
+
+          # rubocop:disable Metrics/MethodLength
+          def self._security_group_base_egress_rules
+            [{
+              cidr: '0.0.0.0/0',
+              protocol: 'tcp',
+              from_port: '0',
+              to_port: '65535'
+            }, {
+              cidr: '0.0.0.0/0',
+              protocol: 'udp',
+              from_port: '0',
+              to_port: '65535'
+            }, {
+              cidr: '0.0.0.0/0',
+              protocol: 'icmp',
+              from_port: '-1',
+              to_port: '-1'
+            }]
+          end
+          # rubocop:enable Metrics/MethodLength
+
+          # rubocop:disable Metrics/MethodLength
+          def self._security_group_base_ingress_rules(cidr)
+            [{
+              cidr: cidr,
+              protocol: 'tcp',
+              from_port: '0',
+              to_port: '65535'
+            }, {
+              cidr: cidr,
+              protocol: 'udp',
+              from_port: '0',
+              to_port: '65535'
+            }, {
+              cidr: cidr,
+              protocol: 'icmp',
+              from_port: '-1',
+              to_port: '-1'
+            }]
+          end
+          # rubocop:enable Metrics/MethodLength
 
           def self.create(description)
             {
@@ -50,7 +85,7 @@ class Formatron
           end
 
           def self.add_region_map(template:)
-            mappings = _mappings template
+            mappings = mappings template
             mappings[REGION_MAP] = Formatron::AWS::REGIONS
           end
 
@@ -58,8 +93,8 @@ class Formatron
             template:,
             hosted_zone_name:
           )
-            resources = _resources template
-            outputs = _outputs template
+            resources = resources template
+            outputs = outputs template
             resources[PRIVATE_HOSTED_ZONE] = Resources::Route53.hosted_zone(
               name: hosted_zone_name,
               vpc: VPC
@@ -70,8 +105,8 @@ class Formatron
           # rubocop:disable Metrics/MethodLength
           # rubocop:disable Metrics/AbcSize
           def self.add_vpc(template:, vpc:)
-            resources = _resources template
-            outputs = _outputs template
+            resources = resources template
+            outputs = outputs template
             resources[VPC] = Resources::EC2.vpc cidr: vpc.cidr
             resources[INTERNET_GATEWAY] = Resources::EC2.internet_gateway
             resources[VPC_GATEWAY_ATTACHMENT] =
@@ -92,7 +127,7 @@ class Formatron
             )
             resources[PRIVATE_ROUTE] = Resources::EC2.route(
               route_table: PRIVATE_ROUTE_TABLE,
-              instance: NAT_INSTANCE
+              instance: "#{NAT}#{INSTANCE}"
             )
             outputs[VPC] = output ref(VPC)
             vpc.subnets.each do |name, subnet|
@@ -110,8 +145,8 @@ class Formatron
           def self.add_subnet(template:, name:, subnet:)
             route_table =
               subnet.public? ? PUBLIC_ROUTE_TABLE : PRIVATE_ROUTE_TABLE
-            resources = _resources template
-            outputs = _outputs template
+            resources = resources template
+            outputs = outputs template
             resources["#{name}#{SUBNET}"] = Resources::EC2.subnet(
               vpc: VPC,
               cidr: subnet.cidr,
@@ -128,7 +163,6 @@ class Formatron
 
           # rubocop:disable Metrics/MethodLength
           # rubocop:disable Metrics/ParameterLists
-          # rubocop:disable Metrics/AbcSize
           def self.add_nat(
             template:,
             hosted_zone_id:,
@@ -137,113 +171,26 @@ class Formatron
             bucket:,
             config_key:
           )
-            resources = _resources template
-            resources[NAT_ROLE] = Resources::IAM.role
-            resources[NAT_INSTANCE_PROFILE] = Resources::IAM.instance_profile(
-              role: NAT_ROLE
-            )
-            resources[NAT_POLICY] = Resources::IAM.policy(
-              role: NAT_ROLE,
-              name: NAT_POLICY,
-              statements: [{
-                actions: 's3:GetObject',
-                resources: "arn:aws:s3:::#{bucket}>/#{config_key}"
-              }, {
-                actions: 'kms:Decrypt',
-                resources: "arn:aws:kms:::key/#{bootstrap.kms_key}"
-              }]
-            )
-            resources[NAT_SECURITY_GROUP] = Resources::EC2.security_group(
-              group_description: 'NAT security group',
-              vpc: VPC,
-              egress: [{
-                cidr: '0.0.0.0/0',
-                protocol: 'tcp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: '0.0.0.0/0',
-                protocol: 'udp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: '0.0.0.0/0',
-                protocol: 'icmp',
-                from_port: '-1',
-                to_port: '-1'
-              }],
-              ingress: [{
-                cidr: bootstrap.vpc.cidr,
-                protocol: 'tcp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: bootstrap.vpc.cidr,
-                protocol: 'udp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: bootstrap.vpc.cidr,
-                protocol: 'icmp',
-                from_port: '-1',
-                to_port: '-1'
-              }]
-            )
-            resources[NAT_INSTANCE] = Resources::EC2.instance(
-              scripts: [
-                Scripts.hostname(
-                  sub_domain: bootstrap.nat.sub_domain,
-                  hosted_zone_name: hosted_zone_name
-                ),
-                Scripts.nat(
-                  cidr: bootstrap.vpc.cidr
-                )
-              ],
-              instance_profile: NAT_INSTANCE_PROFILE,
-              availability_zone: bootstrap.vpc.subnets[
-                bootstrap.nat.subnet
-              ].availability_zone,
-              instance_type: 't2.micro',
-              key_name: bootstrap.ec2.key_pair,
-              subnet: ref("#{bootstrap.nat.subnet}#{SUBNET}"),
-              associate_public_ip_address: bootstrap.vpc.subnets[
-                bootstrap.nat.subnet
-              ].public?,
-              name: "#{bootstrap.nat.sub_domain}.#{hosted_zone_name}",
-              wait_condition_handle: NAT_WAIT_CONDITION_HANDLE,
-              security_group: NAT_SECURITY_GROUP,
-              logical_id: NAT_INSTANCE,
+            add_instance(
+              template: template,
+              prefix: NAT,
+              bucket: bucket,
+              config_key: config_key,
+              instance: bootstrap.nat,
+              bootstrap: bootstrap,
+              scripts: [Scripts.nat(cidr: bootstrap.vpc.cidr)],
+              ingress_rules: [],
+              public_hosted_zone_id: hosted_zone_id,
+              private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
+              hosted_zone_name: hosted_zone_name,
               source_dest_check: false
             )
-            resources[NAT_WAIT_CONDITION_HANDLE] =
-              Resources::CloudFormation.wait_condition_handle
-            resources[NAT_WAIT_CONDITION] =
-              Resources::CloudFormation.wait_condition(
-                instance: NAT_INSTANCE,
-                wait_condition_handle: NAT_WAIT_CONDITION_HANDLE
-              )
-            resources[NAT_PUBLIC_RECORD_SET] = Resources::Route53.record_set(
-              hosted_zone_id: hosted_zone_id,
-              sub_domain: bootstrap.nat.sub_domain,
-              hosted_zone_name: hosted_zone_name,
-              instance: NAT_INSTANCE,
-              attribute: 'PublicIp'
-            )
-            resources[NAT_PRIVATE_RECORD_SET] = Resources::Route53.record_set(
-              hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
-              sub_domain: bootstrap.nat.sub_domain,
-              hosted_zone_name: hosted_zone_name,
-              instance: NAT_INSTANCE,
-              attribute: 'PrivateIp'
-            )
           end
-          # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
           # rubocop:disable Metrics/ParameterLists
-          # rubocop:disable Metrics/AbcSize
           def self.add_bastion(
             template:,
             hosted_zone_id:,
@@ -252,15 +199,55 @@ class Formatron
             bucket:,
             config_key:
           )
-            resources = _resources template
-            resources[BASTION_ROLE] = Resources::IAM.role
-            resources[BASTION_INSTANCE_PROFILE] =
+            add_instance(
+              template: template,
+              prefix: BASTION,
+              bucket: bucket,
+              config_key: config_key,
+              instance: bootstrap.bastion,
+              bootstrap: bootstrap,
+              scripts: [],
+              ingress_rules: [{
+                cidr: '0.0.0.0/0',
+                protocol: 'tcp',
+                from_port: '22',
+                to_port: '22'
+              }],
+              public_hosted_zone_id: hosted_zone_id,
+              private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
+              hosted_zone_name: hosted_zone_name,
+              source_dest_check: true
+            )
+          end
+          # rubocop:enable Metrics/ParameterLists
+          # rubocop:enable Metrics/MethodLength
+
+          # rubocop:disable Metrics/AbcSize
+          # rubocop:disable Metrics/ParameterLists
+          # rubocop:disable Metrics/MethodLength
+          def self.add_instance(
+            template:,
+            prefix:,
+            bucket:,
+            config_key:,
+            instance:,
+            bootstrap:,
+            ingress_rules:,
+            scripts:,
+            public_hosted_zone_id:,
+            private_hosted_zone_id:,
+            hosted_zone_name:,
+            source_dest_check:
+          )
+            resources = resources template
+            resources["#{prefix}#{ROLE}"] = Resources::IAM.role
+            resources["#{prefix}#{INSTANCE_PROFILE}"] =
               Resources::IAM.instance_profile(
-                role: BASTION_ROLE
+                role: "#{prefix}#{ROLE}"
               )
-            resources[BASTION_POLICY] = Resources::IAM.policy(
-              role: BASTION_ROLE,
-              name: BASTION_POLICY,
+            resources["#{prefix}#{POLICY}"] = Resources::IAM.policy(
+              role: "#{prefix}#{ROLE}",
+              name: "#{prefix}#{POLICY}",
               statements: [{
                 actions: 's3:GetObject',
                 resources: "arn:aws:s3:::#{bucket}>/#{config_key}"
@@ -269,107 +256,68 @@ class Formatron
                 resources: "arn:aws:kms:::key/#{bootstrap.kms_key}"
               }]
             )
-            resources[BASTION_SECURITY_GROUP] = Resources::EC2.security_group(
-              group_description: 'Bastion security group',
-              vpc: VPC,
-              egress: [{
-                cidr: '0.0.0.0/0',
-                protocol: 'tcp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: '0.0.0.0/0',
-                protocol: 'udp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: '0.0.0.0/0',
-                protocol: 'icmp',
-                from_port: '-1',
-                to_port: '-1'
-              }],
-              ingress: [{
-                cidr: '0.0.0.0/0',
-                protocol: 'tcp',
-                from_port: '22',
-                to_port: '22'
-              }, {
-                cidr: bootstrap.vpc.cidr,
-                protocol: 'tcp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: bootstrap.vpc.cidr,
-                protocol: 'udp',
-                from_port: '0',
-                to_port: '65535'
-              }, {
-                cidr: bootstrap.vpc.cidr,
-                protocol: 'icmp',
-                from_port: '-1',
-                to_port: '-1'
-              }]
-            )
-            resources[BASTION_INSTANCE] = Resources::EC2.instance(
+            resources["#{prefix}#{SECURITY_GROUP}"] =
+              Resources::EC2.security_group(
+                group_description: "#{prefix} security group",
+                vpc: VPC,
+                egress: _security_group_base_egress_rules,
+                ingress: _security_group_base_ingress_rules(
+                  bootstrap.vpc.cidr
+                ).concat(ingress_rules)
+              )
+            resources["#{prefix}#{INSTANCE}"] = Resources::EC2.instance(
               scripts: [
                 Scripts.hostname(
-                  sub_domain: bootstrap.bastion.sub_domain,
+                  sub_domain: instance.sub_domain,
                   hosted_zone_name: hosted_zone_name
                 )
-              ],
-              instance_profile: BASTION_INSTANCE_PROFILE,
+              ].concat(scripts),
+              instance_profile: "#{prefix}#{INSTANCE_PROFILE}",
               availability_zone: bootstrap.vpc.subnets[
-                bootstrap.bastion.subnet
+                instance.subnet
               ].availability_zone,
               instance_type: 't2.micro',
               key_name: bootstrap.ec2.key_pair,
-              subnet: ref("#{bootstrap.bastion.subnet}#{SUBNET}"),
+              subnet: ref("#{instance.subnet}#{SUBNET}"),
               associate_public_ip_address: bootstrap.vpc.subnets[
-                bootstrap.bastion.subnet
+                instance.subnet
               ].public?,
-              name: "#{bootstrap.bastion.sub_domain}.#{hosted_zone_name}",
-              wait_condition_handle: BASTION_WAIT_CONDITION_HANDLE,
-              security_group: BASTION_SECURITY_GROUP,
-              logical_id: BASTION_INSTANCE,
-              source_dest_check: false
+              name: "#{instance.sub_domain}.#{hosted_zone_name}",
+              wait_condition_handle: "#{prefix}#{WAIT_CONDITION_HANDLE}",
+              security_group: "#{prefix}#{SECURITY_GROUP}",
+              logical_id: "#{prefix}#{INSTANCE}",
+              source_dest_check: source_dest_check
             )
-            resources[BASTION_WAIT_CONDITION_HANDLE] =
+            resources["#{prefix}#{WAIT_CONDITION_HANDLE}"] =
               Resources::CloudFormation.wait_condition_handle
-            resources[BASTION_WAIT_CONDITION] =
+            resources["#{prefix}#{WAIT_CONDITION}"] =
               Resources::CloudFormation.wait_condition(
-                instance: BASTION_INSTANCE,
-                wait_condition_handle: BASTION_WAIT_CONDITION_HANDLE
+                instance: "#{prefix}#{INSTANCE}",
+                wait_condition_handle: "#{prefix}#{WAIT_CONDITION_HANDLE}"
               )
-            resources[BASTION_PUBLIC_RECORD_SET] =
-              Resources::Route53.record_set(
-                hosted_zone_id: hosted_zone_id,
-                sub_domain: bootstrap.bastion.sub_domain,
-                hosted_zone_name: hosted_zone_name,
-                instance: BASTION_INSTANCE,
-                attribute: 'PublicIp'
-              )
-            resources[BASTION_PRIVATE_RECORD_SET] =
-              Resources::Route53.record_set(
-                hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
-                sub_domain: bootstrap.bastion.sub_domain,
-                hosted_zone_name: hosted_zone_name,
-                instance: BASTION_INSTANCE,
-                attribute: 'PrivateIp'
-              )
+            Resources::Route53.add_record_sets(
+              template: template,
+              private_hosted_zone_id: private_hosted_zone_id,
+              public_hosted_zone_id: public_hosted_zone_id,
+              prefix: prefix,
+              sub_domain: instance.sub_domain,
+              subnet: bootstrap.vpc.subnets[instance.subnet],
+              hosted_zone_name: hosted_zone_name
+            )
           end
           # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
-          def self._resources(template)
+          def self.resources(template)
             template[:Resources] ||= {}
           end
 
-          def self._outputs(template)
+          def self.outputs(template)
             template[:Outputs] ||= {}
           end
 
-          def self._mappings(template)
+          def self.mappings(template)
             template[:Mappings] ||= {}
           end
 
@@ -416,9 +364,8 @@ class Formatron
           end
 
           private_class_method(
-            :_resources,
-            :_outputs,
-            :_mappings
+            :_security_group_base_egress_rules,
+            :_security_group_base_ingress_rules
           )
         end
         # rubocop:enable Metrics/ModuleLength

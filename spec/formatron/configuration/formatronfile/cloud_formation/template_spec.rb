@@ -325,9 +325,15 @@ class Formatron
             end
           end
 
-          describe '::add_nat' do
+          describe '::add_instance' do
             before :each do
-              @hosted_zone_id = 'hosted_zone_id'
+              @template = {}
+              @prefix = 'prefix'
+              @script = 'script'
+              @ingress_rule = 'ingress_rule'
+              @source_dest_check = 'source_dest_check'
+              @public_hosted_zone_id = 'public_hosted_zone_id'
+              @private_hosted_zone_id = 'private_hosted_zone_id'
               @hosted_zone_name = 'hosted_zone_name'
               @sub_domain = 'sub_domain'
               @bucket = 'bucket'
@@ -337,6 +343,7 @@ class Formatron
               @availability_zone = 'availability_zone'
               @subnet_name = 'subnet_name'
               @key_pair = 'key_pair'
+              @public = 'public'
               @subnet = instance_double(
                 'Formatron::Configuration::Formatronfile' \
                 '::Bootstrap::VPC::Subnet'
@@ -360,32 +367,30 @@ class Formatron
               allow(@bootstrap_ec2).to receive(:key_pair) { @key_pair }
               allow(@vpc).to receive(:cidr) { @cidr }
               allow(@vpc).to receive(:subnets) { @subnets }
-              @nat = instance_double(
-                'Formatron::Configuration::Formatronfile::Bootstrap::NAT'
+              @instance = instance_double(
+                'Formatron::Configuration::Formatronfile::Instance'
               )
-              allow(@bootstrap).to receive(:nat) { @nat }
-              allow(@nat).to receive(:subnet) { @subnet_name }
-              allow(@nat).to receive(:sub_domain) { @sub_domain }
-              allow(@subnet).to receive(:public?) { true }
+              allow(@instance).to receive(:subnet) { @subnet_name }
+              allow(@instance).to receive(:sub_domain) { @sub_domain }
+              allow(@subnet).to receive(:public?) { @public }
               allow(@subnet).to receive(
                 :availability_zone
               ) { @availability_zone }
             end
 
-            it 'should add the NAT resources to the template' do
-              template = {}
+            it 'should add the instance resources to the template' do
               role = 'role'
               expect(@iam).to receive(:role).once.with(
                 no_args
               ) { role }
               instance_profile = 'instance_profile'
               expect(@iam).to receive(:instance_profile).once.with(
-                role: 'natRole'
+                role: "#{@prefix}Role"
               ) { instance_profile }
               policy = 'policy'
               expect(@iam).to receive(:policy).once.with(
-                role: 'natRole',
-                name: 'natPolicy',
+                role: "#{@prefix}Role",
+                name: "#{@prefix}Policy",
                 statements: [{
                   actions: 's3:GetObject',
                   resources: "arn:aws:s3:::#{@bucket}>/#{@config_key}"
@@ -396,7 +401,7 @@ class Formatron
               ) { policy }
               security_group = 'security_group'
               expect(@ec2).to receive(:security_group).once.with(
-                group_description: 'NAT security group',
+                group_description: "#{@prefix} security group",
                 vpc: 'vpc',
                 egress: [{
                   cidr: '0.0.0.0/0',
@@ -429,34 +434,30 @@ class Formatron
                   protocol: 'icmp',
                   from_port: '-1',
                   to_port: '-1'
-                }]
+                }, @ingress_rule]
               ) { security_group }
               hostname_sh = 'hostname_sh'
               expect(@scripts).to receive(:hostname).once.with(
                 sub_domain: @sub_domain,
                 hosted_zone_name: @hosted_zone_name
               ) { hostname_sh }
-              nat_sh = 'nat_sh'
-              expect(@scripts).to receive(:nat).once.with(
-                cidr: @cidr
-              ) { nat_sh }
               instance = 'instance'
               expect(@ec2).to receive(:instance).once.with(
                 scripts: [
                   hostname_sh,
-                  nat_sh
+                  @script
                 ],
-                instance_profile: 'natInstanceProfile',
+                instance_profile: "#{@prefix}InstanceProfile",
                 availability_zone: @availability_zone,
                 instance_type: 't2.micro',
                 key_name: @key_pair,
                 subnet: { Ref: "#{@subnet_name}Subnet" },
-                associate_public_ip_address: true,
+                associate_public_ip_address: @public,
                 name: "#{@sub_domain}.#{@hosted_zone_name}",
-                wait_condition_handle: 'natWaitConditionHandle',
-                security_group: 'natSecurityGroup',
-                logical_id: 'natInstance',
-                source_dest_check: false
+                wait_condition_handle: "#{@prefix}WaitConditionHandle",
+                security_group: "#{@prefix}SecurityGroup",
+                logical_id: "#{@prefix}Instance",
+                source_dest_check: @source_dest_check
               ) { instance }
               wait_condition_handle = 'wait_condition_handle'
               expect(@cloud_formation).to receive(
@@ -468,231 +469,166 @@ class Formatron
               expect(@cloud_formation).to receive(
                 :wait_condition
               ).once.with(
-                wait_condition_handle: 'natWaitConditionHandle',
-                instance: 'natInstance'
+                wait_condition_handle: "#{@prefix}WaitConditionHandle",
+                instance: "#{@prefix}Instance"
               ) { wait_condition }
-              public_record_set = 'public_record_set'
-              expect(@route53).to receive(:record_set).once.with(
-                hosted_zone_id: @hosted_zone_id,
-                sub_domain: @sub_domain,
+              expect(@route53).to receive(
+                :add_record_sets
+              ).once.with(
+                template: @template,
+                subnet: @subnet,
+                private_hosted_zone_id: @private_hosted_zone_id,
+                public_hosted_zone_id: @public_hosted_zone_id,
                 hosted_zone_name: @hosted_zone_name,
-                instance: 'natInstance',
-                attribute: 'PublicIp'
-              ) { public_record_set }
-              private_record_set = 'private_record_set'
-              expect(@route53).to receive(:record_set).once.with(
-                hosted_zone_id: { Ref: 'privateHostedZone' },
-                sub_domain: @sub_domain,
-                hosted_zone_name: @hosted_zone_name,
-                instance: 'natInstance',
-                attribute: 'PrivateIp'
-              ) { private_record_set }
-              Template.add_nat(
-                template: template,
-                hosted_zone_id: @hosted_zone_id,
+                prefix: @prefix,
+                sub_domain: @sub_domain
+              # rubocop:disable Metrics/LineLength
+              # rubocop:disable Metrics/ParameterLists
+              ) do |template:, subnet:, private_hosted_zone_id:, public_hosted_zone_id:, hosted_zone_name:, prefix:, sub_domain:|
+                # rubocop:enable Metrics/ParameterLists
+                # rubocop:enable Metrics/LineLength
+                template[:recordsets] = {
+                  prefix: prefix,
+                  subnet: subnet,
+                  public_hosted_zone_id: public_hosted_zone_id,
+                  private_hosted_zone_id: private_hosted_zone_id,
+                  hosted_zone_name: hosted_zone_name,
+                  sub_domain: sub_domain
+                }
+              end
+              Template.add_instance(
+                template: @template,
+                prefix: @prefix,
+                public_hosted_zone_id: @public_hosted_zone_id,
+                private_hosted_zone_id: @private_hosted_zone_id,
                 hosted_zone_name: @hosted_zone_name,
                 bootstrap: @bootstrap,
                 bucket: @bucket,
-                config_key: @config_key
+                config_key: @config_key,
+                instance: @instance,
+                scripts: [@script],
+                ingress_rules: [@ingress_rule],
+                source_dest_check: @source_dest_check
               )
-              expect(template).to eql(
+              expect(@template).to eql(
+                recordsets: {
+                  prefix: @prefix,
+                  subnet: @subnet,
+                  public_hosted_zone_id: @public_hosted_zone_id,
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  hosted_zone_name: @hosted_zone_name,
+                  sub_domain: @sub_domain
+                },
                 Resources: {
-                  'natRole' => role,
-                  'natInstanceProfile' => instance_profile,
-                  'natPolicy' => policy,
-                  'natSecurityGroup' => security_group,
-                  'natInstance' => instance,
-                  'natWaitConditionHandle' => wait_condition_handle,
-                  'natWaitCondition' => wait_condition,
-                  'natPublicRecordSet' => public_record_set,
-                  'natPrivateRecordSet' => private_record_set
+                  "#{@prefix}Role" => role,
+                  "#{@prefix}InstanceProfile" => instance_profile,
+                  "#{@prefix}Policy" => policy,
+                  "#{@prefix}SecurityGroup" => security_group,
+                  "#{@prefix}Instance" => instance,
+                  "#{@prefix}WaitConditionHandle" => wait_condition_handle,
+                  "#{@prefix}WaitCondition" => wait_condition
                 }
               )
             end
           end
 
-          describe '::add_bastion' do
-            before :each do
-              @hosted_zone_id = 'hosted_zone_id'
-              @hosted_zone_name = 'hosted_zone_name'
-              @sub_domain = 'sub_domain'
-              @bucket = 'bucket'
-              @config_key = 'config_key'
-              @kms_key = 'kms_key'
-              @cidr = 'cidr'
-              @availability_zone = 'availability_zone'
-              @subnet_name = 'subnet_name'
-              @key_pair = 'key_pair'
-              @subnet = instance_double(
-                'Formatron::Configuration::Formatronfile' \
-                '::Bootstrap::VPC::Subnet'
-              )
-              @bootstrap_ec2 = instance_double(
-                'Formatron::Configuration::Formatronfile' \
-                '::Bootstrap::EC2'
-              )
-              @subnets = {
-                "#{@subnet_name}" => @subnet
-              }
-              @bootstrap = instance_double(
+          describe '::add_nat' do
+            it 'should add the NAT resources to the template' do
+              template = 'template'
+              bucket = 'bucket'
+              config_key = 'config_key'
+              hosted_zone_id = 'hosted_zone_id'
+              hosted_zone_name = 'hosted_zone_name'
+              cidr = 'cidr'
+              nat_sh = 'nat_sh'
+              bootstrap = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap'
               )
-              allow(@bootstrap).to receive(:kms_key) { @kms_key }
-              @vpc = instance_double(
+              nat = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::NAT'
+              )
+              vpc = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
               )
-              allow(@bootstrap).to receive(:vpc) { @vpc }
-              allow(@bootstrap).to receive(:ec2) { @bootstrap_ec2 }
-              allow(@bootstrap_ec2).to receive(:key_pair) { @key_pair }
-              allow(@vpc).to receive(:cidr) { @cidr }
-              allow(@vpc).to receive(:subnets) { @subnets }
-              @bastion = instance_double(
+              expect(bootstrap).to receive(:nat).once.with(
+                no_args
+              ) { nat }
+              expect(bootstrap).to receive(:vpc).once.with(
+                no_args
+              ) { vpc }
+              expect(vpc).to receive(:cidr).once.with(
+                no_args
+              ) { cidr }
+              expect(@scripts).to receive(:nat).once.with(
+                cidr: cidr
+              ) { nat_sh }
+              expect(Template).to receive(:add_instance).once.with(
+                template: template,
+                prefix: 'nat',
+                bucket: bucket,
+                config_key: config_key,
+                instance: nat,
+                bootstrap: bootstrap,
+                scripts: [nat_sh],
+                ingress_rules: [],
+                public_hosted_zone_id: hosted_zone_id,
+                private_hosted_zone_id: { Ref: 'privateHostedZone' },
+                hosted_zone_name: hosted_zone_name,
+                source_dest_check: false
+              )
+              Template.add_nat(
+                template: template,
+                bucket: bucket,
+                config_key: config_key,
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
+                bootstrap: bootstrap
+              )
+            end
+          end
+
+          describe '::add_bastion' do
+            it 'should add the Bastion resources to the template' do
+              template = 'template'
+              bucket = 'bucket'
+              config_key = 'config_key'
+              hosted_zone_id = 'hosted_zone_id'
+              hosted_zone_name = 'hosted_zone_name'
+              bootstrap = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap'
+              )
+              bastion = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap::Bastion'
               )
-              allow(@bootstrap).to receive(:bastion) { @bastion }
-              allow(@bastion).to receive(:subnet) { @subnet_name }
-              allow(@bastion).to receive(:sub_domain) { @sub_domain }
-              allow(@subnet).to receive(:public?) { true }
-              allow(@subnet).to receive(
-                :availability_zone
-              ) { @availability_zone }
-            end
-
-            it 'should add the Bastion resources to the template' do
-              template = {}
-              role = 'role'
-              expect(@iam).to receive(:role).once.with(
+              expect(bootstrap).to receive(:bastion).once.with(
                 no_args
-              ) { role }
-              instance_profile = 'instance_profile'
-              expect(@iam).to receive(:instance_profile).once.with(
-                role: 'bastionRole'
-              ) { instance_profile }
-              policy = 'policy'
-              expect(@iam).to receive(:policy).once.with(
-                role: 'bastionRole',
-                name: 'bastionPolicy',
-                statements: [{
-                  actions: 's3:GetObject',
-                  resources: "arn:aws:s3:::#{@bucket}>/#{@config_key}"
-                }, {
-                  actions: 'kms:Decrypt',
-                  resources: "arn:aws:kms:::key/#{@kms_key}"
-                }]
-              ) { policy }
-              security_group = 'security_group'
-              expect(@ec2).to receive(:security_group).once.with(
-                group_description: 'Bastion security group',
-                vpc: 'vpc',
-                egress: [{
-                  cidr: '0.0.0.0/0',
-                  protocol: 'tcp',
-                  from_port: '0',
-                  to_port: '65535'
-                }, {
-                  cidr: '0.0.0.0/0',
-                  protocol: 'udp',
-                  from_port: '0',
-                  to_port: '65535'
-                }, {
-                  cidr: '0.0.0.0/0',
-                  protocol: 'icmp',
-                  from_port: '-1',
-                  to_port: '-1'
-                }],
-                ingress: [{
+              ) { bastion }
+              expect(Template).to receive(:add_instance).once.with(
+                template: template,
+                prefix: 'bastion',
+                bucket: bucket,
+                config_key: config_key,
+                instance: bastion,
+                bootstrap: bootstrap,
+                scripts: [],
+                ingress_rules: [{
                   cidr: '0.0.0.0/0',
                   protocol: 'tcp',
                   from_port: '22',
                   to_port: '22'
-                }, {
-                  cidr: @cidr,
-                  protocol: 'tcp',
-                  from_port: '0',
-                  to_port: '65535'
-                }, {
-                  cidr: @cidr,
-                  protocol: 'udp',
-                  from_port: '0',
-                  to_port: '65535'
-                }, {
-                  cidr: @cidr,
-                  protocol: 'icmp',
-                  from_port: '-1',
-                  to_port: '-1'
-                }]
-              ) { security_group }
-              hostname_sh = 'hostname_sh'
-              expect(@scripts).to receive(:hostname).once.with(
-                sub_domain: @sub_domain,
-                hosted_zone_name: @hosted_zone_name
-              ) { hostname_sh }
-              instance = 'instance'
-              expect(@ec2).to receive(:instance).once.with(
-                scripts: [
-                  hostname_sh
-                ],
-                instance_profile: 'bastionInstanceProfile',
-                availability_zone: @availability_zone,
-                instance_type: 't2.micro',
-                key_name: @key_pair,
-                subnet: { Ref: "#{@subnet_name}Subnet" },
-                associate_public_ip_address: true,
-                name: "#{@sub_domain}.#{@hosted_zone_name}",
-                wait_condition_handle: 'bastionWaitConditionHandle',
-                security_group: 'bastionSecurityGroup',
-                logical_id: 'bastionInstance',
-                source_dest_check: false
-              ) { instance }
-              wait_condition_handle = 'wait_condition_handle'
-              expect(@cloud_formation).to receive(
-                :wait_condition_handle
-              ).once.with(
-                no_args
-              ) { wait_condition_handle }
-              wait_condition = 'wait_condition'
-              expect(@cloud_formation).to receive(
-                :wait_condition
-              ).once.with(
-                wait_condition_handle: 'bastionWaitConditionHandle',
-                instance: 'bastionInstance'
-              ) { wait_condition }
-              public_record_set = 'public_record_set'
-              expect(@route53).to receive(:record_set).once.with(
-                hosted_zone_id: @hosted_zone_id,
-                sub_domain: @sub_domain,
-                hosted_zone_name: @hosted_zone_name,
-                instance: 'bastionInstance',
-                attribute: 'PublicIp'
-              ) { public_record_set }
-              private_record_set = 'private_record_set'
-              expect(@route53).to receive(:record_set).once.with(
-                hosted_zone_id: { Ref: 'privateHostedZone' },
-                sub_domain: @sub_domain,
-                hosted_zone_name: @hosted_zone_name,
-                instance: 'bastionInstance',
-                attribute: 'PrivateIp'
-              ) { private_record_set }
+                }],
+                public_hosted_zone_id: hosted_zone_id,
+                private_hosted_zone_id: { Ref: 'privateHostedZone' },
+                hosted_zone_name: hosted_zone_name,
+                source_dest_check: true
+              )
               Template.add_bastion(
                 template: template,
-                hosted_zone_id: @hosted_zone_id,
-                hosted_zone_name: @hosted_zone_name,
-                bootstrap: @bootstrap,
-                bucket: @bucket,
-                config_key: @config_key
-              )
-              expect(template).to eql(
-                Resources: {
-                  'bastionRole' => role,
-                  'bastionInstanceProfile' => instance_profile,
-                  'bastionPolicy' => policy,
-                  'bastionSecurityGroup' => security_group,
-                  'bastionInstance' => instance,
-                  'bastionWaitConditionHandle' => wait_condition_handle,
-                  'bastionWaitCondition' => wait_condition,
-                  'bastionPublicRecordSet' => public_record_set,
-                  'bastionPrivateRecordSet' => private_record_set
-                }
+                bucket: bucket,
+                config_key: config_key,
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
+                bootstrap: bootstrap
               )
             end
           end

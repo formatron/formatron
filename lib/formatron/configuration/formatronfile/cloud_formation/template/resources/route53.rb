@@ -51,6 +51,40 @@ class Formatron
                 }
               end
               # rubocop:enable Metrics/MethodLength
+
+              # rubocop:disable Metrics/MethodLength
+              # rubocop:disable Metrics/ParameterLists
+              def self.add_record_sets(
+                template:,
+                public_hosted_zone_id:,
+                private_hosted_zone_id:,
+                hosted_zone_name:,
+                prefix:,
+                sub_domain:,
+                subnet:
+              )
+                resources = Template.resources template
+                resources[
+                  "#{prefix}#{Template::PRIVATE_RECORD_SET}"
+                ] = record_set(
+                  hosted_zone_id: private_hosted_zone_id,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: hosted_zone_name,
+                  instance: "#{prefix}#{Template::INSTANCE}",
+                  attribute: 'PrivateIp'
+                )
+                resources[
+                  "#{prefix}#{Template::PUBLIC_RECORD_SET}"
+                ] = record_set(
+                  hosted_zone_id: public_hosted_zone_id,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: hosted_zone_name,
+                  instance: "#{prefix}#{Template::INSTANCE}",
+                  attribute: 'PublicIp'
+                ) if subnet.public?
+              end
+              # rubocop:enable Metrics/ParameterLists
+              # rubocop:enable Metrics/MethodLength
             end
           end
         end
