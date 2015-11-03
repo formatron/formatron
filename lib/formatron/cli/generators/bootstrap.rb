@@ -7,6 +7,7 @@ class Formatron
       # rubocop:disable Metrics/ModuleLength
       module Bootstrap
         # rubocop:disable Metrics/MethodLength
+        # rubocop:disable Metrics/AbcSize
         def bootstrap_options(c)
           c.option '-n', '--name STRING', 'The name for the configuration'
           c.option(
@@ -34,6 +35,13 @@ class Formatron
             '--availability-zone STRING',
             'The AWS availability zone letter (region is already taken ' \
             'from the AWS credentials)'
+          )
+          c.option(
+            '-b',
+            '--cookbooks-bucket-prefix STRING',
+            'Used to generate target specific S3 bucket names ' \
+            '(PREFIX-TARGET) for the Chef Server to store its ' \
+            'cookbook library'
           )
           c.option(
             '-o',
@@ -84,6 +92,7 @@ class Formatron
             'The unprotected targets (eg. test)'
           )
         end
+        # rubocop:enable Metrics/AbcSize
         # rubocop:enable Metrics/MethodLength
 
         def bootstrap_directory(options)
@@ -116,6 +125,14 @@ class Formatron
 
         def bootstrap_availability_zone(options)
           options.availability_zone || ask('Availability Zone? ')
+        end
+
+        def bootstrap_cookbooks_bucket_prefix(options)
+          options.cookbooks_bucket_prefix || ask(
+            'Chef Server Cookbooks Bucket Prefix? '
+          ) do |q|
+            q.default = "#{options.s3_bucket}-cookbooks"
+          end
         end
 
         def bootstrap_organization(options)
@@ -178,6 +195,8 @@ class Formatron
             hosted_zone_id: bootstrap_hosted_zone_id(options),
             availability_zone: bootstrap_availability_zone(options),
             chef_server: {
+              cookbooks_bucket_prefix:
+                bootstrap_cookbooks_bucket_prefix(options),
               organization: bootstrap_organization(options),
               username: bootstrap_username(options),
               password: bootstrap_password(options),

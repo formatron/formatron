@@ -11,7 +11,7 @@ class Formatron
         end
 
         # rubocop:disable Metrics/MethodLength
-        def self.write_target(file, target, protect)
+        def self.write_target(file, target, protect, cookbooks_bucket_prefix)
           File.write file, <<-EOH.gsub(/^ {12}/, '')
             {
               "protected": #{protect},
@@ -22,14 +22,21 @@ class Formatron
                 "sub_domain": "nat-#{target}"
               },
               "chef_server": {
-                "sub_domain": "chef-#{target}"
+                "sub_domain": "chef-#{target}",
+                "cookbooks_bucket": "#{cookbooks_bucket_prefix}-#{target}"
               }
             }
           EOH
         end
         # rubocop:enable Metrics/MethodLength
 
-        def self.write(directory, target = nil, protect = true)
+        # rubocop:disable Metrics/MethodLength
+        def self.write(
+          directory,
+          target = nil,
+          protect = true,
+          cookbooks_bucket_prefix = nil
+        )
           target_directory = File.join(
             directory,
             'config',
@@ -38,8 +45,14 @@ class Formatron
           FileUtils.mkdir_p target_directory
           file = File.join target_directory, '_default.json'
           write_default(file) if target.nil?
-          write_target(file, target, protect) unless target.nil?
+          write_target(
+            file,
+            target,
+            protect,
+            cookbooks_bucket_prefix
+          ) unless target.nil?
         end
+        # rubocop:enable Metrics/MethodLength
       end
     end
   end

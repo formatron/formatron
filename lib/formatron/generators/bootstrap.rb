@@ -47,9 +47,14 @@ class Formatron
       end
       # rubocop:enable Metrics/MethodLength
 
-      def self.generate_targets(directory, targets)
+      def self.generate_targets(directory, targets, cookbooks_bucket_prefix)
         targets.each do |target, params|
-          Config.write directory, target, params[:protect]
+          Config.write(
+            directory,
+            target,
+            params[:protect],
+            cookbooks_bucket_prefix
+          )
           SSL.write directory, target
         end
       end
@@ -64,6 +69,7 @@ class Formatron
         InstanceCookbook.write directory, 'bastion_instance', 'Bastion instance'
       end
 
+      # rubocop:disable Metrics/MethodLength
       def self.generate(directory, params)
         validate_params params
         Readme.write directory, params[:name]
@@ -71,9 +77,14 @@ class Formatron
         Formatronfile.write directory, params
         Config.write directory
         EC2.write directory
-        generate_targets directory, params[:targets]
+        generate_targets(
+          directory,
+          params[:targets],
+          params[:chef_server][:cookbooks_bucket_prefix]
+        )
         generate_cookbooks directory
       end
+      # rubocop:enable Metrics/MethodLength
     end
   end
 end

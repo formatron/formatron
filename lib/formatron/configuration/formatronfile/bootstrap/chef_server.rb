@@ -7,6 +7,7 @@ class Formatron
         #  Chef Server instance configuration
         class ChefServer < Instance
           %i(
+            cookbooks_bucket
             organization
             username
             email

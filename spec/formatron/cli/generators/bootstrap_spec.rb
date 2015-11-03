@@ -18,6 +18,7 @@ describe Formatron::CLI::Generators::Bootstrap do
   ec2_key_pair = 'ec2-key-_pair'
   hosted_zone_id = 'ABCDEF'
   availability_zone = 'b'
+  cookbooks_bucket_prefix = 'cookbooks_bucket_prefix'
   organization = 'organization'
   username = 'username'
   email = 'email'
@@ -46,6 +47,7 @@ describe Formatron::CLI::Generators::Bootstrap do
     hosted_zone_id: hosted_zone_id,
     availability_zone: availability_zone,
     chef_server: {
+      cookbooks_bucket_prefix: cookbooks_bucket_prefix,
       organization: organization,
       username: username,
       password: password,
@@ -87,6 +89,7 @@ describe Formatron::CLI::Generators::Bootstrap do
         #{ec2_key_pair}
         #{hosted_zone_id}
         #{availability_zone}
+        #{cookbooks_bucket_prefix}
         #{organization}
         #{username}
         #{password}
@@ -124,6 +127,7 @@ describe Formatron::CLI::Generators::Bootstrap do
             '-e', ec2_key_pair,
             '-z', hosted_zone_id,
             '-a', availability_zone,
+            '-b', cookbooks_bucket_prefix,
             '-o', organization,
             '-u', username,
             '-p', password,
@@ -165,6 +169,7 @@ describe Formatron::CLI::Generators::Bootstrap do
             '--ec2-key-pair', ec2_key_pair,
             '--hosted-zone-id', hosted_zone_id,
             '--availability-zone', availability_zone,
+            '--cookbooks-bucket-prefix', cookbooks_bucket_prefix,
             '--organization', organization,
             '--username', username,
             '--password', password,

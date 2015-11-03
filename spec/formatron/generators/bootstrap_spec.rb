@@ -15,6 +15,7 @@ describe Formatron::Generators::Bootstrap do
     availability_zone: 'a',
     s3_bucket: 'my_s3_bucket',
     chef_server: {
+      cookbooks_bucket_prefix: 'cookbooks_bucket_prefix',
       organization: 'my_organization',
       username: 'my_username',
       email: 'my_email',
@@ -70,6 +71,7 @@ describe Formatron::Generators::Bootstrap do
     it 'should generate a Formatronfile' do
       actual = File.read File.join(directory, 'Formatronfile')
       ip = Curl.get('http://whatismyip.akamai.com').body_str
+      # rubocop:disable Metrics/LineLength
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         name '#{params[:name]}',
         bucket '#{params[:s3_bucket]}'
@@ -123,6 +125,7 @@ describe Formatron::Generators::Bootstrap do
             chef_server.subnet 'management1'
             chef_server.sub_domain config['chef_server']['sub_domain']
             chef_server.instance_cookbook 'chef_server_instance'
+            chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
             chef_server.organization '#{params[:chef_server][:organization]}'
             chef_server.username '#{params[:chef_server][:username]}'
             chef_server.email '#{params[:chef_server][:email]}'
@@ -135,6 +138,7 @@ describe Formatron::Generators::Bootstrap do
           end
         end
       EOH
+      # rubocop:enable Metrics/LineLength
     end
 
     it 'should generate a config stub for each target' do
@@ -154,7 +158,8 @@ describe Formatron::Generators::Bootstrap do
             "sub_domain": "nat-target1"
           },
           "chef_server": {
-            "sub_domain": "chef-target1"
+            "sub_domain": "chef-target1",
+            "cookbooks_bucket": "cookbooks_bucket_prefix-target1"
           }
         }
       EOH
@@ -169,7 +174,8 @@ describe Formatron::Generators::Bootstrap do
             "sub_domain": "nat-target2"
           },
           "chef_server": {
-            "sub_domain": "chef-target2"
+            "sub_domain": "chef-target2",
+            "cookbooks_bucket": "cookbooks_bucket_prefix-target2"
           }
         }
       EOH
