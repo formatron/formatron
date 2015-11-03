@@ -269,10 +269,30 @@ class Formatron
                 it 'should return an Instance resource' do
                   hostname_sh = 'hostname_sh'
                   nat_sh = 'nat_sh'
+                  script_variables = {
+                    variable1: 'value1',
+                    variable2: 'value2'
+                  }
+                  script_variables_content = {
+                    'Fn::Join' => [
+                      '', [
+                        'variable1=',
+                        'value1',
+                        "\n",
+                        'variable2=',
+                        'value2',
+                        "\n"
+                      ]
+                    ]
+                  }
                   scripts = [
                     hostname_sh,
                     nat_sh
                   ]
+                  file = 'file'
+                  files = {
+                    file: file
+                  }
                   instance_profile = 'instance_profile'
                   availability_zone = 'availability_zone'
                   instance_type = 'instance_type'
@@ -287,6 +307,8 @@ class Formatron
                   expect(
                     EC2.instance(
                       scripts: scripts,
+                      script_variables: script_variables,
+                      files: files,
                       instance_profile: instance_profile,
                       availability_zone: availability_zone,
                       instance_type: instance_type,
@@ -306,6 +328,12 @@ class Formatron
                       'AWS::CloudFormation::Init' => {
                         config: {
                           files: {
+                            '/tmp/formatron/script-variables' => {
+                              content: script_variables_content,
+                              mode: '000644',
+                              owner: 'root',
+                              group: 'root'
+                            },
                             '/tmp/formatron/script-0.sh' => {
                               content: hostname_sh,
                               mode: '000755',
@@ -317,7 +345,8 @@ class Formatron
                               mode: '000755',
                               owner: 'root',
                               group: 'root'
-                            }
+                            },
+                            file: file
                           }
                         }
                       }

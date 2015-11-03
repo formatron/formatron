@@ -16,7 +16,10 @@ describe Formatron::Generators::Bootstrap do
     s3_bucket: 'my_s3_bucket',
     chef_server: {
       cookbooks_bucket_prefix: 'cookbooks_bucket_prefix',
-      organization: 'my_organization',
+      organization: {
+        short_name: 'my_organization',
+        full_name: 'My Organization'
+      },
       username: 'my_username',
       email: 'my_email',
       first_name: 'my_first_name',
@@ -122,11 +125,15 @@ describe Formatron::Generators::Bootstrap do
           end
 
           configuration.chef_server do |chef_server|
+            chef_server.version '12.2.0-1'
             chef_server.subnet 'management1'
             chef_server.sub_domain config['chef_server']['sub_domain']
             chef_server.instance_cookbook 'chef_server_instance'
             chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
-            chef_server.organization '#{params[:chef_server][:organization]}'
+            chef_server.organization do
+              short_name '#{params[:chef_server][:organization][:short_name]}'
+              full_name '#{params[:chef_server][:organization][:full_name]}'
+            end
             chef_server.username '#{params[:chef_server][:username]}'
             chef_server.email '#{params[:chef_server][:email]}'
             chef_server.first_name '#{params[:chef_server][:first_name]}'

@@ -13,7 +13,9 @@ class Formatron
         :name,
         :bucket,
         :kms_key,
-        :cloud_formation_template
+        :cloud_formation_template,
+        :chef_server_ssl_cert,
+        :chef_server_ssl_key
       )
 
       def initialize(aws:, config:, target:, directory:)
@@ -43,6 +45,8 @@ class Formatron
       # rubocop:disable Metrics/MethodLength
       def _initialize_bootstrap
         _initialize_properties @dsl.bootstrap
+        @chef_server_ssl_cert = @dsl.bootstrap.chef_server.ssl_cert
+        @chef_server_ssl_key = @dsl.bootstrap.chef_server.ssl_key
         @cloud_formation_template = CloudFormation::BootstrapTemplate.json(
           bootstrap: @dsl.bootstrap,
           hosted_zone_id: @hosted_zone_id,

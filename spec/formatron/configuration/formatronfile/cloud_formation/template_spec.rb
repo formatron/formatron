@@ -25,9 +25,9 @@ class Formatron
               'Formatron::Configuration::Formatronfile' \
               '::CloudFormation::Template::Resources::CloudFormation'
             ).as_stubbed_const
-            @scripts = class_double(
+            @files = class_double(
               'Formatron::Configuration::Formatronfile' \
-              '::CloudFormation::Scripts'
+              '::CloudFormation::Files'
             ).as_stubbed_const
           end
 
@@ -330,6 +330,7 @@ class Formatron
               @template = {}
               @prefix = 'prefix'
               @script = 'script'
+              @additional_files = 'additional_files'
               @ingress_rule = 'ingress_rule'
               @source_dest_check = 'source_dest_check'
               @public_hosted_zone_id = 'public_hosted_zone_id'
@@ -437,7 +438,7 @@ class Formatron
                 }, @ingress_rule]
               ) { security_group }
               hostname_sh = 'hostname_sh'
-              expect(@scripts).to receive(:hostname).once.with(
+              expect(@files).to receive(:hostname).once.with(
                 sub_domain: @sub_domain,
                 hosted_zone_name: @hosted_zone_name
               ) { hostname_sh }
@@ -447,6 +448,7 @@ class Formatron
                   hostname_sh,
                   @script
                 ],
+                files: @additional_files,
                 instance_profile: "#{@prefix}InstanceProfile",
                 availability_zone: @availability_zone,
                 instance_type: 't2.micro',
@@ -507,6 +509,7 @@ class Formatron
                 config_key: @config_key,
                 instance: @instance,
                 scripts: [@script],
+                files: @additional_files,
                 ingress_rules: [@ingress_rule],
                 source_dest_check: @source_dest_check
               )
@@ -559,7 +562,7 @@ class Formatron
               expect(vpc).to receive(:cidr).once.with(
                 no_args
               ) { cidr }
-              expect(@scripts).to receive(:nat).once.with(
+              expect(@files).to receive(:nat).once.with(
                 cidr: cidr
               ) { nat_sh }
               expect(Template).to receive(:add_instance).once.with(
@@ -570,6 +573,7 @@ class Formatron
                 instance: nat,
                 bootstrap: bootstrap,
                 scripts: [nat_sh],
+                files: [],
                 ingress_rules: [],
                 public_hosted_zone_id: hosted_zone_id,
                 private_hosted_zone_id: { Ref: 'privateHostedZone' },
@@ -611,6 +615,7 @@ class Formatron
                 instance: bastion,
                 bootstrap: bootstrap,
                 scripts: [],
+                files: [],
                 ingress_rules: [{
                   cidr: '0.0.0.0/0',
                   protocol: 'tcp',
@@ -623,6 +628,70 @@ class Formatron
                 source_dest_check: true
               )
               Template.add_bastion(
+                template: template,
+                bucket: bucket,
+                config_key: config_key,
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
+                bootstrap: bootstrap
+              )
+            end
+          end
+
+          describe '::add_chef_server' do
+            it 'should add the Chef Server resources to the template' do
+              template = 'template'
+              bucket = 'bucket'
+              config_key = 'config_key'
+              hosted_zone_id = 'hosted_zone_id'
+              hosted_zone_name = 'hosted_zone_name'
+              chef_server_sh = 'chef_server_sh'
+              ssl_cert = 'ssl_cert'
+              ssl_key = 'ssl_key'
+              bootstrap = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap'
+              )
+              chef_server = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::ChefServer'
+              )
+              expect(chef_server).to receive(:ssl_cert).once.with(
+                no_args
+              ) { ssl_cert }
+              expect(chef_server).to receive(:ssl_key).once.with(
+                no_args
+              ) { ssl_key }
+              expect(bootstrap).to receive(:chef_server).once.with(
+                no_args
+              ) { chef_server }
+              expect(@files).to receive(:chef_server).once.with(
+                no_args
+              ) { chef_server_sh }
+              expect(Template).to receive(:add_instance).once.with(
+                template: template,
+                prefix: 'chefServer',
+                bucket: bucket,
+                config_key: config_key,
+                instance: chef_server,
+                bootstrap: bootstrap,
+                scripts: [chef_server_sh],
+                files: [],
+                ingress_rules: [{
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '80',
+                  to_port: '80'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '443',
+                  to_port: '443'
+                }],
+                public_hosted_zone_id: hosted_zone_id,
+                private_hosted_zone_id: { Ref: 'privateHostedZone' },
+                hosted_zone_name: hosted_zone_name,
+                source_dest_check: true
+              )
+              Template.add_chef_server(
                 template: template,
                 bucket: bucket,
                 config_key: config_key,

@@ -6,6 +6,7 @@ class Formatron
   class Configuration
     class Formatronfile
       # namespacing for tests
+      # rubocop:disable Metrics/ModuleLength
       module CloudFormation
         describe BootstrapTemplate do
           before :each do
@@ -16,6 +17,8 @@ class Formatron
             @name = 'name'
             @vpc = 'vpc'
             @nat = 'nat'
+            @bastion = 'bastion'
+            @chef_server = 'chef_server'
             @config_key = 'config_key'
             @region_map = 'region_map'
             @bootstrap = instance_double(
@@ -23,6 +26,8 @@ class Formatron
             )
             allow(@bootstrap).to receive(:vpc) { @vpc }
             allow(@bootstrap).to receive(:nat) { @nat }
+            allow(@bootstrap).to receive(:bastion) { @bastion }
+            allow(@bootstrap).to receive(:chef_server) { @chef_server }
 
             template_module = class_double(
               'Formatron::Configuration::Formatronfile' \
@@ -72,7 +77,22 @@ class Formatron
               template[:bastion] = {
                 hosted_zone_id: hosted_zone_id,
                 hosted_zone_name: hosted_zone_name,
-                bootstrap: bootstrap.nat,
+                bootstrap: bootstrap.bastion,
+                bucket: bucket,
+                config_key: config_key
+              }
+            end
+            # rubocop:enable Metrics/ParameterLists
+            # rubocop:disable Metrics/ParameterLists
+            allow(template_module).to receive(
+              :add_chef_server
+            # rubocop:disable Metrics/LineLength
+            ) do |template:, hosted_zone_id:, hosted_zone_name:, bootstrap:, bucket:, config_key:|
+              # rubocop:enable Metrics/LineLength
+              template[:chef_server] = {
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
+                bootstrap: bootstrap.chef_server,
                 bucket: bucket,
                 config_key: config_key
               }
@@ -106,7 +126,14 @@ class Formatron
                   "bastion": {
                     "hosted_zone_id": "#{@hosted_zone_id}",
                     "hosted_zone_name": "#{@hosted_zone_name}",
-                    "bootstrap": "#{@nat}",
+                    "bootstrap": "#{@bastion}",
+                    "bucket": "#{@bucket}",
+                    "config_key": "#{@config_key}"
+                  },
+                  "chef_server": {
+                    "hosted_zone_id": "#{@hosted_zone_id}",
+                    "hosted_zone_name": "#{@hosted_zone_name}",
+                    "bootstrap": "#{@chef_server}",
                     "bucket": "#{@bucket}",
                     "config_key": "#{@config_key}"
                   }
@@ -116,6 +143,7 @@ class Formatron
           end
         end
       end
+      # rubocop:enable Metrics/ModuleLength
     end
   end
 end

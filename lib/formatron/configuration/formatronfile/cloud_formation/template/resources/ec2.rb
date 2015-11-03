@@ -176,7 +176,9 @@ class Formatron
               # rubocop:disable Metrics/ParameterLists
               # rubocop:disable Metrics/AbcSize
               def self.instance(
-                scripts:,
+                scripts: [],
+                script_variables: {},
+                files: [],
                 instance_profile:,
                 availability_zone:,
                 instance_type:,
@@ -189,7 +191,6 @@ class Formatron
                 logical_id:,
                 source_dest_check:
               )
-                files = {}
                 scripts.each_index do |index|
                   files["/tmp/formatron/script-#{index}.sh"] = {
                     content: scripts[index],
@@ -198,6 +199,16 @@ class Formatron
                     group: 'root'
                   }
                 end
+                script_variables_content =
+                  script_variables.reduce([]) do |content, (key, value)|
+                    content.concat(["#{key}=", value, "\n"])
+                  end
+                files['/tmp/formatron/script-variables'] = {
+                  content: Template.join(*script_variables_content),
+                  mode: '000644',
+                  owner: 'root',
+                  group: 'root'
+                }
                 {
                   Type: 'AWS::EC2::Instance',
                   Metadata: {

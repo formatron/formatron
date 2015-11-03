@@ -19,22 +19,21 @@ class Formatron
             _add_region_map template
             _add_private_hosted_zone template, hosted_zone_name
             _add_vpc template, bootstrap
-            _add_nat(
-              template,
-              hosted_zone_id,
-              hosted_zone_name,
-              bootstrap,
-              bucket,
-              config_key
-            )
-            _add_bastion(
-              template,
-              hosted_zone_id,
-              hosted_zone_name,
-              bootstrap,
-              bucket,
-              config_key
-            )
+            %i(
+              add_nat
+              add_bastion
+              add_chef_server
+            ).each do |symbol|
+              Template.send(
+                symbol,
+                template: template,
+                hosted_zone_id: hosted_zone_id,
+                hosted_zone_name: hosted_zone_name,
+                bootstrap: bootstrap,
+                bucket: bucket,
+                config_key: config_key
+              )
+            end
             "#{JSON.pretty_generate template}\n"
           end
           # rubocop:enable Metrics/MethodLength
@@ -65,54 +64,11 @@ class Formatron
             )
           end
 
-          # rubocop:disable Metrics/MethodLength
-          # rubocop:disable Metrics/ParameterLists
-          def self._add_nat(
-            template,
-            hosted_zone_id,
-            hosted_zone_name,
-            bootstrap,
-            bucket,
-            config_key
-          )
-            Template.add_nat(
-              template: template,
-              hosted_zone_id: hosted_zone_id,
-              hosted_zone_name: hosted_zone_name,
-              bootstrap: bootstrap,
-              bucket: bucket,
-              config_key: config_key
-            )
-          end
-          # rubocop:enable Metrics/ParameterLists
-          # rubocop:enable Metrics/MethodLength
-
-          # rubocop:disable Metrics/MethodLength
-          # rubocop:disable Metrics/ParameterLists
-          def self._add_bastion(
-            template,
-            hosted_zone_id,
-            hosted_zone_name,
-            bootstrap,
-            bucket,
-            config_key
-          )
-            Template.add_bastion(
-              template: template,
-              hosted_zone_id: hosted_zone_id,
-              hosted_zone_name: hosted_zone_name,
-              bootstrap: bootstrap,
-              bucket: bucket,
-              config_key: config_key
-            )
-          end
-          # rubocop:enable Metrics/ParameterLists
-          # rubocop:enable Metrics/MethodLength
-
           private_class_method(
             :_create_template,
-            :_add_vpc,
-            :_add_nat
+            :_add_region_map,
+            :_add_private_hosted_zone,
+            :_add_vpc
           )
         end
       end

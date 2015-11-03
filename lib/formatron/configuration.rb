@@ -46,6 +46,16 @@ class Formatron
       @formatronfiles[target].cloud_formation_template
     end
 
+    def chef_server_ssl_cert(target)
+      _load target
+      @formatronfiles[target].chef_server_ssl_cert
+    end
+
+    def chef_server_ssl_key(target)
+      _load target
+      @formatronfiles[target].chef_server_ssl_key
+    end
+
     def _load(target)
       _load_config target
       _load_formatronfile target

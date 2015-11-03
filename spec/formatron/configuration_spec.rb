@@ -3,6 +3,7 @@ require 'formatron/aws'
 require 'formatron/configuration'
 
 # namespacing for tests
+# rubocop:disable Metrics/ClassLength
 class Formatron
   describe Configuration do
     directory = 'test/configuration'
@@ -11,6 +12,8 @@ class Formatron
       param: 'param'
     }
     cloud_formation_template = 'cloud_formation_template'
+    chef_server_ssl_cert = 'chef_server_ssl_cert'
+    chef_server_ssl_key = 'chef_server_ssl_key'
     protect = true
     name = 'name'
     kms_key = 'kms_key'
@@ -37,6 +40,12 @@ class Formatron
       allow(@formatronfile).to receive(
         :cloud_formation_template
       ) { cloud_formation_template }
+      allow(@formatronfile).to receive(
+        :chef_server_ssl_cert
+      ) { chef_server_ssl_cert }
+      allow(@formatronfile).to receive(
+        :chef_server_ssl_key
+      ) { chef_server_ssl_key }
 
       @aws = instance_double('Formatron::AWS')
 
@@ -107,5 +116,32 @@ class Formatron
         )
       end
     end
+
+    describe '#chef_server_ssl_cert' do
+      it 'should return the Chef Server SSL certificate to be uploaded to S3' do
+        expect(@configuration.chef_server_ssl_cert(targets[0])).to eql(
+          chef_server_ssl_cert
+        )
+        expect(@formatronfile).to have_received(
+          :chef_server_ssl_cert
+        ).once.with(
+          no_args
+        )
+      end
+    end
+
+    describe '#chef_server_ssl_key' do
+      it 'should return the Chef Server SSL key to be uploaded to S3' do
+        expect(@configuration.chef_server_ssl_key(targets[0])).to eql(
+          chef_server_ssl_key
+        )
+        expect(@formatronfile).to have_received(
+          :chef_server_ssl_key
+        ).once.with(
+          no_args
+        )
+      end
+    end
   end
 end
+# rubocop:enable Metrics/ClassLength

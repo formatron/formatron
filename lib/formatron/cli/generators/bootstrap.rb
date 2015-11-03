@@ -45,8 +45,14 @@ class Formatron
           )
           c.option(
             '-o',
-            '--organization STRING',
-            'The organization to create on the Chef Server'
+            '--organization-short-name STRING',
+            'The short name of the organization to create on the ' \
+            'Chef Server (should not contain spaces, etc)'
+          )
+          c.option(
+            '-w',
+            '--organization-full-name STRING',
+            'The full name of the organization to create on the Chef Server'
           )
           c.option(
             '-u',
@@ -135,8 +141,14 @@ class Formatron
           end
         end
 
-        def bootstrap_organization(options)
-          options.organization || ask('Chef Server Organization? ')
+        def bootstrap_organization_short_name(options)
+          options.organization_short_name ||
+            ask('Chef Server Organization Short Name? ')
+        end
+
+        def bootstrap_organization_full_name(options)
+          options.organization_full_name ||
+            ask('Chef Server Organization Full Name? ')
         end
 
         def bootstrap_username(options)
@@ -197,7 +209,10 @@ class Formatron
             chef_server: {
               cookbooks_bucket_prefix:
                 bootstrap_cookbooks_bucket_prefix(options),
-              organization: bootstrap_organization(options),
+              organization: {
+                short_name: bootstrap_organization_short_name(options),
+                full_name: bootstrap_organization_full_name(options)
+              },
               username: bootstrap_username(options),
               password: bootstrap_password(options),
               email: bootstrap_email(options),

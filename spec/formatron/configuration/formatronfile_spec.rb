@@ -14,6 +14,8 @@ describe Formatron::Configuration::Formatronfile do
   bootstrap_template = 'bootstrap_template'
   hosted_zone_id = 'hosted_zone_id'
   hosted_zone_name = 'hosted_zone_name'
+  chef_server_ssl_cert = 'chef_server_ssl_cert'
+  chef_server_ssl_key = 'chef_server_ssl_key'
 
   before(:each) do
     aws = instance_double('Formatron::AWS')
@@ -36,6 +38,11 @@ describe Formatron::Configuration::Formatronfile do
     allow(dsl).to receive(:name) { name }
     allow(dsl).to receive(:bucket) { bucket }
 
+    chef_server = instance_double(
+      'Formatron::Configuration::Formatronfile::Bootstrap::ChefServer'
+    )
+    allow(chef_server).to receive(:ssl_cert) { chef_server_ssl_cert }
+    allow(chef_server).to receive(:ssl_key) { chef_server_ssl_key }
     @bootstrap = instance_double(
       'Formatron::Configuration::Formatronfile::Bootstrap'
     )
@@ -44,6 +51,7 @@ describe Formatron::Configuration::Formatronfile do
     allow(@bootstrap).to receive(:protect) { protect }
     allow(@bootstrap).to receive(:kms_key) { kms_key }
     allow(@bootstrap).to receive(:hosted_zone_id) { hosted_zone_id }
+    allow(@bootstrap).to receive(:chef_server) { chef_server }
 
     @bootstrap_template = class_double(
       'Formatron::Configuration::Formatronfile' \
@@ -122,6 +130,18 @@ describe Formatron::Configuration::Formatronfile do
   describe '#kms_key' do
     it 'should return the KMS key for the configuration' do
       expect(@formatronfile.kms_key).to eql kms_key
+    end
+  end
+
+  describe '#chef_server_ssl_cert' do
+    it 'should return the Chef Server SSL certificate' do
+      expect(@formatronfile.chef_server_ssl_cert).to eql chef_server_ssl_cert
+    end
+  end
+
+  describe '#chef_server_ssl_key' do
+    it 'should return the Chef Server SSL key' do
+      expect(@formatronfile.chef_server_ssl_key).to eql chef_server_ssl_key
     end
   end
 end

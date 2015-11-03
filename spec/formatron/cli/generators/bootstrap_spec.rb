@@ -19,7 +19,8 @@ describe Formatron::CLI::Generators::Bootstrap do
   hosted_zone_id = 'ABCDEF'
   availability_zone = 'b'
   cookbooks_bucket_prefix = 'cookbooks_bucket_prefix'
-  organization = 'organization'
+  organization_short_name = 'organization_short_name'
+  organization_full_name = 'organization_full_name'
   username = 'username'
   email = 'email'
   first_name = 'first-name'
@@ -48,7 +49,10 @@ describe Formatron::CLI::Generators::Bootstrap do
     availability_zone: availability_zone,
     chef_server: {
       cookbooks_bucket_prefix: cookbooks_bucket_prefix,
-      organization: organization,
+      organization: {
+        short_name: organization_short_name,
+        full_name: organization_full_name
+      },
       username: username,
       password: password,
       email: email,
@@ -90,7 +94,8 @@ describe Formatron::CLI::Generators::Bootstrap do
         #{hosted_zone_id}
         #{availability_zone}
         #{cookbooks_bucket_prefix}
-        #{organization}
+        #{organization_short_name}
+        #{organization_full_name}
         #{username}
         #{password}
         #{email}
@@ -128,7 +133,8 @@ describe Formatron::CLI::Generators::Bootstrap do
             '-z', hosted_zone_id,
             '-a', availability_zone,
             '-b', cookbooks_bucket_prefix,
-            '-o', organization,
+            '-o', organization_short_name,
+            '-w', organization_full_name,
             '-u', username,
             '-p', password,
             '-m', email,
@@ -170,7 +176,8 @@ describe Formatron::CLI::Generators::Bootstrap do
             '--hosted-zone-id', hosted_zone_id,
             '--availability-zone', availability_zone,
             '--cookbooks-bucket-prefix', cookbooks_bucket_prefix,
-            '--organization', organization,
+            '--organization-short-name', organization_short_name,
+            '--organization-full-name', organization_full_name,
             '--username', username,
             '--password', password,
             '--email', email,

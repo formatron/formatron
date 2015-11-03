@@ -2,7 +2,7 @@ require_relative 'template/resources/route53'
 require_relative 'template/resources/ec2'
 require_relative 'template/resources/iam'
 require_relative 'template/resources/cloud_formation'
-require_relative 'scripts'
+require_relative 'files'
 require 'formatron/aws'
 
 class Formatron
@@ -34,6 +34,7 @@ class Formatron
           PRIVATE_RECORD_SET = 'PrivateRecordSet'
           NAT = 'nat'
           BASTION = 'bastion'
+          CHEF_SERVER = 'chefServer'
 
           # rubocop:disable Metrics/MethodLength
           def self._security_group_base_egress_rules
@@ -178,7 +179,8 @@ class Formatron
               config_key: config_key,
               instance: bootstrap.nat,
               bootstrap: bootstrap,
-              scripts: [Scripts.nat(cidr: bootstrap.vpc.cidr)],
+              scripts: [Files.nat(cidr: bootstrap.vpc.cidr)],
+              files: [],
               ingress_rules: [],
               public_hosted_zone_id: hosted_zone_id,
               private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
@@ -207,11 +209,52 @@ class Formatron
               instance: bootstrap.bastion,
               bootstrap: bootstrap,
               scripts: [],
+              files: [],
               ingress_rules: [{
                 cidr: '0.0.0.0/0',
                 protocol: 'tcp',
                 from_port: '22',
                 to_port: '22'
+              }],
+              public_hosted_zone_id: hosted_zone_id,
+              private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
+              hosted_zone_name: hosted_zone_name,
+              source_dest_check: true
+            )
+          end
+          # rubocop:enable Metrics/ParameterLists
+          # rubocop:enable Metrics/MethodLength
+
+          # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/ParameterLists
+          def self.add_chef_server(
+            template:,
+            hosted_zone_id:,
+            hosted_zone_name:,
+            bootstrap:,
+            bucket:,
+            config_key:
+          )
+            chef_server = bootstrap.chef_server
+            add_instance(
+              template: template,
+              prefix: CHEF_SERVER,
+              bucket: bucket,
+              config_key: config_key,
+              instance: chef_server,
+              bootstrap: bootstrap,
+              scripts: [Files.chef_server],
+              files: [],
+              ingress_rules: [{
+                cidr: '0.0.0.0/0',
+                protocol: 'tcp',
+                from_port: '80',
+                to_port: '80'
+              }, {
+                cidr: '0.0.0.0/0',
+                protocol: 'tcp',
+                from_port: '443',
+                to_port: '443'
               }],
               public_hosted_zone_id: hosted_zone_id,
               private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
@@ -234,6 +277,7 @@ class Formatron
             bootstrap:,
             ingress_rules:,
             scripts:,
+            files:,
             public_hosted_zone_id:,
             private_hosted_zone_id:,
             hosted_zone_name:,
@@ -267,11 +311,12 @@ class Formatron
               )
             resources["#{prefix}#{INSTANCE}"] = Resources::EC2.instance(
               scripts: [
-                Scripts.hostname(
+                Files.hostname(
                   sub_domain: instance.sub_domain,
                   hosted_zone_name: hosted_zone_name
                 )
               ].concat(scripts),
+              files: files,
               instance_profile: "#{prefix}#{INSTANCE_PROFILE}",
               availability_zone: bootstrap.vpc.subnets[
                 instance.subnet
