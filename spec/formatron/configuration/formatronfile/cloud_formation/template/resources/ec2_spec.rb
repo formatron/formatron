@@ -115,7 +115,7 @@ class Formatron
               end
 
               describe '::subnet' do
-                it 'should retuen a Subnet resource' do
+                it 'should return a Subnet resource' do
                   vpc = 'vpc'
                   cidr = 'cidr'
                   availability_zone = 'availability_zone'
@@ -351,15 +351,7 @@ class Formatron
                       }],
                       Tags: [{
                         Key: 'Name',
-                        Value: {
-                          'Fn::Join' => [
-                            '', [
-                              { Ref: 'AWS::StackName' },
-                              '-',
-                              name
-                            ]
-                          ]
-                        }
+                        Value: name
                       }],
                       UserData: {
                         'Fn::Base64' => {

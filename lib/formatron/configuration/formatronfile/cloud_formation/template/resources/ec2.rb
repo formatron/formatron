@@ -231,11 +231,7 @@ class Formatron
                     }],
                     Tags: [{
                       Key: 'Name',
-                      Value: Template.join(
-                        Template.ref('AWS::StackName'),
-                        '-',
-                        name
-                      )
+                      Value: name
                     }],
                     UserData: Template.base_64(
                       Template.join(

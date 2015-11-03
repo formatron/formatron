@@ -209,7 +209,7 @@ class Formatron
               associate_public_ip_address: bootstrap.vpc.subnets[
                 bootstrap.nat.subnet
               ].public?,
-              name: 'nat',
+              name: "#{bootstrap.nat.sub_domain}.#{hosted_zone_name}",
               wait_condition_handle: NAT_WAIT_CONDITION_HANDLE,
               security_group: NAT_SECURITY_GROUP,
               logical_id: NAT_INSTANCE,
@@ -327,7 +327,7 @@ class Formatron
               associate_public_ip_address: bootstrap.vpc.subnets[
                 bootstrap.bastion.subnet
               ].public?,
-              name: 'bastion',
+              name: "#{bootstrap.bastion.sub_domain}.#{hosted_zone_name}",
               wait_condition_handle: BASTION_WAIT_CONDITION_HANDLE,
               security_group: BASTION_SECURITY_GROUP,
               logical_id: BASTION_INSTANCE,
