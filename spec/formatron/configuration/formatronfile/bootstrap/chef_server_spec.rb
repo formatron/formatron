@@ -11,10 +11,9 @@ class Formatron
             @chef_server = ChefServer.new
           end
 
+          it { is_expected.to be_an(Instance) }
+
           %i(
-            subnet
-            sub_domain
-            instance_cookbook
             organization
             username
             email

@@ -1,13 +1,12 @@
+require_relative '../instance'
+
 class Formatron
   class Configuration
     class Formatronfile
       class Bootstrap
         #  Chef Server instance configuration
-        class ChefServer
+        class ChefServer < Instance
           %i(
-            subnet
-            sub_domain
-            instance_cookbook
             organization
             username
             email

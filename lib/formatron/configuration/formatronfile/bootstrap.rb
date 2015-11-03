@@ -1,8 +1,7 @@
 require_relative 'bootstrap/ec2'
 require_relative 'bootstrap/vpc'
-require_relative 'bootstrap/bastion'
-require_relative 'bootstrap/nat'
 require_relative 'bootstrap/chef_server'
+require_relative 'instance'
 
 class Formatron
   class Configuration
@@ -24,8 +23,8 @@ class Formatron
         {
           ec2: EC2,
           vpc: VPC,
-          bastion: Bastion,
-          nat: NAT,
+          bastion: Instance,
+          nat: Instance,
           chef_server: ChefServer
         }.each do |symbol, cls|
           define_method symbol do |&block|

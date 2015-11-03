@@ -545,7 +545,7 @@ class Formatron
                 'Formatron::Configuration::Formatronfile::Bootstrap'
               )
               nat = instance_double(
-                'Formatron::Configuration::Formatronfile::Bootstrap::NAT'
+                'Formatron::Configuration::Formatronfile::Instance'
               )
               vpc = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
@@ -598,7 +598,7 @@ class Formatron
                 'Formatron::Configuration::Formatronfile::Bootstrap'
               )
               bastion = instance_double(
-                'Formatron::Configuration::Formatronfile::Bootstrap::Bastion'
+                'Formatron::Configuration::Formatronfile::Instance'
               )
               expect(bootstrap).to receive(:bastion).once.with(
                 no_args

@@ -66,7 +66,7 @@ class Formatron
         describe '#bastion' do
           before :each do
             @bastion = double
-            allow(Bootstrap::Bastion).to receive(:new) { @bastion }
+            allow(Instance).to receive(:new) { @bastion }
             allow(@bastion).to receive :test
           end
 
@@ -81,7 +81,7 @@ class Formatron
         describe '#nat' do
           before :each do
             @nat = double
-            allow(Bootstrap::NAT).to receive(:new) { @nat }
+            allow(Instance).to receive(:new) { @nat }
             allow(@nat).to receive :test
           end
 
