@@ -124,6 +124,7 @@ class Formatron
                 nginx['ssl_certificate_key'] = '/etc/nginx/ssl/chef.key'
                 EOF
 
+                mkdir -p /etc/nginx/ssl
                 aws s3api get-object --bucket #{bucket} --key #{ssl_cert_key} /etc/nginx/ssl/chef.crt
                 aws s3api get-object --bucket #{bucket} --key #{ssl_key_key} /etc/nginx/ssl/chef.key
 
