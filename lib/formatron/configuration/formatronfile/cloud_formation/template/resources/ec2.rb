@@ -208,7 +208,7 @@ class Formatron
                   mode: '000644',
                   owner: 'root',
                   group: 'root'
-                }
+                } unless script_variables.nil? || script_variables.length == 0
                 {
                   Type: 'AWS::EC2::Instance',
                   Metadata: {

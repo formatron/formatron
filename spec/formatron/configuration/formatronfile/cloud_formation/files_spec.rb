@@ -92,7 +92,7 @@ class Formatron
                   cookbooks_bucket: cookbooks_bucket
                 )
               ).to eql <<-EOH.gsub(/^ {16}/, '')
-                #!/bin/bash -v,
+                #!/bin/bash -v
 
                 set -e
 
@@ -124,8 +124,8 @@ class Formatron
                 nginx['ssl_certificate_key'] = '/etc/nginx/ssl/chef.key'
                 EOF
 
-                aws s3api get-object --bucket #{bucket} --key #{ssl_cert_key} /etc/nginx/ssl/chef.crt || error_exit 'Failed to download SSL certificate'
-                aws s3api get-object --bucket #{bucket} --key #{ssl_key_key} /etc/nginx/ssl/chef.key || error_exit 'Failed to download SSL key'
+                aws s3api get-object --bucket #{bucket} --key #{ssl_cert_key} /etc/nginx/ssl/chef.crt
+                aws s3api get-object --bucket #{bucket} --key #{ssl_key_key} /etc/nginx/ssl/chef.key
 
                 wget -O /tmp/chef-server-core.deb https://web-dl.packagecloud.io/chef/stable/packages/ubuntu/trusty/chef-server-core_#{chef_server_version}_amd64.deb
                 dpkg -i /tmp/chef-server-core.deb
@@ -146,8 +146,8 @@ class Formatron
                 chef-server-ctl reconfigure >> /var/log/chef-install.log
                 opscode-reporting-ctl reconfigure >> /var/log/chef-install.log
 
-                aws s3api put-object --bucket #{bucket} --key #{user_pem_key} --body $HOME/user.pem --ssekms-key-id #{kms_key} --server-side-encryption aws:kms || error_exit 'Failed to upload user key'
-                aws s3api put-object --bucket #{bucket} --key #{organization_pem_key} --body $HOME/organization.pem --ssekms-key-id #{kms_key} --server-side-encryption aws:kms || error_exit 'Failed to upload validator key'
+                aws s3api put-object --bucket #{bucket} --key #{user_pem_key} --body $HOME/user.pem --ssekms-key-id #{kms_key} --server-side-encryption aws:kms
+                aws s3api put-object --bucket #{bucket} --key #{organization_pem_key} --body $HOME/organization.pem --ssekms-key-id #{kms_key} --server-side-encryption aws:kms
               EOH
               # rubocop:enable Metrics/LineLength
             end

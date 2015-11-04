@@ -401,7 +401,7 @@ class Formatron
                               '    -v -s ', { Ref: 'AWS::StackName' }, " -r #{logical_id} ",
                               " || error_exit 'Failed to run cfn-init'\n",
                               "for file in /tmp/formatron/script-*.sh; do\n",
-                              "  $file || error_exit 'failed to run Formatron setup script: $file'\n",
+                              "  $file || error_exit \"failed to run Formatron setup script: $file\"\n",
                               "done\n",
                               "# If all went well, signal success\n",
                               "cfn-signal -e $? -r 'Formatron instance configuration complete' '", { Ref: wait_condition_handle }, "'\n"
