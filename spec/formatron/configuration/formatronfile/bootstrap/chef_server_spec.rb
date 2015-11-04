@@ -14,6 +14,7 @@ class Formatron
           it { is_expected.to be_an(Instance) }
 
           %i(
+            version
             cookbooks_bucket
             username
             email

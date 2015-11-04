@@ -91,7 +91,7 @@ describe Formatron::AWS do
       bucket = 'bucket'
       key = 'key'
 
-      it 'should recursively delete the key from the bucket' do
+      it 'should delete the key from the bucket' do
         expect(@s3_client).to receive(:delete_object).once.with(
           bucket: bucket,
           key: key
@@ -99,6 +99,25 @@ describe Formatron::AWS do
         @aws.delete_file(
           bucket: bucket,
           key: key
+        )
+      end
+    end
+
+    describe '#download_file' do
+      bucket = 'bucket'
+      key = 'key'
+      path = 'path'
+
+      it 'should download the file from S3' do
+        expect(@s3_client).to receive(:get_object).once.with(
+          response_target: path,
+          bucket: bucket,
+          key: key
+        )
+        @aws.download_file(
+          bucket: bucket,
+          key: key,
+          path: path
         )
       end
     end

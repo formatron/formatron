@@ -8,12 +8,17 @@ class Formatron
         # Generates CloudFormation bootstrap template JSON
         module BootstrapTemplate
           # rubocop:disable Metrics/MethodLength
+          # rubocop:disable Metrics/ParameterLists
           def self.json(
             hosted_zone_id:,
             hosted_zone_name:,
             bootstrap:,
             bucket:,
-            config_key:
+            config_key:,
+            user_pem_key:,
+            organization_pem_key:,
+            ssl_cert_key:,
+            ssl_key_key:
           )
             template = _create_template
             _add_region_map template
@@ -22,7 +27,6 @@ class Formatron
             %i(
               add_nat
               add_bastion
-              add_chef_server
             ).each do |symbol|
               Template.send(
                 symbol,
@@ -34,8 +38,21 @@ class Formatron
                 config_key: config_key
               )
             end
+            Template.add_chef_server(
+              template: template,
+              hosted_zone_id: hosted_zone_id,
+              hosted_zone_name: hosted_zone_name,
+              bootstrap: bootstrap,
+              bucket: bucket,
+              config_key: config_key,
+              user_pem_key: user_pem_key,
+              organization_pem_key: organization_pem_key,
+              ssl_cert_key: ssl_cert_key,
+              ssl_key_key: ssl_key_key
+            )
             "#{JSON.pretty_generate template}\n"
           end
+          # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
           def self._create_template

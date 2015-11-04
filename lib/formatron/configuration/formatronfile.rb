@@ -1,4 +1,6 @@
 require 'formatron/s3_configuration'
+require 'formatron/s3_chef_server_cert'
+require 'formatron/s3_chef_server_keys'
 require_relative 'formatronfile/dsl'
 require_relative 'formatronfile/cloud_formation/bootstrap_template'
 
@@ -43,6 +45,7 @@ class Formatron
       end
 
       # rubocop:disable Metrics/MethodLength
+      # rubocop:disable Metrics/AbcSize
       def _initialize_bootstrap
         _initialize_properties @dsl.bootstrap
         @chef_server_ssl_cert = @dsl.bootstrap.chef_server.ssl_cert
@@ -55,9 +58,26 @@ class Formatron
           config_key: S3Configuration.key(
             target: @target,
             name: @name
+          ),
+          user_pem_key: S3ChefServerKeys.user_pem_key(
+            target: @target,
+            name: @name
+          ),
+          organization_pem_key: S3ChefServerKeys.organization_pem_key(
+            target: @target,
+            name: @name
+          ),
+          ssl_cert_key: S3ChefServerCert.cert_key(
+            target: @target,
+            name: @name
+          ),
+          ssl_key_key: S3ChefServerCert.key_key(
+            target: @target,
+            name: @name
           )
         )
       end
+      # rubocop:enable Metrics/AbcSize
       # rubocop:enable Metrics/MethodLength
 
       def _initialize_properties(source)

@@ -65,6 +65,34 @@ class Formatron
             end
           end
 
+          describe '::add_user' do
+            it 'should add the IAM user and access key' do
+              template = {}
+              user = 'user'
+              access_key = 'access_key'
+              prefix = 'prefix'
+              statements = 'statements'
+              expect(@iam).to receive(:user).once.with(
+                policy_name: "#{prefix}User",
+                statements: statements
+              ) { user }
+              expect(@iam).to receive(:access_key).once.with(
+                user_name: { Ref: "#{prefix}User" }
+              ) { access_key }
+              Template.add_user(
+                template: template,
+                prefix: prefix,
+                statements: statements
+              )
+              expect(template).to eql(
+                Resources: {
+                  "#{prefix}User" => user,
+                  "#{prefix}AccessKey" => access_key
+                }
+              )
+            end
+          end
+
           describe '::add_private_hosted_zone' do
             it 'should add the Route53 private hosted zone resource' do
               template = {}
@@ -331,6 +359,7 @@ class Formatron
               @prefix = 'prefix'
               @script = 'script'
               @additional_files = 'additional_files'
+              @script_variables = 'script_variables'
               @ingress_rule = 'ingress_rule'
               @source_dest_check = 'source_dest_check'
               @public_hosted_zone_id = 'public_hosted_zone_id'
@@ -338,7 +367,8 @@ class Formatron
               @hosted_zone_name = 'hosted_zone_name'
               @sub_domain = 'sub_domain'
               @bucket = 'bucket'
-              @config_key = 'config_key'
+              @get_key = 'get_key'
+              @put_key = 'put_key'
               @kms_key = 'kms_key'
               @cidr = 'cidr'
               @availability_zone = 'availability_zone'
@@ -393,11 +423,14 @@ class Formatron
                 role: "#{@prefix}Role",
                 name: "#{@prefix}Policy",
                 statements: [{
-                  actions: 's3:GetObject',
-                  resources: "arn:aws:s3:::#{@bucket}>/#{@config_key}"
-                }, {
-                  actions: 'kms:Decrypt',
+                  actions: ['kms:Decrypt', 'kms:Encrypt'],
                   resources: "arn:aws:kms:::key/#{@kms_key}"
+                }, {
+                  actions: 's3:GetObject',
+                  resources: ["arn:aws:s3:::#{@bucket}/#{@get_key}"]
+                }, {
+                  actions: 's3:PutObject',
+                  resources: ["arn:aws:s3:::#{@bucket}/#{@put_key}"]
                 }]
               ) { policy }
               security_group = 'security_group'
@@ -444,6 +477,7 @@ class Formatron
               ) { hostname_sh }
               instance = 'instance'
               expect(@ec2).to receive(:instance).once.with(
+                script_variables: @script_variables,
                 scripts: [
                   hostname_sh,
                   @script
@@ -506,8 +540,12 @@ class Formatron
                 hosted_zone_name: @hosted_zone_name,
                 bootstrap: @bootstrap,
                 bucket: @bucket,
-                config_key: @config_key,
+                s3_keys: {
+                  put: [@put_key],
+                  get: [@get_key]
+                },
                 instance: @instance,
+                script_variables: @script_variables,
                 scripts: [@script],
                 files: @additional_files,
                 ingress_rules: [@ingress_rule],
@@ -569,11 +607,12 @@ class Formatron
                 template: template,
                 prefix: 'nat',
                 bucket: bucket,
-                config_key: config_key,
+                s3_keys: {
+                  get: [config_key]
+                },
                 instance: nat,
                 bootstrap: bootstrap,
                 scripts: [nat_sh],
-                files: [],
                 ingress_rules: [],
                 public_hosted_zone_id: hosted_zone_id,
                 private_hosted_zone_id: { Ref: 'privateHostedZone' },
@@ -611,11 +650,11 @@ class Formatron
                 template: template,
                 prefix: 'bastion',
                 bucket: bucket,
-                config_key: config_key,
+                s3_keys: {
+                  get: [config_key]
+                },
                 instance: bastion,
                 bootstrap: bootstrap,
-                scripts: [],
-                files: [],
                 ingress_rules: [{
                   cidr: '0.0.0.0/0',
                   protocol: 'tcp',
@@ -646,35 +685,94 @@ class Formatron
               hosted_zone_id = 'hosted_zone_id'
               hosted_zone_name = 'hosted_zone_name'
               chef_server_sh = 'chef_server_sh'
-              ssl_cert = 'ssl_cert'
-              ssl_key = 'ssl_key'
+              username = 'username'
+              first_name = 'first_name'
+              last_name = 'last_name'
+              email = 'email'
+              password = 'password'
+              organization_short_name = 'organization_short_name'
+              organization_full_name = 'organization_full_name'
+              kms_key = 'kms_key'
+              version = 'version'
+              cookbooks_bucket = 'cookbooks_bucket'
+              user_pem_key = 'user_pem_key'
+              organization_pem_key = 'organization_pem_key'
+              ssl_cert_key = 'ssl_cert_key'
+              ssl_key_key = 'ssl_key_key'
               bootstrap = instance_double(
                 'Formatron::Configuration::Formatronfile::Bootstrap'
               )
               chef_server = instance_double(
-                'Formatron::Configuration::Formatronfile::Bootstrap::ChefServer'
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::ChefServer'
               )
-              expect(chef_server).to receive(:ssl_cert).once.with(
-                no_args
-              ) { ssl_cert }
-              expect(chef_server).to receive(:ssl_key).once.with(
-                no_args
-              ) { ssl_key }
-              expect(bootstrap).to receive(:chef_server).once.with(
-                no_args
-              ) { chef_server }
+              organization = instance_double(
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::ChefServer::Organization'
+              )
+              expect(chef_server).to receive(:username) { username }
+              expect(chef_server).to receive(:first_name) { first_name }
+              expect(chef_server).to receive(:last_name) { last_name }
+              expect(chef_server).to receive(:email) { email }
+              expect(chef_server).to receive(:password) { password }
+              expect(chef_server).to receive(:organization) { organization }
+              expect(organization).to receive(
+                :short_name
+              ) { organization_short_name }
+              expect(organization).to receive(
+                :full_name
+              ) { organization_full_name }
+              expect(chef_server).to receive(:version) { version }
+              expect(chef_server).to receive(
+                :cookbooks_bucket
+              ) { cookbooks_bucket }
+              expect(bootstrap).to receive(:chef_server) { chef_server }
+              expect(bootstrap).to receive(:kms_key) { kms_key }
               expect(@files).to receive(:chef_server).once.with(
-                no_args
+                username: username,
+                first_name: first_name,
+                last_name: last_name,
+                email: email,
+                password: password,
+                organization_short_name: organization_short_name,
+                organization_full_name: organization_full_name,
+                bucket: bucket,
+                user_pem_key: user_pem_key,
+                organization_pem_key: organization_pem_key,
+                kms_key: kms_key,
+                chef_server_version: version,
+                ssl_cert_key: ssl_cert_key,
+                ssl_key_key: ssl_key_key,
+                cookbooks_bucket: cookbooks_bucket
               ) { chef_server_sh }
               expect(Template).to receive(:add_instance).once.with(
                 template: template,
                 prefix: 'chefServer',
                 bucket: bucket,
-                config_key: config_key,
+                s3_keys: {
+                  get: [
+                    config_key,
+                    ssl_cert_key,
+                    ssl_key_key
+                  ],
+                  put: [
+                    user_pem_key,
+                    organization_pem_key
+                  ]
+                },
                 instance: chef_server,
                 bootstrap: bootstrap,
+                script_variables: {
+                  'REGION' => { Ref: 'AWS::Region' },
+                  'ACCESS_KEY_ID' => { Ref: 'chefServerAccessKey' },
+                  'SECRET_ACCESS_KEY' => {
+                    'Fn::GetAtt' => %w(
+                      chefServerAccessKey
+                      SecretAccessKey
+                    )
+                  }
+                },
                 scripts: [chef_server_sh],
-                files: [],
                 ingress_rules: [{
                   cidr: '0.0.0.0/0',
                   protocol: 'tcp',
@@ -691,10 +789,25 @@ class Formatron
                 hosted_zone_name: hosted_zone_name,
                 source_dest_check: true
               )
+              expect(Template).to receive(:add_user).once.with(
+                template: template,
+                prefix: 'chefServer',
+                statements: [{
+                  actions: ['s3:PutObject', 's3:GetObject', 's3:DeleteObject'],
+                  resources: "arn:aws:s3:::#{cookbooks_bucket}/*"
+                }, {
+                  actions: ['s3:ListBucket'],
+                  resources: "arn:aws:s3:::#{cookbooks_bucket}"
+                }]
+              )
               Template.add_chef_server(
                 template: template,
                 bucket: bucket,
                 config_key: config_key,
+                user_pem_key: user_pem_key,
+                organization_pem_key: organization_pem_key,
+                ssl_cert_key: ssl_cert_key,
+                ssl_key_key: ssl_key_key,
                 hosted_zone_id: hosted_zone_id,
                 hosted_zone_name: hosted_zone_name,
                 bootstrap: bootstrap

@@ -13,6 +13,8 @@ class Formatron
         # rubocop:disable Metrics/ModuleLength
         module Template
           REGION_MAP = 'regionMap'
+          USER = 'User'
+          ACCESS_KEY = 'AccessKey'
           PRIVATE_HOSTED_ZONE = 'privateHostedZone'
           VPC = 'vpc'
           INTERNET_GATEWAY = 'internetGateway'
@@ -83,6 +85,17 @@ class Formatron
               AWSTemplateFormatVersion: '2010-09-09',
               Description: "#{description}"
             }
+          end
+
+          def self.add_user(template:, prefix:, statements:)
+            resources = resources template
+            resources["#{prefix}#{USER}"] = Resources::IAM.user(
+              policy_name: "#{prefix}#{USER}",
+              statements: statements
+            )
+            resources["#{prefix}#{ACCESS_KEY}"] = Resources::IAM.access_key(
+              user_name: Template.ref("#{prefix}#{USER}")
+            )
           end
 
           def self.add_region_map(template:)
@@ -176,11 +189,12 @@ class Formatron
               template: template,
               prefix: NAT,
               bucket: bucket,
-              config_key: config_key,
+              s3_keys: {
+                get: [config_key]
+              },
               instance: bootstrap.nat,
               bootstrap: bootstrap,
               scripts: [Files.nat(cidr: bootstrap.vpc.cidr)],
-              files: [],
               ingress_rules: [],
               public_hosted_zone_id: hosted_zone_id,
               private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
@@ -205,11 +219,11 @@ class Formatron
               template: template,
               prefix: BASTION,
               bucket: bucket,
-              config_key: config_key,
+              s3_keys: {
+                get: [config_key]
+              },
               instance: bootstrap.bastion,
               bootstrap: bootstrap,
-              scripts: [],
-              files: [],
               ingress_rules: [{
                 cidr: '0.0.0.0/0',
                 protocol: 'tcp',
@@ -227,24 +241,75 @@ class Formatron
 
           # rubocop:disable Metrics/MethodLength
           # rubocop:disable Metrics/ParameterLists
+          # rubocop:disable Metrics/AbcSize
           def self.add_chef_server(
             template:,
             hosted_zone_id:,
             hosted_zone_name:,
             bootstrap:,
             bucket:,
+            user_pem_key:,
+            organization_pem_key:,
+            ssl_cert_key:,
+            ssl_key_key:,
             config_key:
           )
             chef_server = bootstrap.chef_server
+            organization = chef_server.organization
+            cookbooks_bucket = chef_server.cookbooks_bucket
+            add_user(
+              template: template,
+              prefix: CHEF_SERVER,
+              statements: [{
+                actions: ['s3:PutObject', 's3:GetObject', 's3:DeleteObject'],
+                resources: "arn:aws:s3:::#{cookbooks_bucket}/*"
+              }, {
+                actions: ['s3:ListBucket'],
+                resources: "arn:aws:s3:::#{cookbooks_bucket}"
+              }]
+            )
             add_instance(
               template: template,
               prefix: CHEF_SERVER,
               bucket: bucket,
-              config_key: config_key,
+              s3_keys: {
+                get: [
+                  config_key,
+                  ssl_cert_key,
+                  ssl_key_key
+                ],
+                put: [
+                  user_pem_key,
+                  organization_pem_key
+                ]
+              },
               instance: chef_server,
               bootstrap: bootstrap,
-              scripts: [Files.chef_server],
-              files: [],
+              script_variables: {
+                'REGION' => Template.ref('AWS::Region'),
+                'ACCESS_KEY_ID' => Template.ref("#{CHEF_SERVER}#{ACCESS_KEY}"),
+                'SECRET_ACCESS_KEY' => Template.get_attribute(
+                  "#{CHEF_SERVER}#{ACCESS_KEY}",
+                  'SecretAccessKey'
+                )
+              },
+              scripts: [Files.chef_server(
+                username: chef_server.username,
+                first_name: chef_server.first_name,
+                last_name: chef_server.last_name,
+                email: chef_server.email,
+                password: chef_server.password,
+                organization_short_name: organization.short_name,
+                organization_full_name: organization.full_name,
+                bucket: bucket,
+                user_pem_key: user_pem_key,
+                organization_pem_key: organization_pem_key,
+                kms_key: bootstrap.kms_key,
+                chef_server_version: chef_server.version,
+                ssl_cert_key: ssl_cert_key,
+                ssl_key_key: ssl_key_key,
+                cookbooks_bucket: cookbooks_bucket
+              )],
               ingress_rules: [{
                 cidr: '0.0.0.0/0',
                 protocol: 'tcp',
@@ -262,6 +327,7 @@ class Formatron
               source_dest_check: true
             )
           end
+          # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
@@ -272,17 +338,34 @@ class Formatron
             template:,
             prefix:,
             bucket:,
-            config_key:,
+            s3_keys:,
             instance:,
             bootstrap:,
             ingress_rules:,
-            scripts:,
-            files:,
+            script_variables: {},
+            scripts: [],
+            files: {},
             public_hosted_zone_id:,
             private_hosted_zone_id:,
             hosted_zone_name:,
             source_dest_check:
           )
+            statements = [{
+              actions: ['kms:Decrypt', 'kms:Encrypt'],
+              resources: "arn:aws:kms:::key/#{bootstrap.kms_key}"
+            }]
+            statements.push(
+              actions: 's3:GetObject',
+              resources: s3_keys[:get].collect do |s3_key|
+                "arn:aws:s3:::#{bucket}/#{s3_key}"
+              end
+            ) unless s3_keys[:get].nil?
+            statements.push(
+              actions: 's3:PutObject',
+              resources: s3_keys[:put].collect do |s3_key|
+                "arn:aws:s3:::#{bucket}/#{s3_key}"
+              end
+            ) unless s3_keys[:put].nil?
             resources = resources template
             resources["#{prefix}#{ROLE}"] = Resources::IAM.role
             resources["#{prefix}#{INSTANCE_PROFILE}"] =
@@ -292,13 +375,7 @@ class Formatron
             resources["#{prefix}#{POLICY}"] = Resources::IAM.policy(
               role: "#{prefix}#{ROLE}",
               name: "#{prefix}#{POLICY}",
-              statements: [{
-                actions: 's3:GetObject',
-                resources: "arn:aws:s3:::#{bucket}>/#{config_key}"
-              }, {
-                actions: 'kms:Decrypt',
-                resources: "arn:aws:kms:::key/#{bootstrap.kms_key}"
-              }]
+              statements: statements
             )
             resources["#{prefix}#{SECURITY_GROUP}"] =
               Resources::EC2.security_group(
@@ -310,6 +387,7 @@ class Formatron
                 ).concat(ingress_rules)
               )
             resources["#{prefix}#{INSTANCE}"] = Resources::EC2.instance(
+              script_variables: script_variables,
               scripts: [
                 Files.hostname(
                   sub_domain: instance.sub_domain,

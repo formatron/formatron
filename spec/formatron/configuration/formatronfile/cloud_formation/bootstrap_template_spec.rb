@@ -20,6 +20,10 @@ class Formatron
             @bastion = 'bastion'
             @chef_server = 'chef_server'
             @config_key = 'config_key'
+            @user_pem_key = 'user_pem_key'
+            @organization_pem_key = 'organization_pem_key'
+            @ssl_cert_key = 'ssl_cert_key'
+            @ssl_key_key = 'ssl_key_key'
             @region_map = 'region_map'
             @bootstrap = instance_double(
               'Formatron::Configuration::Formatronfile::Bootstrap'
@@ -87,14 +91,18 @@ class Formatron
             allow(template_module).to receive(
               :add_chef_server
             # rubocop:disable Metrics/LineLength
-            ) do |template:, hosted_zone_id:, hosted_zone_name:, bootstrap:, bucket:, config_key:|
+            ) do |template:, hosted_zone_id:, hosted_zone_name:, bootstrap:, bucket:, config_key:, user_pem_key:, organization_pem_key:, ssl_cert_key:, ssl_key_key:|
               # rubocop:enable Metrics/LineLength
               template[:chef_server] = {
                 hosted_zone_id: hosted_zone_id,
                 hosted_zone_name: hosted_zone_name,
                 bootstrap: bootstrap.chef_server,
                 bucket: bucket,
-                config_key: config_key
+                config_key: config_key,
+                user_pem_key: user_pem_key,
+                organization_pem_key: organization_pem_key,
+                ssl_cert_key: ssl_cert_key,
+                ssl_key_key: ssl_key_key
               }
             end
             # rubocop:enable Metrics/ParameterLists
@@ -108,6 +116,10 @@ class Formatron
                   hosted_zone_name: @hosted_zone_name,
                   bucket: @bucket,
                   config_key: @config_key,
+                  user_pem_key: @user_pem_key,
+                  organization_pem_key: @organization_pem_key,
+                  ssl_cert_key: @ssl_cert_key,
+                  ssl_key_key: @ssl_key_key,
                   bootstrap: @bootstrap
                 )
               ).to eql <<-EOH.gsub(/^ {16}/, '')
@@ -135,7 +147,11 @@ class Formatron
                     "hosted_zone_name": "#{@hosted_zone_name}",
                     "bootstrap": "#{@chef_server}",
                     "bucket": "#{@bucket}",
-                    "config_key": "#{@config_key}"
+                    "config_key": "#{@config_key}",
+                    "user_pem_key": "#{@user_pem_key}",
+                    "organization_pem_key": "#{@organization_pem_key}",
+                    "ssl_cert_key": "#{@ssl_cert_key}",
+                    "ssl_key_key": "#{@ssl_key_key}"
                   }
                 }
               EOH

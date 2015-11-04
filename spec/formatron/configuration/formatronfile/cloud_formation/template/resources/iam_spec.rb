@@ -8,6 +8,7 @@ class Formatron
       module CloudFormation
         module Template
           # namespacing for tests
+          # rubocop:disable Metrics/ModuleLength
           module Resources
             describe IAM do
               describe '::role' do
@@ -82,8 +83,64 @@ class Formatron
                   )
                 end
               end
+
+              describe '::user' do
+                it 'should return a User resource' do
+                  policy_name = 'policy_name'
+                  statements = [{
+                    actions: 'actions1',
+                    resources: 'resources1'
+                  }, {
+                    actions: 'actions2',
+                    resources: 'resources3'
+                  }]
+                  expect(
+                    IAM.user(
+                      policy_name: policy_name,
+                      statements: statements
+                    )
+                  ).to eql(
+                    Type: 'AWS::IAM::User',
+                    Properties: {
+                      Path: '/',
+                      Policies: [{
+                        PolicyName: policy_name,
+                        PolicyDocument: {
+                          Version: '2012-10-17',
+                          Statement: [{
+                            Effect: 'Allow',
+                            Action: statements[0][:actions],
+                            Resource: statements[0][:resources]
+                          }, {
+                            Effect: 'Allow',
+                            Action: statements[1][:actions],
+                            Resource: statements[1][:resources]
+                          }]
+                        }
+                      }]
+                    }
+                  )
+                end
+              end
+
+              describe '::access_key' do
+                it 'should return a AccessKey resource' do
+                  user_name = 'user_name'
+                  expect(
+                    IAM.access_key(
+                      user_name: user_name
+                    )
+                  ).to eql(
+                    Type: 'AWS::IAM::AccessKey',
+                    Properties: {
+                      UserName: user_name
+                    }
+                  )
+                end
+              end
             end
           end
+          # rubocop:enable Metrics/ModuleLength
         end
       end
     end

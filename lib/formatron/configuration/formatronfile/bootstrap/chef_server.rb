@@ -8,6 +8,7 @@ class Formatron
         #  Chef Server instance configuration
         class ChefServer < Instance
           %i(
+            version
             cookbooks_bucket
             organization
             username

@@ -64,6 +64,14 @@ class Formatron
       )
     end
 
+    def download_file(bucket:, key:, path:)
+      @s3_client.get_object(
+        bucket: bucket,
+        key: key,
+        response_target: path
+      )
+    end
+
     def deploy_stack(stack_name:, template_url:)
       @cloudformation_client.create_stack(
         stack_name: stack_name,

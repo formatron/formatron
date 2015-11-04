@@ -11,21 +11,24 @@ class Formatron
       aws:,
       bucket:,
       name:,
-      target:
+      target:,
+      directory:
     )
       aws.download_file(
         bucket: bucket,
         key: user_pem_key(
           name: name,
           target: target
-        )
+        ),
+        path: File.join(directory, USER_PEM_NAME)
       )
       aws.download_file(
         bucket: bucket,
         key: organization_pem_key(
           name: name,
           target: target
-        )
+        ),
+        path: File.join(directory, ORGANIZATION_PEM_NAME)
       )
     end
     # rubocop:enable Metrics/MethodLength

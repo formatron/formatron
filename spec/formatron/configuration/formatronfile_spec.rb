@@ -6,6 +6,10 @@ describe Formatron::Configuration::Formatronfile do
   target = 'target1'
   config = {}
   config_key = 'config_key'
+  user_pem_key = 'user_pem_key'
+  organization_pem_key = 'organization_pem_key'
+  ssl_cert_key = 'ssl_cert_key'
+  ssl_key_key = 'ssl_key_key'
   directory = 'test/configuration'
   name = 'name'
   protect = false
@@ -64,6 +68,20 @@ describe Formatron::Configuration::Formatronfile do
     ).as_stubbed_const
     allow(@s3_configuration).to receive(:key) { config_key }
 
+    @s3_chef_server_cert = class_double(
+      'Formatron::S3ChefServerCert'
+    ).as_stubbed_const
+    allow(@s3_chef_server_cert).to receive(:cert_key) { ssl_cert_key }
+    allow(@s3_chef_server_cert).to receive(:key_key) { ssl_key_key }
+
+    @s3_chef_server_keys = class_double(
+      'Formatron::S3ChefServerKeys'
+    ).as_stubbed_const
+    allow(@s3_chef_server_keys).to receive(:user_pem_key) { user_pem_key }
+    allow(@s3_chef_server_keys).to receive(
+      :organization_pem_key
+    ) { organization_pem_key }
+
     @formatronfile = Formatron::Configuration::Formatronfile.new(
       aws: aws,
       config: config,
@@ -79,12 +97,34 @@ describe Formatron::Configuration::Formatronfile do
         name: name,
         target: target
       )
+      expect(@s3_chef_server_cert).to have_received(:cert_key).once.with(
+        name: name,
+        target: target
+      )
+      expect(@s3_chef_server_cert).to have_received(:key_key).once.with(
+        name: name,
+        target: target
+      )
+      expect(@s3_chef_server_keys).to have_received(:user_pem_key).once.with(
+        name: name,
+        target: target
+      )
+      expect(@s3_chef_server_keys).to have_received(
+        :organization_pem_key
+      ).once.with(
+        name: name,
+        target: target
+      )
       expect(@bootstrap_template).to have_received(:json).once.with(
         hosted_zone_id: hosted_zone_id,
         hosted_zone_name: hosted_zone_name,
         bootstrap: @bootstrap,
         bucket: bucket,
-        config_key: config_key
+        config_key: config_key,
+        user_pem_key: user_pem_key,
+        organization_pem_key: organization_pem_key,
+        ssl_cert_key: ssl_cert_key,
+        ssl_key_key: ssl_key_key
       )
     end
   end

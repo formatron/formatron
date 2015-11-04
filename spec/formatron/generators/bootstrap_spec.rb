@@ -130,9 +130,9 @@ describe Formatron::Generators::Bootstrap do
             chef_server.sub_domain config['chef_server']['sub_domain']
             chef_server.instance_cookbook 'chef_server_instance'
             chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
-            chef_server.organization do
-              short_name '#{params[:chef_server][:organization][:short_name]}'
-              full_name '#{params[:chef_server][:organization][:full_name]}'
+            chef_server.organization do |organization|
+              organization.short_name '#{params[:chef_server][:organization][:short_name]}'
+              organization.full_name '#{params[:chef_server][:organization][:full_name]}'
             end
             chef_server.username '#{params[:chef_server][:username]}'
             chef_server.email '#{params[:chef_server][:email]}'

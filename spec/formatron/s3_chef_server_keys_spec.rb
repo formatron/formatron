@@ -11,6 +11,7 @@ class Formatron
     name = 'name'
     user_pem_key = 'user_pem_key'
     organization_pem_key = 'organization_pem_key'
+    directory = 'directory'
 
     before(:each) do
       @aws = instance_double 'Formatron::AWS'
@@ -33,17 +34,20 @@ class Formatron
         ) { organization_pem_key }
         expect(@aws).to receive(:download_file).once.with(
           bucket: bucket,
-          key: user_pem_key
+          key: user_pem_key,
+          path: File.join(directory, 'user.pem')
         )
         expect(@aws).to receive(:download_file).once.with(
           bucket: bucket,
-          key: organization_pem_key
+          key: organization_pem_key,
+          path: File.join(directory, 'organization.pem')
         )
         S3ChefServerKeys.get(
           aws: @aws,
           bucket: bucket,
           name: name,
-          target: target
+          target: target,
+          directory: directory
         )
       end
     end

@@ -58,6 +58,39 @@ class Formatron
                 }
               end
               # rubocop:enable Metrics/MethodLength
+
+              # rubocop:disable Metrics/MethodLength
+              def self.user(policy_name:, statements:)
+                {
+                  Type: 'AWS::IAM::User',
+                  Properties: {
+                    Path: '/',
+                    Policies: [{
+                      PolicyName: policy_name,
+                      PolicyDocument: {
+                        Version: '2012-10-17',
+                        Statement: statements.collect do |statement|
+                          {
+                            Effect: 'Allow',
+                            Action: statement[:actions],
+                            Resource: statement[:resources]
+                          }
+                        end
+                      }
+                    }]
+                  }
+                }
+              end
+              # rubocop:enable Metrics/MethodLength
+
+              def self.access_key(user_name:)
+                {
+                  Type: 'AWS::IAM::AccessKey',
+                  Properties: {
+                    UserName: user_name
+                  }
+                }
+              end
             end
           end
         end
