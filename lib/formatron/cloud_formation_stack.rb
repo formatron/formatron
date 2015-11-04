@@ -19,6 +19,10 @@ class Formatron
       aws.delete_stack _stack_name(name, target)
     end
 
+    def self.stack_ready!(aws:, name:, target:)
+      aws.stack_ready! stack_name: _stack_name(name, target)
+    end
+
     def self._stack_name(name, target)
       "#{name}-#{target}"
     end

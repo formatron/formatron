@@ -36,7 +36,14 @@ class Formatron
       }
     }
 
-    CAPABILITIES = ['CAPABILITY_IAM']
+    CAPABILITIES = %w(CAPABILITY_IAM)
+
+    STACK_READY_STATES = %w(
+      CREATE_COMPLETE
+      UPDATE_COMPLETE
+      UPDATE_ROLLBACK_COMPLETE
+      ROLLBACK_COMPLETE
+    )
 
     def initialize(credentials_json)
       @credentials = JSON.parse(File.read(credentials_json))
@@ -105,6 +112,14 @@ class Formatron
       @cloudformation_client.delete_stack(
         stack_name: stack_name
       )
+    end
+
+    def stack_ready!(stack_name:)
+      status = @cloudformation_client.describe_stacks(
+        stack_name: stack_name
+      ).stacks[0].stack_status
+      fail "CloudFormation stack, #{stack_name}, " \
+           "is not ready: #{status}" unless STACK_READY_STATES.include? status
     end
 
     def _create_aws_credentials

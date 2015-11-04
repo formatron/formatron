@@ -51,5 +51,41 @@ class Formatron
         )
       end
     end
+
+    describe '::stack_ready!' do
+      context 'when the stack is not ready' do
+        before :each do
+          expect(@aws).to receive(:stack_ready!).once.with(
+            stack_name: "#{@name}-#{@target}"
+          ) { fail 'not ready' }
+        end
+
+        it 'should raise an error' do
+          expect do
+            CloudFormationStack.stack_ready!(
+              aws: @aws,
+              name: @name,
+              target: @target
+            )
+          end.to raise_error 'not ready'
+        end
+      end
+
+      context 'when the stack is ready' do
+        before :each do
+          expect(@aws).to receive(:stack_ready!).once.with(
+            stack_name: "#{@name}-#{@target}"
+          )
+        end
+
+        it 'should do nothing' do
+          CloudFormationStack.stack_ready!(
+            aws: @aws,
+            name: @name,
+            target: @target
+          )
+        end
+      end
+    end
   end
 end
