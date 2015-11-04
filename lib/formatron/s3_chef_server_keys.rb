@@ -20,7 +20,7 @@ class Formatron
           name: name,
           target: target
         ),
-        path: File.join(directory, USER_PEM_NAME)
+        path: user_pem_path(directory: directory)
       )
       aws.download_file(
         bucket: bucket,
@@ -28,7 +28,7 @@ class Formatron
           name: name,
           target: target
         ),
-        path: File.join(directory, ORGANIZATION_PEM_NAME)
+        path: organization_pem_path(directory: directory)
       )
     end
     # rubocop:enable Metrics/MethodLength
@@ -41,12 +41,20 @@ class Formatron
       )
     end
 
+    def self.user_pem_path(directory:)
+      File.join directory, USER_PEM_NAME
+    end
+
     def self.organization_pem_key(name:, target:)
       S3Path.key(
         name: name,
         target: target,
         sub_key: ORGANIZATION_PEM_NAME
       )
+    end
+
+    def self.organization_pem_path(directory:)
+      File.join directory, ORGANIZATION_PEM_NAME
     end
   end
 end

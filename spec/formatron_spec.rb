@@ -176,15 +176,15 @@ describe Formatron do
 
   describe '#provision' do
     before(:each) do
-      @chef_instances = class_double(
-        'Formatron::ChefInstances'
+      @chef = class_double(
+        'Formatron::Chef'
       ).as_stubbed_const
-      allow(@chef_instances).to receive(:provision)
+      allow(@chef).to receive(:provision)
     end
 
     it 'should provision the instances with Chef' do
       @formatron.provision 'target1'
-      expect(@chef_instances).to have_received(:provision).once.with(
+      expect(@chef).to have_received(:provision).once.with(
         aws: @aws,
         configuration: @configuration,
         target: 'target1'
@@ -210,7 +210,7 @@ describe Formatron do
       allow(@cloud_formation_stack).to receive(:destroy)
 
       @chef_instances = class_double(
-        'Formatron::ChefInstances'
+        'Formatron::Chef'
       ).as_stubbed_const
       allow(@chef_instances).to receive(:destroy)
     end

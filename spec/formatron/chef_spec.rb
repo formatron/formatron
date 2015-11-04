@@ -1,10 +1,10 @@
 require 'spec_helper'
-require 'formatron/chef_instances'
+require 'formatron/chef'
 
 # namespacing for tests
 # rubocop:disable Metrics/ClassLength
 class Formatron
-  describe ChefInstances do
+  describe Chef do
     describe '::provision' do
       before :each do
         @aws = instance_double 'Formatron::AWS'
@@ -33,21 +33,21 @@ class Formatron
         allow(@configuration).to receive(:bucket).with(
           @target
         ) { @bucket }
-        @chef_keys_class = class_double(
-          'ChefKeys'
+        @keys_class = class_double(
+          'Formatron::Chef::Keys'
         ).as_stubbed_const
-        @chef_keys = instance_double 'Formatron::ChefKeys'
-        allow(@chef_keys_class).to receive(:new) { @chef_keys }
+        @keys = instance_double 'Formatron::Chef::Keys'
+        allow(@keys_class).to receive(:new) { @keys }
         @berkshelf_class = class_double(
-          'Formatron::Berkshelf'
+          'Formatron::Chef::Berkshelf'
         ).as_stubbed_const
-        @berkshelf = instance_double 'Formatron::Berkshelf'
+        @berkshelf = instance_double 'Formatron::Chef::Berkshelf'
         allow(@berkshelf_class).to receive(:new) { @berkshelf }
         allow(@berkshelf).to receive(:upload)
         @knife_class = class_double(
-          'Formatron::Knife'
+          'Formatron::Chef::Knife'
         ).as_stubbed_const
-        @knife = instance_double 'Formatron::Knife'
+        @knife = instance_double 'Formatron::Chef::Knife'
         allow(@knife_class).to receive(:new) { @knife }
         allow(@knife).to receive(:create_environment)
         allow(@knife).to receive(:bootstrap)
@@ -64,7 +64,7 @@ class Formatron
 
         it 'should error' do
           expect do
-            ChefInstances.provision(
+            Chef.provision(
               aws: @aws,
               configuration: @configuration,
               target: @target
@@ -80,7 +80,7 @@ class Formatron
             name: @name,
             target: @target
           )
-          ChefInstances.provision(
+          Chef.provision(
             aws: @aws,
             configuration: @configuration,
             target: @target
@@ -88,7 +88,7 @@ class Formatron
         end
 
         it 'should download the chef keys' do
-          expect(@chef_keys_class).to receive(:new).once.with(
+          expect(@keys_class).to have_received(:new).once.with(
             aws: @aws,
             bucket: @bucket,
             name: @name,
@@ -98,7 +98,7 @@ class Formatron
 
         it 'should create a knife client' do
           expect(@knife_class).to receive(:new).once.with(
-            chef_keys: @chef_keys,
+            keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -108,7 +108,7 @@ class Formatron
 
         it 'should create a berkshelf client' do
           expect(@berkshelf_class).to receive(:new).once.with(
-            chef_keys: @chef_keys,
+            keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -142,7 +142,7 @@ class Formatron
 
     describe '::destroy' do
       it 'should do something' do
-        ChefInstances.destroy(
+        Chef.destroy(
           aws: @aws,
           configuration: @configuration,
           target: @target

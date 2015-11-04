@@ -5,7 +5,7 @@ require 'formatron/s3_configuration'
 require 'formatron/s3_chef_server_cert'
 require 'formatron/s3_cloud_formation_template'
 require 'formatron/cloud_formation_stack'
-require 'formatron/chef_instances'
+require 'formatron/chef'
 
 # manages a Formatron stack
 # rubocop:disable Metrics/ClassLength
@@ -47,7 +47,7 @@ class Formatron
   # rubocop:enable Metrics/MethodLength
 
   def provision(target)
-    ChefInstances.provision(
+    Chef.provision(
       aws: @aws,
       configuration: @configuration,
       target: target
@@ -152,7 +152,7 @@ class Formatron
   end
 
   def _destroy_instances(target)
-    ChefInstances.destroy(
+    Chef.destroy(
       aws: @aws,
       configuration: @configuration,
       target: target

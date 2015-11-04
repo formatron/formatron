@@ -68,6 +68,16 @@ class Formatron
       end
     end
 
+    describe '::user_pem_path' do
+      it 'should return the path to the downloaded user key' do
+        expect(
+          S3ChefServerKeys.user_pem_path(
+            directory: directory
+          )
+        ).to eql File.join directory, 'user.pem'
+      end
+    end
+
     describe '::organization_pem_key' do
       it 'should return the S3 key to the organization key' do
         expect(@s3_path).to receive(:key).once.with(
@@ -81,6 +91,16 @@ class Formatron
             target: target
           )
         ).to eql organization_pem_key
+      end
+    end
+
+    describe '::organization_pem_path' do
+      it 'should return the path to the downloaded organization key' do
+        expect(
+          S3ChefServerKeys.organization_pem_path(
+            directory: directory
+          )
+        ).to eql File.join directory, 'organization.pem'
       end
     end
   end
