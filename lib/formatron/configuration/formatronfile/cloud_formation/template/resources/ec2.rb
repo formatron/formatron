@@ -97,6 +97,63 @@ class Formatron
                 }
               end
 
+              def self.network_acl(vpc:)
+                {
+                  Type: 'AWS::EC2::NetworkAcl',
+                  Properties: {
+                    VpcId: Template.ref(vpc)
+                  }
+                }
+              end
+
+              def self.subnet_network_acl_association(subnet:, network_acl:)
+                {
+                  Type: 'AWS::EC2::SubnetNetworkAclAssociation',
+                  Properties: {
+                    SubnetId: Template.ref(subnet),
+                    NetworkAclId: Template.ref(network_acl)
+                  }
+                }
+              end
+
+              # rubocop:disable Metrics/MethodLength
+              # rubocop:disable Metrics/ParameterLists
+              def self.network_acl_entry(
+                network_acl:,
+                cidr:,
+                egress:,
+                protocol:,
+                action:,
+                icmp_code: nil,
+                icmp_type: nil,
+                start_port: nil,
+                end_port: nil,
+                number:
+              )
+                resource = {
+                  Type: 'AWS::EC2::NetworkAclEntry',
+                  Properties: {
+                    NetworkAclId: Template.ref(network_acl),
+                    CidrBlock: cidr,
+                    Egress: egress,
+                    Protocol: protocol,
+                    RuleAction: action,
+                    RuleNumber: number
+                  }
+                }
+                resource[:Properties][:Icmp] = {
+                  Code: icmp_code,
+                  Type: icmp_type
+                } unless icmp_code.nil?
+                resource[:Properties][:PortRange] = {
+                  From: start_port,
+                  To: end_port
+                } unless start_port.nil?
+                resource
+              end
+              # rubocop:enable Metrics/ParameterLists
+              # rubocop:enable Metrics/MethodLength
+
               # rubocop:disable Metrics/MethodLength
               def self.security_group(
                 group_description:,
@@ -176,9 +233,9 @@ class Formatron
               # rubocop:disable Metrics/ParameterLists
               # rubocop:disable Metrics/AbcSize
               def self.instance(
-                scripts: [],
-                script_variables: {},
-                files: {},
+                scripts: nil,
+                script_variables: nil,
+                files: nil,
                 instance_profile:,
                 availability_zone:,
                 instance_type:,
@@ -191,6 +248,7 @@ class Formatron
                 logical_id:,
                 source_dest_check:
               )
+                files ||= {}
                 scripts.each_index do |index|
                   files["/tmp/formatron/script-#{index}.sh"] = {
                     content: scripts[index],
@@ -198,17 +256,17 @@ class Formatron
                     owner: 'root',
                     group: 'root'
                   }
-                end
+                end unless scripts.nil?
                 script_variables_content =
                   script_variables.reduce([]) do |content, (key, value)|
                     content.concat(["#{key}=", value, "\n"])
-                  end
+                  end unless script_variables.nil?
                 files['/tmp/formatron/script-variables'] = {
                   content: Template.join(*script_variables_content),
                   mode: '000644',
                   owner: 'root',
                   group: 'root'
-                } unless script_variables.nil? || script_variables.length == 0
+                } unless script_variables_content.nil?
                 {
                   Type: 'AWS::EC2::Instance',
                   Metadata: {

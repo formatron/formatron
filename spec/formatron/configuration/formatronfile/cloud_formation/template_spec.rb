@@ -121,6 +121,12 @@ class Formatron
           end
 
           describe '::add_vpc' do
+            before :each do
+              @vpc = instance_double(
+                'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
+              )
+            end
+
             it 'should add the VPC resources to the template' do
               cidr = 'cidr'
               subnets = {
@@ -128,18 +134,18 @@ class Formatron
                 subnet2: 'subnet2',
                 subnet3: 'subnet3'
               }
-              vpc = instance_double(
-                'Formatron::Configuration::Formatronfile::Bootstrap::VPC'
-              )
-              allow(vpc).to receive(:cidr) { cidr }
-              allow(vpc).to receive(:subnets) { subnets }
+              allow(@vpc).to receive(:cidr) { cidr }
+              allow(@vpc).to receive(:subnets) { subnets }
               allow(Template).to receive(
                 :add_subnet
-              ) do |template:, name:, subnet:|
-                template["#{name}Subnet"] = subnet
+              ) do |template:, name:, subnet:, vpc:|
+                template["#{name}Subnet"] = {
+                  subnet: subnet,
+                  vpc: vpc
+                }
               end
               template = {}
-              expect(@ec2).to receive(:vpc).once.with(cidr: cidr) { vpc }
+              expect(@ec2).to receive(:vpc).once.with(cidr: cidr) { @vpc }
               internet_gateway = 'internet_gateway'
               expect(@ec2).to receive(
                 :internet_gateway
@@ -172,14 +178,23 @@ class Formatron
               ) { private_route }
               Template.add_vpc(
                 template: template,
-                vpc: vpc
+                vpc: @vpc
               )
               expect(template).to eql(
-                'subnet1Subnet' => subnets[:subnet1],
-                'subnet2Subnet' => subnets[:subnet2],
-                'subnet3Subnet' => subnets[:subnet3],
+                'subnet1Subnet' => {
+                  subnet: subnets[:subnet1],
+                  vpc: @vpc
+                },
+                'subnet2Subnet' => {
+                  subnet: subnets[:subnet2],
+                  vpc: @vpc
+                },
+                'subnet3Subnet' => {
+                  subnet: subnets[:subnet3],
+                  vpc: @vpc
+                },
                 Resources: {
-                  'vpc' => vpc,
+                  'vpc' => @vpc,
                   'internetGateway' => internet_gateway,
                   'vpcGatewayAttachment' => vpc_gateway_attachment,
                   'publicRouteTable' => route_table,
@@ -201,6 +216,12 @@ class Formatron
               @name = 'name'
               @availability_zone = 'availability_zone'
               @cidr = 'cidr'
+              @vpc_cidr = 'vpc_cidr'
+              @vpc = instance_double(
+                'Formatron::Configuration::Formatronfile' \
+                '::Bootstrap::VPC'
+              )
+              allow(@vpc).to receive(:cidr) { @vpc_cidr }
               @subnet = instance_double(
                 'Formatron::Configuration::Formatronfile' \
                 '::Bootstrap::VPC::Subnet'
@@ -236,7 +257,8 @@ class Formatron
                 Template.add_subnet(
                   template: template,
                   name: @name,
-                  subnet: @subnet
+                  subnet: @subnet,
+                  vpc: @vpc
                 )
                 expect(template).to eql(
                   Resources: {
@@ -288,7 +310,8 @@ class Formatron
                   Template.add_subnet(
                     template: template,
                     name: @name,
-                    subnet: @subnet
+                    subnet: @subnet,
+                    vpc: @vpc
                   )
                   expect(template).to eql(
                     Resources: {
@@ -311,15 +334,30 @@ class Formatron
                     '1.1.1.1',
                     '2.2.2.2'
                   ]
-                  allow(@acl).to receive(:source_ips) { @sourceips }
+                  allow(@acl).to receive(:source_ips) { @source_ips }
                 end
 
-                skip 'should add the subnet resources to the template' do
+                it 'should add the subnet resources to the template' do
                   template = {}
                   subnet = 'subnet'
                   subnet_route_table_association =
                     'subnet_route_table_association'
                   vpc = 'vpc'
+                  network_acl = 'network_acl'
+                  network_acl_entry_vpc_inbound =
+                    'network_acl_entry_vpc_inbound'
+                  network_acl_entry_external_inbound_tcp =
+                    'network_acl_entry_external_inbound_tcp'
+                  network_acl_entry_external_inbound_udp =
+                    'network_acl_entry_external_inbound_udp'
+                  network_acl_entry_outbound =
+                    'network_acl_entry_outbound'
+                  network_acl_entry_external_inbound_0 =
+                    'network_acl_entry_external_inbound_0'
+                  network_acl_entry_external_inbound_1 =
+                    'network_acl_entry_external_inbound_1'
+                  subnet_network_acl_association =
+                    'subnet_network_acl_association'
                   expect(@ec2).to receive(:subnet).once.with(
                     vpc: vpc,
                     cidr: @cidr,
@@ -331,16 +369,101 @@ class Formatron
                     route_table: 'publicRouteTable',
                     subnet: "#{@name}Subnet"
                   ) { subnet_route_table_association }
+                  expect(@ec2).to receive(:network_acl).once.with(
+                    vpc: vpc
+                  ) { network_acl }
+                  expect(@ec2).to receive(
+                    :subnet_network_acl_association
+                  ).once.with(
+                    subnet: "#{@name}Subnet",
+                    network_acl: "#{@name}NetworkAcl"
+                  ) { subnet_network_acl_association }
+                  expect(@ec2).to receive(:network_acl_entry).once.with(
+                    network_acl: "#{@name}NetworkAcl",
+                    cidr: @vpc_cidr,
+                    egress: false,
+                    protocol: -1,
+                    action: 'allow',
+                    icmp_code: -1,
+                    icmp_type: -1,
+                    number: 100
+                  ) { network_acl_entry_vpc_inbound }
+                  expect(@ec2).to receive(:network_acl_entry).once.with(
+                    network_acl: "#{@name}NetworkAcl",
+                    cidr: '0.0.0.0/0',
+                    egress: false,
+                    protocol: 6,
+                    action: 'allow',
+                    start_port: 1024,
+                    end_port: 65_535,
+                    number: 200
+                  ) { network_acl_entry_external_inbound_tcp }
+                  expect(@ec2).to receive(:network_acl_entry).once.with(
+                    network_acl: "#{@name}NetworkAcl",
+                    cidr: '0.0.0.0/0',
+                    egress: false,
+                    protocol: 17,
+                    action: 'allow',
+                    start_port: 1024,
+                    end_port: 65_535,
+                    number: 300
+                  ) { network_acl_entry_external_inbound_udp }
+                  expect(@ec2).to receive(:network_acl_entry).once.with(
+                    network_acl: "#{@name}NetworkAcl",
+                    cidr: '0.0.0.0/0',
+                    egress: true,
+                    protocol: -1,
+                    action: 'allow',
+                    icmp_code: -1,
+                    icmp_type: -1,
+                    number: 400
+                  ) { network_acl_entry_outbound }
+                  expect(@ec2).to receive(:network_acl_entry).once.with(
+                    network_acl: "#{@name}NetworkAcl",
+                    cidr: @source_ips[0],
+                    egress: false,
+                    protocol: -1,
+                    action: 'allow',
+                    icmp_code: -1,
+                    icmp_type: -1,
+                    number: 500
+                  ) { network_acl_entry_external_inbound_0 }
+                  expect(@ec2).to receive(:network_acl_entry).once.with(
+                    network_acl: "#{@name}NetworkAcl",
+                    cidr: @source_ips[1],
+                    egress: false,
+                    protocol: -1,
+                    action: 'allow',
+                    icmp_code: -1,
+                    icmp_type: -1,
+                    number: 501
+                  ) { network_acl_entry_external_inbound_1 }
                   Template.add_subnet(
                     template: template,
                     name: @name,
-                    subnet: @subnet
+                    subnet: @subnet,
+                    vpc: @vpc
                   )
                   expect(template).to eql(
                     Resources: {
                       "#{@name}Subnet" => subnet,
                       "#{@name}SubnetRouteTableAssociation" =>
-                        subnet_route_table_association
+                        subnet_route_table_association,
+                      "#{@name}NetworkAcl" => network_acl,
+                      "#{@name}NetworkAclEntryVpcInbound" =>
+                        network_acl_entry_vpc_inbound,
+                      "#{@name}NetworkAclEntryExternalInboundTcp" =>
+                        network_acl_entry_external_inbound_tcp,
+                      "#{@name}NetworkAclEntryExternalInboundUdp" =>
+                        network_acl_entry_external_inbound_udp,
+                      "#{@name}NetworkAclEntryOutbound" =>
+                        network_acl_entry_outbound,
+                      "#{@name}NetworkAclEntryExternalInbound0" =>
+                        network_acl_entry_external_inbound_0,
+                      "#{@name}NetworkAclEntryExternalInbound1" =>
+                        network_acl_entry_external_inbound_1,
+                      "#{@name}SubnetNetworkAclAssociation" =>
+                        subnet_network_acl_association
                     },
                     Outputs: {
                       "#{@name}Subnet" => {
@@ -801,7 +924,8 @@ class Formatron
                 public_hosted_zone_id: hosted_zone_id,
                 private_hosted_zone_id: { Ref: 'privateHostedZone' },
                 hosted_zone_name: hosted_zone_name,
-                source_dest_check: true
+                source_dest_check: true,
+                instance_type: 't2.medium'
               )
               expect(Template).to receive(:add_user).once.with(
                 template: template,

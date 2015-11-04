@@ -162,6 +162,88 @@ class Formatron
                 end
               end
 
+              describe '::network_acl' do
+                it 'should return a NetworkAcl resource' do
+                  vpc = 'vpc'
+                  expect(
+                    EC2.network_acl(
+                      vpc: vpc
+                    )
+                  ).to eql(
+                    Type: 'AWS::EC2::NetworkAcl',
+                    Properties: {
+                      VpcId: { Ref: vpc }
+                    }
+                  )
+                end
+              end
+
+              describe '::subnet_network_acl_association' do
+                it 'should return a SubnetNetworkAclAssociation resource' do
+                  subnet = 'subnet'
+                  network_acl = 'network_acl'
+                  expect(
+                    EC2.subnet_network_acl_association(
+                      subnet: subnet,
+                      network_acl: network_acl
+                    )
+                  ).to eql(
+                    Type: 'AWS::EC2::SubnetNetworkAclAssociation',
+                    Properties: {
+                      SubnetId: { Ref: subnet },
+                      NetworkAclId: { Ref: network_acl }
+                    }
+                  )
+                end
+              end
+
+              describe '::network_acl_entry' do
+                it 'should return a NetworkAclEntry resource' do
+                  network_acl = 'network_acl'
+                  cidr = 'cidr'
+                  egress = 'egress'
+                  protocol = 'protocol'
+                  action = 'action'
+                  icmp_code = 'icmp_code'
+                  icmp_type = 'icmp_type'
+                  start_port = 'start_port'
+                  end_port = 'end_port'
+                  number = 'number'
+                  expect(
+                    EC2.network_acl_entry(
+                      network_acl: network_acl,
+                      cidr: cidr,
+                      egress: egress,
+                      protocol: protocol,
+                      action: action,
+                      icmp_code: icmp_code,
+                      icmp_type: icmp_type,
+                      start_port: start_port,
+                      end_port: end_port,
+                      number: number
+                    )
+                  ).to eql(
+                    Type: 'AWS::EC2::NetworkAclEntry',
+                    Properties: {
+                      NetworkAclId: { Ref: network_acl },
+                      CidrBlock: cidr,
+                      Egress: egress,
+                      Icmp: {
+                        Code: icmp_code,
+                        Type: icmp_type
+                      },
+                      Protocol: protocol,
+                      PortRange: {
+                        From: start_port,
+                        To: end_port
+                      },
+                      RuleAction: action,
+                      RuleNumber: number
+                    }
+                  )
+                end
+              end
+
               describe '::security_group' do
                 it 'should return a SecurityGroup resource' do
                   group_description = 'group_description'

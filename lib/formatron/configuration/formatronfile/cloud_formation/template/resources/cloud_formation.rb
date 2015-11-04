@@ -20,7 +20,7 @@ class Formatron
                   DependsOn: instance,
                   Properties: {
                     Handle: Template.ref(wait_condition_handle),
-                    Timeout: '1200'
+                    Timeout: '1800'
                   }
                 }
               end

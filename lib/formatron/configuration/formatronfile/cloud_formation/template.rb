@@ -25,6 +25,15 @@ class Formatron
           PRIVATE_ROUTE = 'privateRoute'
           SUBNET = 'Subnet'
           SUBNET_ROUTE_TABLE_ASSOCIATION = 'SubnetRouteTableAssociation'
+          NETWORK_ACL = 'NetworkAcl'
+          SUBNET_NETWORK_ACL_ASSOCIATION = 'SubnetNetworkAclAssociation'
+          NETWORK_ACL_ENTRY_VPC_INBOUND = 'NetworkAclEntryVpcInbound'
+          NETWORK_ACL_ENTRY_EXTERNAL_INBOUND_TCP =
+            'NetworkAclEntryExternalInboundTcp'
+          NETWORK_ACL_ENTRY_EXTERNAL_INBOUND_UDP =
+            'NetworkAclEntryExternalInboundUdp'
+          NETWORK_ACL_ENTRY_OUTBOUND = 'NetworkAclEntryOutbound'
+          NETWORK_ACL_ENTRY_EXTERNAL_INBOUND = 'NetworkAclEntryExternalInbound'
           INSTANCE = 'Instance'
           ROLE = 'Role'
           INSTANCE_PROFILE = 'InstanceProfile'
@@ -37,6 +46,9 @@ class Formatron
           NAT = 'nat'
           BASTION = 'bastion'
           CHEF_SERVER = 'chefServer'
+
+          EPHEMERAL_PORT_START = 1024
+          EPHEMERAL_PORT_END = 65_535
 
           # rubocop:disable Metrics/MethodLength
           def self._security_group_base_egress_rules
@@ -148,7 +160,8 @@ class Formatron
               add_subnet(
                 template: template,
                 name: name,
-                subnet: subnet
+                subnet: subnet,
+                vpc: vpc
               )
             end
           end
@@ -156,9 +169,11 @@ class Formatron
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
-          def self.add_subnet(template:, name:, subnet:)
+          # rubocop:disable Metrics/AbcSize
+          def self.add_subnet(template:, name:, subnet:, vpc:)
+            is_public = subnet.public?
             route_table =
-              subnet.public? ? PUBLIC_ROUTE_TABLE : PRIVATE_ROUTE_TABLE
+             is_public ? PUBLIC_ROUTE_TABLE : PRIVATE_ROUTE_TABLE
             resources = resources template
             outputs = outputs template
             resources["#{name}#{SUBNET}"] = Resources::EC2.subnet(
@@ -172,7 +187,79 @@ class Formatron
                 subnet: "#{name}#{SUBNET}"
               )
             outputs["#{name}#{SUBNET}"] = output ref("#{name}#{SUBNET}")
+            return unless is_public
+            acl = subnet.acl
+            return if acl.nil?
+            source_ips = acl.source_ips
+            return if source_ips.nil? || source_ips.length == 0
+            resources["#{name}#{NETWORK_ACL}"] =
+              Resources::EC2.network_acl vpc: VPC
+            resources["#{name}#{SUBNET_NETWORK_ACL_ASSOCIATION}"] =
+              Resources::EC2.subnet_network_acl_association(
+                subnet: "#{name}#{SUBNET}",
+                network_acl: "#{name}#{NETWORK_ACL}"
+              )
+            resources["#{name}#{NETWORK_ACL_ENTRY_VPC_INBOUND}"] =
+              Resources::EC2.network_acl_entry(
+                network_acl: "#{name}#{NETWORK_ACL}",
+                cidr: vpc.cidr,
+                egress: false,
+                protocol: -1,
+                action: 'allow',
+                icmp_code: -1,
+                icmp_type: -1,
+                number: 100
+              )
+            resources["#{name}#{NETWORK_ACL_ENTRY_EXTERNAL_INBOUND_TCP}"] =
+              Resources::EC2.network_acl_entry(
+                network_acl: "#{name}#{NETWORK_ACL}",
+                cidr: '0.0.0.0/0',
+                egress: false,
+                protocol: 6,
+                action: 'allow',
+                start_port: EPHEMERAL_PORT_START,
+                end_port: EPHEMERAL_PORT_END,
+                number: 200
+              )
+            resources["#{name}#{NETWORK_ACL_ENTRY_EXTERNAL_INBOUND_UDP}"] =
+              Resources::EC2.network_acl_entry(
+                network_acl: "#{name}#{NETWORK_ACL}",
+                cidr: '0.0.0.0/0',
+                egress: false,
+                protocol: 17,
+                action: 'allow',
+                start_port: EPHEMERAL_PORT_START,
+                end_port: EPHEMERAL_PORT_END,
+                number: 300
+              )
+            resources["#{name}#{NETWORK_ACL_ENTRY_OUTBOUND}"] =
+              Resources::EC2.network_acl_entry(
+                network_acl: "#{name}#{NETWORK_ACL}",
+                cidr: '0.0.0.0/0',
+                egress: true,
+                protocol: -1,
+                action: 'allow',
+                icmp_code: -1,
+                icmp_type: -1,
+                number: 400
+              )
+            source_ips.each_index do |index|
+              source_ip = source_ips[index]
+              resources[
+                "#{name}#{NETWORK_ACL_ENTRY_EXTERNAL_INBOUND}#{index}"
+              ] = Resources::EC2.network_acl_entry(
+                network_acl: "#{name}#{NETWORK_ACL}",
+                cidr: source_ip,
+                egress: false,
+                protocol: -1,
+                action: 'allow',
+                icmp_code: -1,
+                icmp_type: -1,
+                number: 500 + index
+              )
+            end
           end
+          # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
@@ -324,7 +411,8 @@ class Formatron
               public_hosted_zone_id: hosted_zone_id,
               private_hosted_zone_id: Template.ref(PRIVATE_HOSTED_ZONE),
               hosted_zone_name: hosted_zone_name,
-              source_dest_check: true
+              source_dest_check: true,
+              instance_type: 't2.medium'
             )
           end
           # rubocop:enable Metrics/AbcSize
@@ -342,13 +430,14 @@ class Formatron
             instance:,
             bootstrap:,
             ingress_rules:,
-            script_variables: {},
-            scripts: [],
-            files: {},
+            script_variables: nil,
+            scripts: nil,
+            files: nil,
             public_hosted_zone_id:,
             private_hosted_zone_id:,
             hosted_zone_name:,
-            source_dest_check:
+            source_dest_check:,
+            instance_type: 't2.micro'
           )
             statements = [{
               actions: ['kms:Decrypt', 'kms:Encrypt', 'kms:GenerateDataKey*'],
@@ -399,13 +488,13 @@ class Formatron
                   sub_domain: instance.sub_domain,
                   hosted_zone_name: hosted_zone_name
                 )
-              ].concat(scripts),
+              ].concat(scripts || []),
               files: files,
               instance_profile: "#{prefix}#{INSTANCE_PROFILE}",
               availability_zone: bootstrap.vpc.subnets[
                 instance.subnet
               ].availability_zone,
-              instance_type: 't2.micro',
+              instance_type: instance_type,
               key_name: bootstrap.ec2.key_pair,
               subnet: ref("#{instance.subnet}#{SUBNET}"),
               associate_public_ip_address: bootstrap.vpc.subnets[
