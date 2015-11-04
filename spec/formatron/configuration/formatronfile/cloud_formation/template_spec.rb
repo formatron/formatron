@@ -287,7 +287,7 @@ class Formatron
 
               context 'without any ACL source IP rules' do
                 before :each do
-                  allow(@acl).to receive(:source_ips) { [] }
+                  allow(@acl).to receive(:source_cidrs) { [] }
                 end
 
                 it 'should add the subnet resources to the template' do
@@ -330,11 +330,11 @@ class Formatron
 
               context 'with ACL source IP rules' do
                 before :each do
-                  @source_ips = [
+                  @source_cidrs = [
                     '1.1.1.1',
                     '2.2.2.2'
                   ]
-                  allow(@acl).to receive(:source_ips) { @source_ips }
+                  allow(@acl).to receive(:source_cidrs) { @source_cidrs }
                 end
 
                 it 'should add the subnet resources to the template' do
@@ -420,7 +420,7 @@ class Formatron
                   ) { network_acl_entry_outbound }
                   expect(@ec2).to receive(:network_acl_entry).once.with(
                     network_acl: "#{@name}NetworkAcl",
-                    cidr: @source_ips[0],
+                    cidr: @source_cidrs[0],
                     egress: false,
                     protocol: -1,
                     action: 'allow',
@@ -430,7 +430,7 @@ class Formatron
                   ) { network_acl_entry_external_inbound_0 }
                   expect(@ec2).to receive(:network_acl_entry).once.with(
                     network_acl: "#{@name}NetworkAcl",
-                    cidr: @source_ips[1],
+                    cidr: @source_cidrs[1],
                     egress: false,
                     protocol: -1,
                     action: 'allow',

@@ -12,13 +12,13 @@ class Formatron
                 @acl = ACL.new
               end
 
-              describe '#source_ip' do
-                it 'should append to the list of allowed source IPs' do
-                  expect(@acl.source_ips).to be_nil
-                  @acl.source_ip '1'
-                  expect(@acl.source_ips).to eql %w(1)
-                  @acl.source_ip '2'
-                  expect(@acl.source_ips).to eql %w(1 2)
+              describe '#source_cidr' do
+                it 'should append to the list of allowed source CIDRs' do
+                  expect(@acl.source_cidrs).to be_nil
+                  @acl.source_cidr '1'
+                  expect(@acl.source_cidrs).to eql %w(1)
+                  @acl.source_cidr '2'
+                  expect(@acl.source_cidrs).to eql %w(1 2)
                 end
               end
             end

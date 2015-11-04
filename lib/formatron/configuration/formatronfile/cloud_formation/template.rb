@@ -190,8 +190,8 @@ class Formatron
             return unless is_public
             acl = subnet.acl
             return if acl.nil?
-            source_ips = acl.source_ips
-            return if source_ips.nil? || source_ips.length == 0
+            source_cidrs = acl.source_cidrs
+            return if source_cidrs.nil? || source_cidrs.length == 0
             resources["#{name}#{NETWORK_ACL}"] =
               Resources::EC2.network_acl vpc: VPC
             resources["#{name}#{SUBNET_NETWORK_ACL_ASSOCIATION}"] =
@@ -243,13 +243,13 @@ class Formatron
                 icmp_type: -1,
                 number: 400
               )
-            source_ips.each_index do |index|
-              source_ip = source_ips[index]
+            source_cidrs.each_index do |index|
+              source_cidr = source_cidrs[index]
               resources[
                 "#{name}#{NETWORK_ACL_ENTRY_EXTERNAL_INBOUND}#{index}"
               ] = Resources::EC2.network_acl_entry(
                 network_acl: "#{name}#{NETWORK_ACL}",
-                cidr: source_ip,
+                cidr: source_cidr,
                 egress: false,
                 protocol: -1,
                 action: 'allow',

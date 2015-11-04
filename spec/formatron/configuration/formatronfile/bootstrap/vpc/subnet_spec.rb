@@ -39,13 +39,13 @@ class Formatron
                   '::Bootstrap::VPC::Subnet::ACL'
                 )
                 allow(acl_class).to receive(:new) { @acl }
-                allow(@acl).to receive :source_ip
+                allow(@acl).to receive :source_cidr
               end
 
               context 'when set to false' do
                 before :each do
                   @subnet.public false do |acl|
-                    acl.source_ip '1'
+                    acl.source_cidr '1'
                   end
                 end
 
@@ -55,7 +55,7 @@ class Formatron
                 end
 
                 it 'should ignore the ACL block' do
-                  expect(@acl).to_not have_received :source_ip
+                  expect(@acl).to_not have_received :source_cidr
                 end
               end
 
@@ -63,7 +63,7 @@ class Formatron
                 context 'with an ACL block' do
                   before :each do
                     @subnet.public true do |acl|
-                      acl.source_ip '1'
+                      acl.source_cidr '1'
                     end
                   end
 
@@ -73,7 +73,7 @@ class Formatron
                   end
 
                   it 'should yield to the ACL block' do
-                    expect(@acl).to have_received(:source_ip).once.with '1'
+                    expect(@acl).to have_received(:source_cidr).once.with '1'
                   end
                 end
 

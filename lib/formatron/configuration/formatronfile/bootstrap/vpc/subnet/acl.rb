@@ -6,11 +6,11 @@ class Formatron
           class Subnet
             # Subnet ACL configuration
             class ACL
-              attr_reader :source_ips
+              attr_reader :source_cidrs
 
-              def source_ip(ip)
-                @source_ips ||= []
-                @source_ips.push ip
+              def source_cidr(cidr)
+                @source_cidrs ||= []
+                @source_cidrs.push cidr
               end
             end
           end

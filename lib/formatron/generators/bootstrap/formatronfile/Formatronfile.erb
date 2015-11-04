@@ -18,7 +18,7 @@ bootstrap do |configuration|
       subnet.availability_zone '<%= params[:availability_zone] %>'
       subnet.cidr '10.0.0.0/24'
       subnet.public true do |acl|
-        acl.source_ip '<%= ip %>'
+        acl.source_cidr '<%= ip %>/32'
       end
     end
 
