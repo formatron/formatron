@@ -423,8 +423,22 @@ class Formatron
                 role: "#{@prefix}Role",
                 name: "#{@prefix}Policy",
                 statements: [{
-                  actions: ['kms:Decrypt', 'kms:Encrypt'],
-                  resources: "arn:aws:kms:::key/#{@kms_key}"
+                  actions: [
+                    'kms:Decrypt',
+                    'kms:Encrypt',
+                    'kms:GenerateDataKey*'
+                  ],
+                  resources: {
+                    'Fn::Join' => [
+                      '', [
+                        'arn:aws:kms:',
+                        { Ref: 'AWS::Region' },
+                        ':',
+                        { Ref: 'AWS::AccountId' },
+                        ":key/#{@kms_key}"
+                      ]
+                    ]
+                  }
                 }, {
                   actions: 's3:GetObject',
                   resources: ["arn:aws:s3:::#{@bucket}/#{@get_key}"]

@@ -351,8 +351,14 @@ class Formatron
             source_dest_check:
           )
             statements = [{
-              actions: ['kms:Decrypt', 'kms:Encrypt'],
-              resources: "arn:aws:kms:::key/#{bootstrap.kms_key}"
+              actions: ['kms:Decrypt', 'kms:Encrypt', 'kms:GenerateDataKey*'],
+              resources: Template.join(
+                'arn:aws:kms:',
+                Template.ref('AWS::Region'),
+                ':',
+                Template.ref('AWS::AccountId'),
+                ":key/#{bootstrap.kms_key}"
+              )
             }]
             statements.push(
               actions: 's3:GetObject',
