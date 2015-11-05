@@ -5,51 +5,49 @@ class Formatron
   module Chef
     # Wrapper for the knife cli
     class Knife
-      class Error < RuntimeError
-      end
-
-      class CreateEnvironmentError < Error
-      end
-
-      def initialize(server_url, user, key, organization, ssl_verify)
-        _create_key_file key
-        _create_knife_file server_url, user, organization, ssl_verify
-      end
-
-      def unlink
-        @knife_file.unlink
-        @key_file.unlink
-      end
-
-      def create_environment(environment)
-        # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "knife environment show #{environment} -c #{@knife_file.path}"
-        Util::KernelHelper.shell "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless Util::KernelHelper.success?
-        fail CreateEnvironmentError, "failed to create opscode environment: #{environment}" unless Util::KernelHelper.success?
-        # rubocop:enable Metrics/LineLength
-      end
-
-      def _create_key_file(key)
-        @key_file = Tempfile.new('knife_key')
-        @key_file.write(key)
-        @key_file.close
-      end
-
-      def _create_knife_file(server_url, user, organization, ssl_verify)
-        @knife_file = Tempfile.new('knife')
-        @knife_file.write <<-EOH.gsub(/^\s{10}/, '')
-          chef_server_url '#{server_url}/organizations/#{organization}'
-          node_name '#{user}'
-          client_key '#{@key_file.path}'
+      # rubocop:disable Metrics/MethodLength
+      def initialize(
+        keys:, chef_server_url:, username:, organization:, ssl_verify:
+      )
+        @knife_file = Tempfile.new('formatron-knife-')
+        @knife_file.write <<-EOH.gsub(/^ {10}/, '')
+          chef_server_url '#{chef_server_url}'
+          validation_client_name '#{organization}-validator'
+          validation_key '#{keys.organization_key}'
+          node_name '#{username}'
+          client_key '#{keys.user_key}'
           ssl_verify_mode #{ssl_verify ? ':verify_peer' : ':verify_none'}
         EOH
         @knife_file.close
       end
+      # rubocop:enable Metrics/MethodLength
 
-      private(
-        :_create_key_file,
-        :_create_knife_file
+      def create_environment(environment:)
+        # rubocop:disable Metrics/LineLength
+        Util::KernelHelper.shell "chef exec knife environment show #{environment} -c #{@knife_file.path}"
+        Util::KernelHelper.shell "chef exec knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless Util::KernelHelper.success?
+        fail "failed to create opscode environment: #{environment}" unless Util::KernelHelper.success?
+        # rubocop:enable Metrics/LineLength
+      end
+
+      # rubocop:disable Metrics/MethodLength
+      def bootstrap(
+        environment:,
+        bastion_hostname:,
+        cookbook:,
+        hostname:,
+        private_key:
       )
+        # rubocop:disable Metrics/LineLength
+        if bastion_hostname.eql? hostname
+          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{hostname} -c #{@knife_file.path}"
+        else
+          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -G ubuntu@#{bastion_hostname} -N #{hostname} -c #{@knife_file.path}"
+        end
+        fail "failed to bootstrap instance: #{hostname}" unless Util::KernelHelper.success?
+        # rubocop:enable Metrics/LineLength
+      end
+      # rubocop:enable Metrics/MethodLength
     end
   end
 end

@@ -4,35 +4,48 @@ require 'formatron/chef'
 # namespacing for tests
 # rubocop:disable Metrics/ClassLength
 class Formatron
-  xdescribe Chef do
+  describe Chef do
     describe '::provision' do
       before :each do
         @aws = instance_double 'Formatron::AWS'
-        @configuration = instance_double 'Formatron::Configuration'
-        @target = 'target'
         @name = 'name'
+        @hosted_zone_name = 'hosted_zone_name'
+        @instance0 = instance_double 'Formatron::Formatronfile::Instance'
+        @instance0_cookbook = 'instance0_cookbook'
+        @instance0_sub_domain = 'instance0_sub_domain'
+        allow(@instance0).to receive(:instance_cookbook) { @instance0_cookbook }
+        allow(@instance0).to receive(
+          :sub_domain
+        ) { @instance0_sub_domain }
+        @instance0_environment = "#{@name}__#{@instance0_cookbook}"
+        @instance0_hostname = "#{@instance0_sub_domain}.#{@hosted_zone_name}"
+        @instance1 = instance_double 'Formatron::Formatronfile::Instance'
+        @instance1_cookbook = 'instance1_cookbook'
+        @instance1_sub_domain = 'instance1_sub_domain'
+        allow(@instance1).to receive(:instance_cookbook) { @instance1_cookbook }
+        allow(@instance1).to receive(
+          :sub_domain
+        ) { @instance1_sub_domain }
+        @instance1_environment = "#{@name}__#{@instance1_cookbook}"
+        @instance1_hostname = "#{@instance1_sub_domain}.#{@hosted_zone_name}"
+        @bastion_sub_domain = 'bastion_sub_domain'
+        @bastion_hostname = "#{@bastion_sub_domain}.#{@hosted_zone_name}"
+        @instances = [
+          @instance0,
+          @instance1
+        ]
+        @target = 'target'
         @bucket = 'bucket'
         @chef_sub_domain = 'chef_sub_domain'
-        @hosted_zone_name = 'hosted_zone_name'
         @organization = 'organization'
         @username = 'username'
         @ssl_verify = 'ssl_verify'
         @private_key = 'private_key'
-        @bastion_cookbook = 'bastion_cookbook'
-        @bastion_sub_domain = 'bastion_sub_domain'
-        @bastion_environment = "#{@name}__#{@bastion_cookbook}"
-        @bastion_hostname = "#{@bastion_sub_domain}.#{@hosted_zone_name}"
         @chef_server_url = "https://#{@chef_sub_domain}.#{@hosted_zone_name}" \
                            "/organizations/#{@organization}"
-        @cloud_formation_stack = class_double(
-          'Formatron::CloudFormationStack'
+        @cloud_formation = class_double(
+          'Formatron::CloudFormation'
         ).as_stubbed_const
-        allow(@configuration).to receive(:name).with(
-          @target
-        ) { @name }
-        allow(@configuration).to receive(:bucket).with(
-          @target
-        ) { @bucket }
         @keys_class = class_double(
           'Formatron::Chef::Keys'
         ).as_stubbed_const
@@ -55,7 +68,7 @@ class Formatron
 
       context 'when the CloudFormation stack is not ready' do
         before :each do
-          expect(@cloud_formation_stack).to receive(:stack_ready!).once.with(
+          expect(@cloud_formation).to receive(:stack_ready!).once.with(
             aws: @aws,
             name: @name,
             target: @target
@@ -66,8 +79,17 @@ class Formatron
           expect do
             Chef.provision(
               aws: @aws,
-              configuration: @configuration,
-              target: @target
+              bucket: @bucket,
+              name: @name,
+              target: @target,
+              private_key: @private_key,
+              username: @username,
+              organization: @organization,
+              ssl_verify: @ssl_verify,
+              chef_sub_domain: @chef_sub_domain,
+              bastion_sub_domain: @bastion_sub_domain,
+              hosted_zone_name: @hosted_zone_name,
+              instances: @instances
             )
           end.to raise_error 'not ready'
         end
@@ -75,15 +97,24 @@ class Formatron
 
       context 'when the CloudFormation stack is ready' do
         before :each do
-          expect(@cloud_formation_stack).to receive(:stack_ready!).once.with(
+          expect(@cloud_formation).to receive(:stack_ready!).once.with(
             aws: @aws,
             name: @name,
             target: @target
           )
           Chef.provision(
             aws: @aws,
-            configuration: @configuration,
-            target: @target
+            bucket: @bucket,
+            name: @name,
+            target: @target,
+            private_key: @private_key,
+            username: @username,
+            organization: @organization,
+            ssl_verify: @ssl_verify,
+            chef_sub_domain: @chef_sub_domain,
+            bastion_sub_domain: @bastion_sub_domain,
+            hosted_zone_name: @hosted_zone_name,
+            instances: @instances
           )
         end
 
@@ -111,29 +142,43 @@ class Formatron
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
-            organization: @organization,
             ssl_verify: @ssl_verify
           )
         end
 
-        it 'should create the bastion environment' do
+        it 'should create the instance environments' do
           expect(@knife).to receive(:create_environment).once.with(
-            environment: @bastion_environment
+            environment: @instance0_environment
+          )
+          expect(@knife).to receive(:create_environment).once.with(
+            environment: @instance1_environment
           )
         end
 
-        it 'should deploy the bastion cookbooks' do
+        it 'should deploy the instance cookbooks' do
           expect(@berkshelf).to have_received(:upload).once.with(
-            environment: @bastion_environment,
-            cookbook: @bastion_cookbook
+            environment: @instance0_environment,
+            cookbook: @instance0_cookbook
+          )
+          expect(@berkshelf).to have_received(:upload).once.with(
+            environment: @instance1_environment,
+            cookbook: @instance1_cookbook
           )
         end
 
-        it 'should bootstrap the bastion instance' do
+        it 'should bootstrap the instances' do
           expect(@knife).to receive(:bootstrap).once.with(
-            environment: @bastion_environment,
-            cookbook: @bastion_cookbook,
-            hostname: @bastion_hostname,
+            bastion_hostname: @bastion_hostname,
+            environment: @instance0_environment,
+            cookbook: @instance0_cookbook,
+            hostname: @instance0_hostname,
+            private_key: @private_key
+          )
+          expect(@knife).to receive(:bootstrap).once.with(
+            bastion_hostname: @bastion_hostname,
+            environment: @instance1_environment,
+            cookbook: @instance1_cookbook,
+            hostname: @instance1_hostname,
             private_key: @private_key
           )
         end

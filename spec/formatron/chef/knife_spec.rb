@@ -3,61 +3,67 @@ require 'spec_helper'
 require 'formatron/chef/knife'
 
 ENVIRONMENT = 'env'
-ENVIRONMENT_CHECK_COMMAND = "knife environment show #{ENVIRONMENT} " \
+ENVIRONMENT_CHECK_COMMAND = 'chef exec knife environment ' \
+                            "show #{ENVIRONMENT} " \
                             '-c knife_file'
-ENVIRONMENT_CREATE_COMMAND = "knife environment create #{ENVIRONMENT} -c " \
+ENVIRONMENT_CREATE_COMMAND = 'chef exec knife environment create ' \
+                             "#{ENVIRONMENT} -c " \
                              "knife_file -d '#{ENVIRONMENT} environment " \
                              "created by formatron'"
+BOOTSTRAP_COMMAND = 'chef exec knife bootstrap hostname ' \
+                    '--sudo -x ubuntu -i private_key -E ' \
+                    "#{ENVIRONMENT} -r cookbook -N hostname -c knife_file"
+BOOTSTRAP_COMMAND_WITH_BASTION = 'chef exec knife bootstrap hostname ' \
+                                 '--sudo -x ubuntu -i private_key -E ' \
+                                 "#{ENVIRONMENT} -r cookbook -G " \
+                                 'ubuntu@bastion -N hostname -c knife_file'
 
 class Formatron
   # rubocop:disable Metrics/ModuleLength
   module Chef
     describe Knife do
       before(:each) do
-        @key_tempfile = instance_double('Tempfile')
-        allow(@key_tempfile).to receive(:write)
-        allow(@key_tempfile).to receive(:close)
-        allow(@key_tempfile).to receive(:unlink)
-        allow(@key_tempfile).to receive(:path) do
-          'key_file'
-        end
+        @keys = instance_double 'Formatron::Chef::Keys'
+        @chef_server_url = 'chef_server_url'
+        @username = 'username'
+        @user_key = 'user_key'
+        allow(@keys).to receive(:user_key) { @user_key }
+        @organization = 'organization'
+        @organization_key = 'organization_key'
+        allow(@keys).to receive(:organization_key) { @organization_key }
         @knife_tempfile = instance_double('Tempfile')
         allow(@knife_tempfile).to receive(:write)
         allow(@knife_tempfile).to receive(:close)
-        allow(@knife_tempfile).to receive(:unlink)
         allow(@knife_tempfile).to receive(:path) do
           'knife_file'
         end
         @tempfile_class = class_double('Tempfile').as_stubbed_const
-        allow(@tempfile_class).to receive(:new) do |name|
-          case name
-          when 'knife_key'
-            @key_tempfile
-          when 'knife'
-            @knife_tempfile
-          end
-        end
+        allow(@tempfile_class).to receive(:new) { @knife_tempfile }
       end
 
       context 'when verifying SSL certs' do
         before(:each) do
           @knife = Knife.new(
-            'http://server',
-            'user',
-            'key',
-            'organization',
-            true
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true
           )
         end
 
         it 'should create a temporary file for the knife ' \
            'config setting the verify mode to :verify_peer' do
-          expect(@tempfile_class).to have_received(:new).with('knife').once
+          expect(@tempfile_class).to have_received(
+            :new
+          ).with('formatron-knife-')
           expect(@knife_tempfile).to have_received(:write).with(
             <<-EOH.gsub(/^ {14}/, '')
-              chef_server_url 'http://server/organizations/organization'
-              node_name 'user'
-              client_key 'key_file'
+              chef_server_url '#{@chef_server_url}'
+              validation_client_name '#{@organization}-validator'
+              validation_key '#{@organization_key}'
+              node_name '#{@username}'
+              client_key '#{@user_key}'
               ssl_verify_mode :verify_peer
             EOH
           ).once
@@ -68,22 +74,26 @@ class Formatron
       context 'when not verifying SSL certs' do
         before(:each) do
           @knife = Knife.new(
-            'http://server',
-            'user',
-            'key',
-            'organization',
-            false
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: false
           )
         end
 
         it 'should create a temporary file for the knife ' \
            'config setting the verify mode to :verify_none' do
-          expect(@tempfile_class).to have_received(:new).with('knife').once
+          expect(@tempfile_class).to have_received(
+            :new
+          ).with('formatron-knife-')
           expect(@knife_tempfile).to have_received(:write).with(
             <<-EOH.gsub(/^\ {14}/, '')
-              chef_server_url 'http://server/organizations/organization'
-              node_name 'user'
-              client_key 'key_file'
+              chef_server_url '#{@chef_server_url}'
+              validation_client_name '#{@organization}-validator'
+              validation_key '#{@organization_key}'
+              node_name '#{@username}'
+              client_key '#{@user_key}'
               ssl_verify_mode :verify_none
             EOH
           ).once
@@ -91,48 +101,14 @@ class Formatron
         end
       end
 
-      it 'should create a temporary file for the chef key' do
-        @knife = Knife.new(
-          'http://server',
-          'user',
-          'key',
-          'organization',
-          true
-        )
-        expect(@tempfile_class).to have_received(:new).with('knife_key').once
-        expect(@key_tempfile).to have_received(:write).with('key').once
-        expect(@key_tempfile).to have_received(:close).with(no_args).once
-      end
-
-      describe '#unlink' do
+      describe '#create_environment' do
         before(:each) do
           @knife = Knife.new(
-            'http://server',
-            'user',
-            'key',
-            'organization',
-            true
-          )
-          @knife.unlink
-        end
-
-        it 'should delete the chef key file' do
-          expect(@key_tempfile).to have_received(:unlink).with(no_args).once
-        end
-
-        it 'should delete the knife config file' do
-          expect(@knife_tempfile).to have_received(:unlink).with(no_args).once
-        end
-      end
-
-      describe '#createEnvironment' do
-        before(:each) do
-          @knife = Knife.new(
-            'http://server',
-            'user',
-            'key',
-            'organization',
-            true
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true
           )
         end
 
@@ -154,7 +130,7 @@ class Formatron
           end
 
           it 'should do nothing' do
-            @knife.create_environment(ENVIRONMENT)
+            @knife.create_environment environment: ENVIRONMENT
             expect(@kernel_helper_class).to have_received(:shell).once
             expect(@kernel_helper_class).to have_received(:shell).with(
               ENVIRONMENT_CHECK_COMMAND
@@ -180,7 +156,7 @@ class Formatron
           end
 
           it 'should create the environment' do
-            @knife.create_environment(ENVIRONMENT)
+            @knife.create_environment environment: ENVIRONMENT
             expect(@kernel_helper_class).to have_received(:shell).twice
             expect(@kernel_helper_class).to have_received(:shell).with(
               ENVIRONMENT_CHECK_COMMAND
@@ -209,8 +185,94 @@ class Formatron
           end
 
           it 'should fail' do
-            expect { @knife.create_environment(ENVIRONMENT) }.to raise_error(
-              Knife::CreateEnvironmentError
+            expect do
+              @knife.create_environment environment: ENVIRONMENT
+            end.to raise_error(
+              'failed to create opscode environment: env'
+            )
+          end
+        end
+      end
+
+      describe '#bootstrap' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true
+          )
+        end
+
+        context 'when the host is the bastion' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { true }
+          end
+
+          it 'should bootstrap the host directly' do
+            @knife.bootstrap(
+              environment: ENVIRONMENT,
+              bastion_hostname: 'hostname',
+              cookbook: 'cookbook',
+              hostname: 'hostname',
+              private_key: 'private_key'
+            )
+            expect(@kernel_helper_class).to have_received(:shell).once
+            expect(@kernel_helper_class).to have_received(:shell).with(
+              BOOTSTRAP_COMMAND
+            )
+          end
+        end
+
+        context 'when the host is not the bastion' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { true }
+          end
+
+          it 'should bootstrap the host directly' do
+            @knife.bootstrap(
+              environment: ENVIRONMENT,
+              bastion_hostname: 'bastion',
+              cookbook: 'cookbook',
+              hostname: 'hostname',
+              private_key: 'private_key'
+            )
+            expect(@kernel_helper_class).to have_received(:shell).once
+            expect(@kernel_helper_class).to have_received(:shell).with(
+              BOOTSTRAP_COMMAND_WITH_BASTION
+            )
+          end
+        end
+
+        context 'when the bootstrap command fails' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { false }
+          end
+
+          it 'should fail' do
+            expect do
+              @knife.bootstrap(
+                environment: ENVIRONMENT,
+                bastion_hostname: 'bastion',
+                cookbook: 'cookbook',
+                hostname: 'hostname',
+                private_key: 'private_key'
+              )
+            end.to raise_error(
+              'failed to bootstrap instance: hostname'
             )
           end
         end
