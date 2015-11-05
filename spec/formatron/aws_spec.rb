@@ -57,7 +57,7 @@ class Formatron
           EOH
         )
         @aws = AWS.new(
-          File.join('test', 'credentials.json')
+          credentials: File.join('test', 'credentials.json')
         )
       end
 

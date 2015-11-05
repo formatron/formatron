@@ -4,7 +4,7 @@ require 'formatron/chef'
 # namespacing for tests
 # rubocop:disable Metrics/ClassLength
 class Formatron
-  describe Chef do
+  xdescribe Chef do
     describe '::provision' do
       before :each do
         @aws = instance_double 'Formatron::AWS'

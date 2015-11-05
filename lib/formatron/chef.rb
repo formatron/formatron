@@ -1,4 +1,4 @@
-require 'formatron/cloud_formation_stack'
+require 'formatron/cloud_formation'
 require_relative 'chef/keys'
 
 class Formatron
@@ -17,7 +17,7 @@ class Formatron
         hosted_zone_name: hosted_zone_name,
         organization: organization
       )
-      CloudFormationStack.stack_ready!(
+      CloudFormation.stack_ready!(
         aws: aws,
         name: configuration.name(target),
         target: target

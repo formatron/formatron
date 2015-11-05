@@ -1,4 +1,5 @@
 require 'formatron'
+require 'formatron/config'
 
 class Formatron
   class CLI
@@ -15,15 +16,15 @@ class Formatron
           )
       end
 
-      def destroy_target(target, formatron)
+      def destroy_target(target, directory)
         target || choose(
           'Target?',
-          *formatron.targets
+          *Config.targets(directory: directory)
         )
       end
 
       def destroy_ok(formatron, target)
-        !formatron.protected?(target) || agree(
+        !formatron.protected? || agree(
           "Are you sure you wish to destroy protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -32,14 +33,14 @@ class Formatron
 
       def destroy_action(c)
         c.action do |args, options|
+          directory = destroy_directory options
+          target = destroy_target args[0], directory
           formatron = Formatron.new(
-            destroy_credentials(options),
-            destroy_directory(options)
+            credentials: destroy_credentials(options),
+            directory: directory,
+            target: target
           )
-          t = destroy_target args[0], formatron
-          formatron.destroy(
-            t
-          ) if destroy_ok(formatron, t)
+          formatron.destroy if destroy_ok formatron, target
         end
       end
 

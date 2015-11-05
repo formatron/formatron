@@ -1,4 +1,5 @@
 require 'formatron'
+require 'formatron/config'
 
 class Formatron
   class CLI
@@ -15,15 +16,15 @@ class Formatron
           )
       end
 
-      def provision_target(target, formatron)
+      def provision_target(target, directory)
         target || choose(
           'Target?',
-          *formatron.targets
+          *Config.targets(directory: directory)
         )
       end
 
       def provision_ok(formatron, target)
-        !formatron.protected?(target) || agree(
+        !formatron.protected? || agree(
           "Are you sure you wish to provision protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -32,14 +33,14 @@ class Formatron
 
       def provision_action(c)
         c.action do |args, options|
+          directory = provision_directory options
+          target = provision_target args[0], directory
           formatron = Formatron.new(
-            provision_credentials(options),
-            provision_directory(options)
+            credentials: provision_credentials(options),
+            directory: directory,
+            target: target
           )
-          t = provision_target args[0], formatron
-          formatron.provision(
-            t
-          ) if provision_ok(formatron, t)
+          formatron.provision if provision_ok formatron, target
         end
       end
 

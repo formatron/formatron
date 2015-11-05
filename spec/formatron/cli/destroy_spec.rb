@@ -16,18 +16,15 @@ describe Formatron::CLI::Destroy do
   target = 'production'
   target_index = 1
 
-  expected_constructor_params = [
-    credentials,
-    directory
-  ]
-
-  expected_params = [
-    target
-  ]
+  expected_constructor_params = {
+    credentials: credentials,
+    directory: directory,
+    target: target
+  }
 
   before(:each) do
     @formatron = instance_double('Formatron')
-    allow(@formatron).to receive(:targets) do
+    allow(Formatron::Config).to receive(:targets) do
       %w(production test)
     end
     allow(@formatron).to receive(:protected?) do
@@ -52,16 +49,20 @@ describe Formatron::CLI::Destroy do
       # rubocop:disable Style/GlobalVars
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
+      expect(Formatron::Config).to receive(:targets).once.with(
+        directory: Dir.pwd
+      )
       expect(
         Formatron
       ).to receive(:new).once.with(
-        File.join(Dir.home, '.formatron/credentials.json'),
-        Dir.pwd
+        credentials: File.join(Dir.home, '.formatron/credentials.json'),
+        directory: Dir.pwd,
+        target: target
       ) do
         @formatron
       end
       expect(@formatron).to receive(:destroy).with(
-        *expected_params
+        no_args
       ).once
       Test.new.run
     end
@@ -86,16 +87,20 @@ describe Formatron::CLI::Destroy do
       # rubocop:disable Style/GlobalVars
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
+      expect(Formatron::Config).to receive(:targets).once.with(
+        directory: Dir.pwd
+      )
       expect(
         Formatron
       ).to receive(:new).once.with(
-        File.join(Dir.pwd, '.formatron/credentials.json'),
-        Dir.pwd
+        credentials: File.join(Dir.pwd, '.formatron/credentials.json'),
+        directory: Dir.pwd,
+        target: target
       ) do
         @formatron
       end
       expect(@formatron).to receive(:destroy).with(
-        *expected_params
+        no_args
       ).once
       Test.new.run
     end
@@ -124,15 +129,16 @@ describe Formatron::CLI::Destroy do
       # rubocop:disable Style/GlobalVars
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
+      expect(Formatron::Config).to_not receive :targets
       expect(
         Formatron
       ).to receive(:new).once.with(
-        *expected_constructor_params
+        expected_constructor_params
       ) do
         @formatron
       end
       expect(@formatron).to receive(:destroy).with(
-        *expected_params
+        no_args
       ).once
       Test.new.run
     end
@@ -161,15 +167,16 @@ describe Formatron::CLI::Destroy do
       # rubocop:disable Style/GlobalVars
       $terminal = HighLine.new @input, @output
       # rubocop:enable Style/GlobalVars
+      expect(Formatron::Config).to_not receive :targets
       expect(
         Formatron
       ).to receive(:new).once.with(
-        *expected_constructor_params
+        expected_constructor_params
       ) do
         @formatron
       end
       expect(@formatron).to receive(:destroy).with(
-        *expected_params
+        no_args
       ).once
       Test.new.run
     end

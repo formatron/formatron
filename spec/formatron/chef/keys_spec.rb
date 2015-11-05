@@ -14,7 +14,7 @@ class Formatron
         @user_pem_path = 'user_pem_path'
         @organization_pem_path = 'organization_pem_path'
         @s3_chef_server_keys = class_double(
-          'Formatron::S3ChefServerKeys'
+          'Formatron::S3::ChefServerKeys'
         ).as_stubbed_const
         allow(@s3_chef_server_keys).to receive(:get)
         allow(@s3_chef_server_keys).to receive(

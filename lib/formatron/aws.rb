@@ -45,8 +45,8 @@ class Formatron
       ROLLBACK_COMPLETE
     )
 
-    def initialize(credentials_json)
-      @credentials = JSON.parse(File.read(credentials_json))
+    def initialize(credentials:)
+      @credentials = JSON.parse(File.read(credentials))
       @region = @credentials['region']
       _create_aws_credentials
       _create_s3_client

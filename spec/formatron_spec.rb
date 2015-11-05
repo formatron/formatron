@@ -1,289 +1,266 @@
 require 'spec_helper'
-
 require 'formatron'
 
 describe Formatron do
-  directory = 'test/directory'
-  credentials = 'test/credentials'
-
   before(:each) do
+    @directory = 'test/directory'
+    @credentials = 'test/credentials'
+    @target = 'target'
     @kms_key = 'kms_key'
     @name = 'name'
     @bucket = 'bucket'
+    @protected = 'protected'
     @config = 'config'
+    @file = File.join @directory, 'Formatronfile'
     @cloud_formation_template = 'cloud_formation_template'
+    @hosted_zone_id = 'hosted_zone_id'
+    @hosted_zone_name = 'hosted_zone_name'
+    @config_key = 'config_key'
+    @user_pem_key = 'user_pem_key'
+    @organization_pem_key = 'organization_pem_key'
+    @ssl_cert_key = 'ssl_cert_key'
+    @ssl_key_key = 'ssl_key_key'
+    @chef_ssl_cert = 'chef_ssl_cert'
+    @chef_ssl_key = 'chef_ssl_key'
+
     @aws_class = class_double(
       'Formatron::AWS'
     ).as_stubbed_const
     @aws = instance_double('Formatron::AWS')
     allow(@aws_class).to receive(:new) { @aws }
+    allow(@aws).to receive(
+      :hosted_zone_name
+    ).with(@hosted_zone_id) { @hosted_zone_name }
 
-    @configuration_class = class_double(
-      'Formatron::Configuration'
+    @config_class = class_double(
+      'Formatron::Config'
     ).as_stubbed_const
-    @configuration = instance_double('Formatron::Configuration')
-    allow(@configuration_class).to receive(:new) { @configuration }
-    allow(@configuration).to receive(:kms_key) { @kms_key }
-    allow(@configuration).to receive(:name) { @name }
-    allow(@configuration).to receive(:bucket) { @bucket }
-    allow(@configuration).to receive(:config) { @config }
-    allow(@configuration).to receive(
-      :cloud_formation_template
-    ) { @cloud_formation_template }
-    allow(@configuration).to receive(
-      :chef_server_ssl_cert
-    ) { nil }
-    allow(@configuration).to receive(
-      :chef_server_ssl_key
-    ) { nil }
+    allow(@config_class).to receive(:target).with(
+      directory: @directory,
+      target: @target
+    ) { @config }
+
+    @formatronfile_class = class_double(
+      'Formatron::Formatronfile'
+    ).as_stubbed_const
+    @formatronfile = instance_double 'Formatron::Formatronfile'
+    allow(@formatronfile_class).to receive(:new) { @formatronfile }
+    allow(@formatronfile).to receive(:name) { @name }
+    allow(@formatronfile).to receive(:bucket) { @bucket }
+
+    @bootstrap = instance_double 'Formatron::Formatronfile::Bootstrap'
+    allow(@formatronfile).to receive(:bootstrap) { @bootstrap }
+    allow(@bootstrap).to receive(:kms_key) { @kms_key }
+    allow(@bootstrap).to receive(:protect) { @protected }
+    allow(@bootstrap).to receive(:hosted_zone_id) { @hosted_zone_id }
+
+    @chef_server = instance_double 'Formatron::Formatronfile' \
+                                   '::Bootstrap::ChefServer'
+    allow(@bootstrap).to receive(:chef_server) { @chef_server }
+    allow(@chef_server).to receive(:ssl_cert) { @chef_ssl_cert }
+    allow(@chef_server).to receive(:ssl_key) { @chef_ssl_key }
+
+    @cloud_formation = class_double(
+      'Formatron::CloudFormation'
+    ).as_stubbed_const
+
+    @bootstrap_template = class_double(
+      'Formatron::CloudFormation::BootstrapTemplate'
+    ).as_stubbed_const
+    allow(@bootstrap_template).to receive(:json) { @cloud_formation_template }
+
+    @s3_configuration = class_double(
+      'Formatron::S3::Configuration'
+    ).as_stubbed_const
+    allow(@s3_configuration).to receive(:key) { @config_key }
+
+    @s3_cloud_formation_template = class_double(
+      'Formatron::S3::CloudFormationTemplate'
+    ).as_stubbed_const
+
+    @s3_chef_server_cert = class_double(
+      'Formatron::S3::ChefServerCert'
+    ).as_stubbed_const
+    allow(@s3_chef_server_cert).to receive(:cert_key) { @ssl_cert_key }
+    allow(@s3_chef_server_cert).to receive(:key_key) { @ssl_key_key }
+
+    @s3_chef_server_keys = class_double(
+      'Formatron::S3::ChefServerKeys'
+    ).as_stubbed_const
+    allow(@s3_chef_server_keys).to receive(:user_pem_key) { @user_pem_key }
+    allow(@s3_chef_server_keys).to receive(
+      :organization_pem_key
+    ) { @organization_pem_key }
+
+    @chef = class_double(
+      'Formatron::Chef'
+    ).as_stubbed_const
 
     @formatron = Formatron.new(
-      credentials,
-      directory
+      credentials: @credentials,
+      directory: @directory,
+      target: @target
     )
   end
 
   describe('::new') do
     it 'should create an AWS instance' do
-      expect(@aws_class).to have_received(:new).once.with(credentials)
-    end
-
-    it 'should create a Configuration instance' do
-      expect(@configuration_class).to have_received(:new).once.with(
-        @aws,
-        directory
+      expect(@aws_class).to have_received(:new).once.with(
+        credentials: @credentials
       )
     end
-  end
 
-  describe '#targets' do
-    it 'should get the list of targets from the formatronfile' do
-      targets = %w(target1 target2 target3)
-      expect(@configuration).to receive(:targets).once.with(no_args) { targets }
-      expect(@formatron.targets).to eql targets
+    it 'should create a Formatronfile instance' do
+      expect(@formatronfile_class).to have_received(:new).once.with(
+        aws: @aws,
+        config: @config,
+        target: @target,
+        file: @file
+      )
+    end
+
+    it 'should generate the bootstrap CloudFormation template' do
+      expect(@bootstrap_template).to have_received(:json).once.with(
+        hosted_zone_id: @hosted_zone_id,
+        hosted_zone_name: @hosted_zone_name,
+        bootstrap: @bootstrap,
+        bucket: @bucket,
+        config_key: @config_key,
+        user_pem_key: @user_pem_key,
+        organization_pem_key: @organization_pem_key,
+        ssl_cert_key: @ssl_cert_key,
+        ssl_key_key: @ssl_key_key
+      )
     end
   end
 
   describe '#protected?' do
     it 'should return whether the target should be protected from changes' do
-      expect(@configuration).to receive(:protected?)
-        .once.with('target1') { true }
-      expect(@formatron.protected?('target1')).to eql true
+      expect(@formatron.protected?).to eql @protected
     end
   end
 
   describe '#deploy' do
     before(:each) do
-      @s3_configuration = class_double(
-        'Formatron::S3Configuration'
-      ).as_stubbed_const
       allow(@s3_configuration).to receive(:deploy)
-
-      @s3_cloud_formation_template = class_double(
-        'Formatron::S3CloudFormationTemplate'
-      ).as_stubbed_const
       allow(@s3_cloud_formation_template).to receive(:deploy)
-
-      @cloud_formation_stack = class_double(
-        'Formatron::CloudFormationStack'
-      ).as_stubbed_const
-      allow(@cloud_formation_stack).to receive(:deploy)
+      allow(@s3_chef_server_cert).to receive(:deploy)
+      allow(@cloud_formation).to receive(:deploy)
+      @formatron.deploy
     end
 
     it 'should upload the configuration to S3' do
-      @formatron.deploy 'target1'
-      expect(@configuration).to have_received(:kms_key).once.with('target1')
-      expect(@configuration).to have_received(:bucket).once.with('target1')
-      expect(@configuration).to have_received(:name).once.with('target1')
-      expect(@configuration).to have_received(:config).once.with('target1')
       expect(@s3_configuration).to have_received(:deploy).once.with(
         aws: @aws,
         kms_key: @kms_key,
         bucket: @bucket,
         name: @name,
-        target: 'target1',
+        target: @target,
         config: @config
       )
     end
 
     it 'should upload the CloudFormation template to S3' do
-      @formatron.deploy 'target1'
-      expect(@configuration).to have_received(:kms_key).once.with('target1')
-      expect(@configuration).to have_received(:bucket).once.with('target1')
-      expect(@configuration).to have_received(:name).once.with('target1')
-      expect(@configuration).to have_received(
-        :cloud_formation_template
-      ).once.with('target1')
       expect(@s3_cloud_formation_template).to have_received(:deploy).once.with(
         aws: @aws,
         kms_key: @kms_key,
         bucket: @bucket,
         name: @name,
-        target: 'target1',
+        target: @target,
         cloud_formation_template: @cloud_formation_template
       )
     end
 
     it 'should deploy the CloudFormation stack' do
-      @formatron.deploy 'target1'
-      expect(@cloud_formation_stack).to have_received(:deploy).once.with(
+      expect(@cloud_formation).to have_received(:deploy).once.with(
         aws: @aws,
         bucket: @bucket,
         name: @name,
-        target: 'target1'
+        target: @target
       )
     end
 
-    context 'when there is a bootstrap configuration' do
-      before :each do
-        @s3_chef_server_cert = class_double(
-          'Formatron::S3ChefServerCert'
-        ).as_stubbed_const
-        allow(@s3_chef_server_cert).to receive(:deploy)
-        @ssl_cert = 'ssl_cert'
-        @ssl_key = 'ssl_key'
-        allow(@configuration).to receive(
-          :chef_server_ssl_cert
-        ) { @ssl_cert }
-        allow(@configuration).to receive(
-          :chef_server_ssl_key
-        ) { @ssl_key }
-      end
-
-      it 'should upload the Chef Server SSL certificate and key to S3' do
-        @formatron.deploy 'target1'
-        expect(@configuration).to have_received(:kms_key).once.with('target1')
-        expect(@configuration).to have_received(:bucket).once.with('target1')
-        expect(@configuration).to have_received(:name).once.with('target1')
-        expect(@configuration).to have_received(
-          :chef_server_ssl_cert
-        ).once.with('target1')
-        expect(@configuration).to have_received(
-          :chef_server_ssl_key
-        ).once.with('target1')
-        expect(@s3_chef_server_cert).to have_received(:deploy).once.with(
-          aws: @aws,
-          kms_key: @kms_key,
-          bucket: @bucket,
-          name: @name,
-          target: 'target1',
-          cert: @ssl_cert,
-          key: @ssl_key
-        )
-      end
+    it 'should upload the Chef Server SSL certificate and key to S3' do
+      expect(@s3_chef_server_cert).to have_received(:deploy).once.with(
+        aws: @aws,
+        kms_key: @kms_key,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        cert: @chef_ssl_cert,
+        key: @chef_ssl_key
+      )
     end
   end
 
   describe '#provision' do
-    before(:each) do
-      @chef = class_double(
-        'Formatron::Chef'
-      ).as_stubbed_const
+    before :each do
       allow(@chef).to receive(:provision)
     end
 
-    it 'should provision the instances with Chef' do
-      @formatron.provision 'target1'
+    skip 'should provision the instances with Chef' do
+      @formatron.provision
       expect(@chef).to have_received(:provision).once.with(
         aws: @aws,
-        configuration: @configuration,
-        target: 'target1'
+        target: @target
       )
     end
   end
 
   describe '#destroy' do
     before(:each) do
-      @s3_configuration = class_double(
-        'Formatron::S3Configuration'
-      ).as_stubbed_const
       allow(@s3_configuration).to receive(:destroy)
-
-      @s3_cloud_formation_template = class_double(
-        'Formatron::S3CloudFormationTemplate'
-      ).as_stubbed_const
       allow(@s3_cloud_formation_template).to receive(:destroy)
-
-      @cloud_formation_stack = class_double(
-        'Formatron::CloudFormationStack'
-      ).as_stubbed_const
-      allow(@cloud_formation_stack).to receive(:destroy)
-
-      @chef_instances = class_double(
-        'Formatron::Chef'
-      ).as_stubbed_const
-      allow(@chef_instances).to receive(:destroy)
+      allow(@s3_chef_server_cert).to receive(:destroy)
+      allow(@cloud_formation).to receive(:destroy)
+      allow(@chef).to receive(:destroy)
     end
 
     it 'should delete the configuration from S3' do
-      @formatron.destroy 'target1'
-      expect(@configuration).to have_received(:bucket).once.with('target1')
-      expect(@configuration).to have_received(:name).once.with('target1')
+      @formatron.destroy
       expect(@s3_configuration).to have_received(:destroy).once.with(
         aws: @aws,
         bucket: @bucket,
         name: @name,
-        target: 'target1'
+        target: @target
       )
     end
 
     it 'should delete the CloudFormation template from S3' do
-      @formatron.destroy 'target1'
-      expect(@configuration).to have_received(:bucket).once.with('target1')
-      expect(@configuration).to have_received(:name).once.with('target1')
+      @formatron.destroy
       expect(@s3_cloud_formation_template).to have_received(:destroy).once.with(
         aws: @aws,
         bucket: @bucket,
         name: @name,
-        target: 'target1'
+        target: @target
       )
     end
 
     it 'should destroy the CloudFormation stack' do
-      @formatron.destroy 'target1'
-      expect(@cloud_formation_stack).to have_received(:destroy).once.with(
+      @formatron.destroy
+      expect(@cloud_formation).to have_received(:destroy).once.with(
         aws: @aws,
         name: @name,
-        target: 'target1'
+        target: @target
       )
     end
 
-    it 'should cleanup the Chef Server configuration for the instances' do
-      @formatron.destroy 'target1'
-      expect(@chef_instances).to have_received(:destroy).once.with(
+    it 'should delete the Chef Server SSL certificate and key from S3' do
+      @formatron.destroy
+      expect(@s3_chef_server_cert).to have_received(:destroy).once.with(
         aws: @aws,
-        configuration: @configuration,
-        target: 'target1'
+        bucket: @bucket,
+        name: @name,
+        target: @target
       )
     end
 
-    context 'when there is a bootstrap configuration' do
-      before :each do
-        @s3_chef_server_cert = class_double(
-          'Formatron::S3ChefServerCert'
-        ).as_stubbed_const
-        allow(@s3_chef_server_cert).to receive(:destroy)
-        @ssl_cert = 'ssl_cert'
-        @ssl_key = 'ssl_key'
-        allow(@configuration).to receive(
-          :chef_server_ssl_cert
-        ) { @ssl_cert }
-      end
-
-      it 'should delete the Chef Server SSL certificate and key from S3' do
-        @formatron.destroy 'target1'
-        expect(@configuration).to have_received(:bucket).once.with('target1')
-        expect(@configuration).to have_received(:name).once.with('target1')
-        expect(@configuration).to have_received(
-          :chef_server_ssl_cert
-        ).once.with('target1')
-        expect(@s3_chef_server_cert).to have_received(:destroy).once.with(
-          aws: @aws,
-          bucket: @bucket,
-          name: @name,
-          target: 'target1'
-        )
-      end
+    skip 'should cleanup the Chef Server configuration for the instances' do
+      @formatron.destroy
+      expect(@chef).to have_received(:destroy).once.with(
+        aws: @aws,
+        target: @target
+      )
     end
   end
 end

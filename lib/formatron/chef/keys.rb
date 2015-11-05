@@ -1,4 +1,4 @@
-require 'formatron/s3_chef_server_keys'
+require 'formatron/s3/chef_server_keys'
 
 class Formatron
   module Chef
@@ -6,7 +6,7 @@ class Formatron
     class Keys
       def initialize(aws:, bucket:, name:, target:)
         @directory = Dir.mktmpdir 'formatron-chef-server-keys-'
-        S3ChefServerKeys.get(
+        S3::ChefServerKeys.get(
           aws: aws,
           bucket: bucket,
           name: name,
@@ -16,11 +16,11 @@ class Formatron
       end
 
       def user_key
-        S3ChefServerKeys.user_pem_path directory: @directory
+        S3::ChefServerKeys.user_pem_path directory: @directory
       end
 
       def organization_key
-        S3ChefServerKeys.organization_pem_path directory: @directory
+        S3::ChefServerKeys.organization_pem_path directory: @directory
       end
     end
   end

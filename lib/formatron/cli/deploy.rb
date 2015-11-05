@@ -1,3 +1,4 @@
+require 'formatron/config'
 require 'formatron'
 
 class Formatron
@@ -15,15 +16,15 @@ class Formatron
           )
       end
 
-      def deploy_target(target, formatron)
+      def deploy_target(target, directory)
         target || choose(
           'Target?',
-          *formatron.targets
+          *Config.targets(directory: directory)
         )
       end
 
       def deploy_ok(formatron, target)
-        !formatron.protected?(target) || agree(
+        !formatron.protected? || agree(
           "Are you sure you wish to deploy protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -32,14 +33,14 @@ class Formatron
 
       def deploy_action(c)
         c.action do |args, options|
+          directory = deploy_directory options
+          target = deploy_target args[0], directory
           formatron = Formatron.new(
-            deploy_credentials(options),
-            deploy_directory(options)
+            credentials: deploy_credentials(options),
+            directory: directory,
+            target: target
           )
-          t = deploy_target args[0], formatron
-          formatron.deploy(
-            t
-          ) if deploy_ok(formatron, t)
+          formatron.deploy if deploy_ok(formatron, target)
         end
       end
 
