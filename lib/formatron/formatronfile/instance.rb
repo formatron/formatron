@@ -5,7 +5,7 @@ class Formatron
       %i(
         subnet
         sub_domain
-        instance_cookbook
+        cookbook
       ).each do |symbol|
         define_method symbol do |value = nil|
           instance_variable_set "@#{symbol}", value unless value.nil?

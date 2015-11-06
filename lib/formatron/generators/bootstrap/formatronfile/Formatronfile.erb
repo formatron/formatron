@@ -37,20 +37,20 @@ bootstrap do |configuration|
   configuration.bastion do |bastion|
     bastion.subnet 'management1'
     bastion.sub_domain config['bastion']['sub_domain']
-    bastion.instance_cookbook 'bastion_instance'
+    bastion.cookbook 'cookbooks/bastion_instance'
   end
 
   configuration.nat do |nat|
     nat.subnet 'public1'
     nat.sub_domain config['nat']['sub_domain']
-    nat.instance_cookbook 'nat_instance'
+    nat.cookbook 'cookbooks/nat_instance'
   end
 
   configuration.chef_server do |chef_server|
     chef_server.version '12.2.0-1'
     chef_server.subnet 'management1'
     chef_server.sub_domain config['chef_server']['sub_domain']
-    chef_server.instance_cookbook 'chef_server_instance'
+    chef_server.cookbook 'cookbooks/chef_server_instance'
     chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
     chef_server.organization do |organization|
       organization.short_name '<%= params[:chef_server][:organization][:short_name] %>'

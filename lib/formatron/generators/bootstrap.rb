@@ -1,7 +1,7 @@
 require_relative 'bootstrap/formatronfile'
 require_relative 'bootstrap/config'
 require_relative 'bootstrap/ssl'
-require_relative 'bootstrap/instance_cookbook'
+require_relative 'bootstrap/cookbook'
 require_relative 'bootstrap/readme'
 require_relative 'bootstrap/gitignore'
 require_relative 'bootstrap/ec2'
@@ -60,13 +60,13 @@ class Formatron
       end
 
       def self.generate_cookbooks(directory)
-        InstanceCookbook.write(
+        Cookbook.write(
           directory,
           'chef_server_instance',
           'Chef Server instance'
         )
-        InstanceCookbook.write directory, 'nat_instance', 'NAT instance'
-        InstanceCookbook.write directory, 'bastion_instance', 'Bastion instance'
+        Cookbook.write directory, 'nat_instance', 'NAT instance'
+        Cookbook.write directory, 'bastion_instance', 'Bastion instance'
       end
 
       # rubocop:disable Metrics/MethodLength

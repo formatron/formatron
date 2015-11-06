@@ -46,9 +46,10 @@ class Formatron
     @chef_ssl_cert = bootstrap.chef_server.ssl_cert
     @chef_ssl_key = bootstrap.chef_server.ssl_key
     hosted_zone_id = bootstrap.hosted_zone_id
+    @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
     @cloud_formation_template = CloudFormation::BootstrapTemplate.json(
       hosted_zone_id: hosted_zone_id,
-      hosted_zone_name: @aws.hosted_zone_name(hosted_zone_id),
+      hosted_zone_name: @hosted_zone_name,
       bootstrap: bootstrap,
       bucket: @bucket,
       config_key: S3::Configuration.key(
@@ -78,8 +79,43 @@ class Formatron
     _deploy_stack
   end
 
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def provision
+    bootstrap = @formatronfile.bootstrap
+    bastion = bootstrap.bastion
+    nat = bootstrap.nat
+    chef_server = bootstrap.chef_server
+    bastion_sub_domain = bastion.sub_domain
+    chef = Chef.new(
+      aws: @aws,
+      bucket: @bucket,
+      name: @name,
+      target: @target,
+      username: chef_server.username,
+      organization: chef_server.organization.short_name,
+      ssl_verify: chef_server.ssl_verify,
+      chef_sub_domain: chef_server.sub_domain,
+      private_key: bootstrap.ec2.private_key,
+      bastion_sub_domain: bastion_sub_domain,
+      hosted_zone_name: @hosted_zone_name,
+      server_stack: @name
+    )
+    chef.provision(
+      sub_domain: bastion_sub_domain,
+      cookbook: bastion.cookbook
+    )
+    chef.provision(
+      sub_domain: nat.sub_domain,
+      cookbook: nat.cookbook
+    )
+    chef.provision(
+      sub_domain: chef_server.sub_domain,
+      cookbook: chef_server.cookbook
+    )
   end
+  # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength
 
   def destroy
     _destroy_configuration

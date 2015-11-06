@@ -25,11 +25,11 @@ class Formatron
         end
       end
 
-      describe '#instance_cookbook' do
-        it 'should set the instance coobook name' do
-          expect(@instance.instance_cookbook).to be_nil
-          @instance.instance_cookbook 'instance_cookbook'
-          expect(@instance.instance_cookbook).to eql 'instance_cookbook'
+      describe '#cookbook' do
+        it 'should set the instance coobook path' do
+          expect(@instance.cookbook).to be_nil
+          @instance.cookbook 'cookbook'
+          expect(@instance.cookbook).to eql 'cookbook'
         end
       end
     end

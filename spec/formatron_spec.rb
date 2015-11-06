@@ -40,6 +40,50 @@ describe Formatron do
       target: @target
     ) { @config }
 
+    @organization = instance_double 'Formatron::Formatronfile' \
+                                    '::Bootstrap::ChefServer::Organization'
+    @organization_short_name = 'organization_short_name'
+    allow(@organization).to receive(:short_name) { @organization_short_name }
+
+    @ec2 = instance_double 'Formatron::Formatronfile::Bootstrap::EC2'
+    @private_key = 'private_key'
+    allow(@ec2).to receive(:private_key) { @private_key }
+
+    @bastion = instance_double 'Formatron::Formatronfile::Instance'
+    @bastion_sub_domain = 'bastion_sub_domain'
+    allow(@bastion).to receive(:sub_domain) { @bastion_sub_domain }
+    @bastion_cookbook = 'cookbooks/bastion_cookbook'
+    allow(@bastion).to receive(:cookbook) { @bastion_cookbook }
+
+    @nat = instance_double 'Formatron::Formatronfile::Instance'
+    @nat_sub_domain = 'nat_sub_domain'
+    allow(@nat).to receive(:sub_domain) { @nat_sub_domain }
+    @nat_cookbook = 'cookbooks/nat_cookbook'
+    allow(@nat).to receive(:cookbook) { @nat_cookbook }
+
+    @chef_server = instance_double 'Formatron::Formatronfile' \
+                                   '::Bootstrap::ChefServer'
+    allow(@chef_server).to receive(:ssl_cert) { @chef_ssl_cert }
+    allow(@chef_server).to receive(:ssl_key) { @chef_ssl_key }
+    @username = 'username'
+    allow(@chef_server).to receive(:username) { @username }
+    @ssl_verify = 'ssl_verify'
+    allow(@chef_server).to receive(:ssl_verify) { @ssl_verify }
+    @chef_sub_domain = 'chef_sub_domain'
+    allow(@chef_server).to receive(:sub_domain) { @chef_sub_domain }
+    @chef_cookbook = 'cookbooks/chef_cookbook'
+    allow(@chef_server).to receive(:cookbook) { @chef_cookbook }
+    allow(@chef_server).to receive(:organization) { @organization }
+
+    @bootstrap = instance_double 'Formatron::Formatronfile::Bootstrap'
+    allow(@bootstrap).to receive(:kms_key) { @kms_key }
+    allow(@bootstrap).to receive(:protect) { @protected }
+    allow(@bootstrap).to receive(:hosted_zone_id) { @hosted_zone_id }
+    allow(@bootstrap).to receive(:ec2) { @ec2 }
+    allow(@bootstrap).to receive(:bastion) { @bastion }
+    allow(@bootstrap).to receive(:nat) { @nat }
+    allow(@bootstrap).to receive(:chef_server) { @chef_server }
+
     @formatronfile_class = class_double(
       'Formatron::Formatronfile'
     ).as_stubbed_const
@@ -47,18 +91,7 @@ describe Formatron do
     allow(@formatronfile_class).to receive(:new) { @formatronfile }
     allow(@formatronfile).to receive(:name) { @name }
     allow(@formatronfile).to receive(:bucket) { @bucket }
-
-    @bootstrap = instance_double 'Formatron::Formatronfile::Bootstrap'
     allow(@formatronfile).to receive(:bootstrap) { @bootstrap }
-    allow(@bootstrap).to receive(:kms_key) { @kms_key }
-    allow(@bootstrap).to receive(:protect) { @protected }
-    allow(@bootstrap).to receive(:hosted_zone_id) { @hosted_zone_id }
-
-    @chef_server = instance_double 'Formatron::Formatronfile' \
-                                   '::Bootstrap::ChefServer'
-    allow(@bootstrap).to receive(:chef_server) { @chef_server }
-    allow(@chef_server).to receive(:ssl_cert) { @chef_ssl_cert }
-    allow(@chef_server).to receive(:ssl_key) { @chef_ssl_key }
 
     @cloud_formation = class_double(
       'Formatron::CloudFormation'
@@ -197,7 +230,7 @@ describe Formatron do
       allow(@chef).to receive(:provision)
     end
 
-    skip 'should provision the instances with Chef' do
+    it 'should provision the instances with Chef' do
       @formatron.provision
       expect(@chef_class).to have_received(:new).once.with(
         aws: @aws,
@@ -205,7 +238,7 @@ describe Formatron do
         name: @name,
         target: @target,
         username: @username,
-        organization: @organization,
+        organization: @organization_short_name,
         ssl_verify: @ssl_verify,
         chef_sub_domain: @chef_sub_domain,
         private_key: @private_key,

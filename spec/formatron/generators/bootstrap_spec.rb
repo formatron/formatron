@@ -115,20 +115,20 @@ describe Formatron::Generators::Bootstrap do
           configuration.bastion do |bastion|
             bastion.subnet 'management1'
             bastion.sub_domain config['bastion']['sub_domain']
-            bastion.instance_cookbook 'bastion_instance'
+            bastion.cookbook 'cookbooks/bastion_instance'
           end
 
           configuration.nat do |nat|
             nat.subnet 'public1'
             nat.sub_domain config['nat']['sub_domain']
-            nat.instance_cookbook 'nat_instance'
+            nat.cookbook 'cookbooks/nat_instance'
           end
 
           configuration.chef_server do |chef_server|
             chef_server.version '12.2.0-1'
             chef_server.subnet 'management1'
             chef_server.sub_domain config['chef_server']['sub_domain']
-            chef_server.instance_cookbook 'chef_server_instance'
+            chef_server.cookbook 'cookbooks/chef_server_instance'
             chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
             chef_server.organization do |organization|
               organization.short_name '#{params[:chef_server][:organization][:short_name]}'
@@ -216,7 +216,7 @@ describe Formatron::Generators::Bootstrap do
     it 'should add a chef_server_instance cookbook stub' do
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_instance/metadata.rb'
+        'cookbooks/chef_server_instance/metadata.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         name 'chef_server_instance'
@@ -225,7 +225,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_instance/Berksfile'
+        'cookbooks/chef_server_instance/Berksfile'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         source 'https://supermarket.chef.io'
@@ -234,7 +234,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_instance/README.md'
+        'cookbooks/chef_server_instance/README.md'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         # chef_server_instance
@@ -243,7 +243,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/chef_server_instance/recipes/default.rb'
+        'cookbooks/chef_server_instance/recipes/default.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
       EOH
@@ -252,7 +252,7 @@ describe Formatron::Generators::Bootstrap do
     it 'should add a nat_instance cookbook stub' do
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/nat_instance/metadata.rb'
+        'cookbooks/nat_instance/metadata.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         name 'nat_instance'
@@ -261,7 +261,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/nat_instance/Berksfile'
+        'cookbooks/nat_instance/Berksfile'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         source 'https://supermarket.chef.io'
@@ -270,7 +270,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/nat_instance/README.md'
+        'cookbooks/nat_instance/README.md'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         # nat_instance
@@ -279,7 +279,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/nat_instance/recipes/default.rb'
+        'cookbooks/nat_instance/recipes/default.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
       EOH
@@ -288,7 +288,7 @@ describe Formatron::Generators::Bootstrap do
     it 'should add a bastion_instance cookbook stub' do
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/bastion_instance/metadata.rb'
+        'cookbooks/bastion_instance/metadata.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         name 'bastion_instance'
@@ -297,7 +297,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/bastion_instance/Berksfile'
+        'cookbooks/bastion_instance/Berksfile'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         source 'https://supermarket.chef.io'
@@ -306,7 +306,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/bastion_instance/README.md'
+        'cookbooks/bastion_instance/README.md'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         # bastion_instance
@@ -315,7 +315,7 @@ describe Formatron::Generators::Bootstrap do
       EOH
       actual = File.read File.join(
         directory,
-        'instance_cookbooks/bastion_instance/recipes/default.rb'
+        'cookbooks/bastion_instance/recipes/default.rb'
       )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
       EOH

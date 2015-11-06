@@ -1,12 +1,12 @@
 class Formatron
   module Generators
     module Bootstrap
-      # generates placeholder instance cookbook for chef server
-      module InstanceCookbook
+      # generates placeholder cookbooks
+      module Cookbook
         def self.write(directory, name, description)
           cookbook_directory = File.join(
             directory,
-            'instance_cookbooks',
+            'cookbooks',
             name
           )
           _write_cookbook_metadata cookbook_directory, name
