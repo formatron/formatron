@@ -3,17 +3,17 @@ require 'spec_helper'
 require 'formatron/chef/knife'
 
 ENVIRONMENT = 'env'
-ENVIRONMENT_CHECK_COMMAND = 'chef exec knife environment ' \
+ENVIRONMENT_CHECK_COMMAND = 'knife environment ' \
                             "show #{ENVIRONMENT} " \
                             '-c knife_file'
-ENVIRONMENT_CREATE_COMMAND = 'chef exec knife environment create ' \
+ENVIRONMENT_CREATE_COMMAND = 'knife environment create ' \
                              "#{ENVIRONMENT} -c " \
                              "knife_file -d '#{ENVIRONMENT} environment " \
                              "created by formatron'"
-BOOTSTRAP_COMMAND = 'chef exec knife bootstrap hostname ' \
+BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     '--sudo -x ubuntu -i private_key -E ' \
                     "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} -c knife_file"
-BOOTSTRAP_COMMAND_WITH_BASTION = 'chef exec knife bootstrap hostname ' \
+BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i private_key -E ' \
                                  "#{ENVIRONMENT} -r cookbook -G " \
                                  "ubuntu@bastion -N #{ENVIRONMENT} " \
@@ -65,6 +65,7 @@ class Formatron
               validation_key '#{@organization_key}'
               node_name '#{@username}'
               client_key '#{@user_key}'
+              verify_api_cert true
               ssl_verify_mode :verify_peer
             EOH
           ).once
@@ -95,6 +96,7 @@ class Formatron
               validation_key '#{@organization_key}'
               node_name '#{@username}'
               client_key '#{@user_key}'
+              verify_api_cert false
               ssl_verify_mode :verify_none
             EOH
           ).once

@@ -47,4 +47,6 @@ EOH
   spec.add_runtime_dependency 'commander', '~> 4.3'
   spec.add_runtime_dependency 'curb', '~> 0.8'
   spec.add_runtime_dependency 'deep_merge', '~> 1.0'
+  spec.add_runtime_dependency 'berkshelf', '~> 4.0'
+  spec.add_runtime_dependency 'chef', '~> 12.5'
 end

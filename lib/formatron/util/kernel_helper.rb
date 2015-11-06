@@ -3,7 +3,10 @@ class Formatron
     # wrapper for shelling out calls so that we can still test
     module KernelHelper
       def self.shell(command)
-        `#{command}`
+        puts command
+        output = `#{command}`
+        puts output
+        output
       end
 
       def self.success?

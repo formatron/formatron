@@ -61,7 +61,7 @@ class Formatron
           before(:each) do
             allow(@kernel_helper_class).to receive(:shell) do |command|
               case command
-              when "chef exec berks install -b #{@cookbook}/Berksfile"
+              when "berks install -b #{@cookbook}/Berksfile"
                 allow(@kernel_helper_class).to receive(:success?) { false }
               else
                 allow(@kernel_helper_class).to receive(:success?) { true }
@@ -85,7 +85,7 @@ class Formatron
           before(:each) do
             allow(@kernel_helper_class).to receive(:shell) do |command|
               case command
-              when "chef exec berks upload -c #{@config} " \
+              when "berks upload -c #{@config} " \
                    "-b #{@cookbook}/Berksfile"
                 allow(@kernel_helper_class).to receive(:success?) { false }
               else
@@ -110,7 +110,7 @@ class Formatron
           before(:each) do
             allow(@kernel_helper_class).to receive(:shell) do |command|
               case command
-              when "chef exec berks apply #{@environment} -c #{@config} " \
+              when "berks apply #{@environment} -c #{@config} " \
                    "-b #{@cookbook}/Berksfile.lock"
                 allow(@kernel_helper_class).to receive(:success?) { false }
               else
@@ -142,20 +142,20 @@ class Formatron
 
           it 'should install cookbooks' do
             expect(@kernel_helper_class).to have_received(:shell).with(
-              "chef exec berks install -b #{@cookbook}/Berksfile"
+              "berks install -b #{@cookbook}/Berksfile"
             ).once
           end
 
           it 'should upload cookbooks' do
             expect(@kernel_helper_class).to have_received(:shell).with(
-              "chef exec berks upload -c #{@config} " \
+              "berks upload -c #{@config} " \
               "-b #{@cookbook}/Berksfile"
             ).once
           end
 
           it 'should apply cookbooks to the environment' do
             expect(@kernel_helper_class).to have_received(:shell).with(
-              "chef exec berks apply #{@environment} -c #{@config} " \
+              "berks apply #{@environment} -c #{@config} " \
               "-b #{@cookbook}/Berksfile.lock"
             ).once
           end

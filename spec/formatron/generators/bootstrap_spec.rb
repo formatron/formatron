@@ -166,7 +166,10 @@ describe Formatron::Generators::Bootstrap do
           },
           "chef_server": {
             "sub_domain": "chef-target1",
-            "cookbooks_bucket": "cookbooks_bucket_prefix-target1"
+            "cookbooks_bucket": "cookbooks_bucket_prefix-target1",
+            "ssl": {
+              "verify": true
+            }
           }
         }
       EOH
@@ -182,7 +185,10 @@ describe Formatron::Generators::Bootstrap do
           },
           "chef_server": {
             "sub_domain": "chef-target2",
-            "cookbooks_bucket": "cookbooks_bucket_prefix-target2"
+            "cookbooks_bucket": "cookbooks_bucket_prefix-target2",
+            "ssl": {
+              "verify": true
+            }
           }
         }
       EOH

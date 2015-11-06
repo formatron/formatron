@@ -23,7 +23,10 @@ class Formatron
               },
               "chef_server": {
                 "sub_domain": "chef-#{target}",
-                "cookbooks_bucket": "#{cookbooks_bucket_prefix}-#{target}"
+                "cookbooks_bucket": "#{cookbooks_bucket_prefix}-#{target}",
+                "ssl": {
+                  "verify": true
+                }
               }
             }
           EOH

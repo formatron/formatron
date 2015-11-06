@@ -9,6 +9,7 @@ class Formatron
       def initialize(
         keys:, chef_server_url:, username:, organization:, ssl_verify:
       )
+        @ssl_verify = ssl_verify
         @knife_file = Tempfile.new('formatron-knife-')
         @knife_file.write <<-EOH.gsub(/^ {10}/, '')
           chef_server_url '#{chef_server_url}'
@@ -16,7 +17,8 @@ class Formatron
           validation_key '#{keys.organization_key}'
           node_name '#{username}'
           client_key '#{keys.user_key}'
-          ssl_verify_mode #{ssl_verify ? ':verify_peer' : ':verify_none'}
+          verify_api_cert #{@ssl_verify}
+          ssl_verify_mode #{@ssl_verify ? ':verify_peer' : ':verify_none'}
         EOH
         @knife_file.close
       end
@@ -24,8 +26,8 @@ class Formatron
 
       def create_environment(environment:)
         # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "chef exec knife environment show #{environment} -c #{@knife_file.path}"
-        Util::KernelHelper.shell "chef exec knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless Util::KernelHelper.success?
+        Util::KernelHelper.shell "knife environment show #{environment} -c #{@knife_file.path}"
+        Util::KernelHelper.shell "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless Util::KernelHelper.success?
         fail "failed to create opscode environment: #{environment}" unless Util::KernelHelper.success?
         # rubocop:enable Metrics/LineLength
       end
@@ -40,9 +42,9 @@ class Formatron
       )
         # rubocop:disable Metrics/LineLength
         if bastion_hostname.eql? hostname
-          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}"
+          Util::KernelHelper.shell "knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
         else
-          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -G ubuntu@#{bastion_hostname} -N #{environment} -c #{@knife_file.path}"
+          Util::KernelHelper.shell "knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -G ubuntu@#{bastion_hostname} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
         end
         fail "failed to bootstrap instance: #{hostname}" unless Util::KernelHelper.success?
         # rubocop:enable Metrics/LineLength
