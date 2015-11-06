@@ -5,11 +5,10 @@ require_relative 'chef/knife'
 
 class Formatron
   # manage the instance provisioning with Chef
-  module Chef
+  class Chef
     # rubocop:disable Metrics/MethodLength
     # rubocop:disable Metrics/ParameterLists
-    # rubocop:disable Metrics/AbcSize
-    def self.provision(
+    def initialize(
       aws:,
       bucket:,
       name:,
@@ -21,88 +20,90 @@ class Formatron
       chef_sub_domain:,
       bastion_sub_domain:,
       hosted_zone_name:,
-      instances:
+      server_stack:
     )
-      chef_server_url = _chef_server_url(
-        sub_domain: chef_sub_domain,
-        hosted_zone_name: hosted_zone_name,
-        organization: organization
-      )
-      bastion_hostname = _hostname(
-        sub_domain: bastion_sub_domain,
-        hosted_zone_name: hosted_zone_name
+      @aws = aws
+      @name = name
+      @target = target
+      @private_key = private_key
+      @chef_sub_domain = chef_sub_domain
+      @hosted_zone_name = hosted_zone_name
+      @organization = organization
+      chef_server_url = _chef_server_url
+      @bastion_hostname = _hostname(
+        sub_domain: bastion_sub_domain
       )
       CloudFormation.stack_ready!(
-        aws: aws,
-        name: name,
-        target: target
+        aws: @aws,
+        name: server_stack,
+        target: @target
       )
       keys = Keys.new(
-        aws: aws,
+        aws: @aws,
         bucket: bucket,
-        name: name,
-        target: target
+        name: server_stack,
+        target: @target
       )
-      knife = Knife.new(
+      @knife = Knife.new(
         keys: keys,
         chef_server_url: chef_server_url,
         username: username,
         organization: organization,
         ssl_verify: ssl_verify
       )
-      berkshelf = Berkshelf.new(
+      @berkshelf = Berkshelf.new(
         keys: keys,
         chef_server_url: chef_server_url,
         username: username,
         ssl_verify: ssl_verify
       )
-      instances.each do |instance|
-        cookbook = instance.instance_cookbook
-        cookbook_name = File.basename cookbook
-        environment = _environment(
-          name: name,
-          cookbook: cookbook_name
-        )
-        hostname = _hostname(
-          sub_domain: instance.sub_domain,
-          hosted_zone_name: hosted_zone_name
-        )
-        knife.create_environment environment: environment
-        berkshelf.upload environment: environment, cookbook: cookbook
-        knife.bootstrap(
-          bastion_hostname: bastion_hostname,
-          environment: environment,
-          cookbook: cookbook_name,
-          hostname: hostname,
-          private_key: private_key
-        )
-      end
     end
-    # rubocop:enable Metrics/AbcSize
     # rubocop:enable Metrics/ParameterLists
     # rubocop:enable Metrics/MethodLength
 
-    def self.destroy(aws:, configuration:, target:)
-      puts aws
-      puts configuration
-      puts target
+    # rubocop:disable Metrics/MethodLength
+    def provision(
+      sub_domain:,
+      cookbook:
+    )
+      CloudFormation.stack_ready!(
+        aws: @aws,
+        name: @name,
+        target: @target
+      )
+      cookbook_name = File.basename cookbook
+      hostname = _hostname(
+        sub_domain: sub_domain
+      )
+      @knife.create_environment environment: sub_domain
+      @berkshelf.upload environment: sub_domain, cookbook: cookbook
+      @knife.bootstrap(
+        bastion_hostname: @bastion_hostname,
+        environment: sub_domain,
+        cookbook: cookbook_name,
+        hostname: hostname,
+        private_key: @private_key
+      )
+    end
+    # rubocop:enable Metrics/ParameterLists
+    # rubocop:enable Metrics/MethodLength
+
+    def destroy(sub_domain:)
+      puts sub_domain
     end
 
-    def self._chef_server_url(sub_domain:, hosted_zone_name:, organization:)
-      "https://#{sub_domain}.#{hosted_zone_name}" \
-      "/organizations/#{organization}"
+    def _chef_server_url
+      "https://#{@chef_sub_domain}.#{@hosted_zone_name}" \
+      "/organizations/#{@organization}"
     end
 
-    def self._environment(name:, cookbook:)
-      "#{name}__#{cookbook}"
+    def _hostname(sub_domain:)
+      "#{sub_domain}.#{@hosted_zone_name}"
     end
 
-    def self._hostname(sub_domain:, hosted_zone_name:)
-      "#{sub_domain}.#{hosted_zone_name}"
-    end
-
-    private_class_method(
-      :_chef_server_url
+    private(
+      :_chef_server_url,
+      :_hostname
     )
   end
 end

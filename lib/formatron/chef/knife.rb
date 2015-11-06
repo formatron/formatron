@@ -2,7 +2,7 @@ require 'formatron/util/kernel_helper'
 require 'English'
 
 class Formatron
-  module Chef
+  class Chef
     # Wrapper for the knife cli
     class Knife
       # rubocop:disable Metrics/MethodLength
@@ -40,9 +40,9 @@ class Formatron
       )
         # rubocop:disable Metrics/LineLength
         if bastion_hostname.eql? hostname
-          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{hostname} -c #{@knife_file.path}"
+          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}"
         else
-          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -G ubuntu@#{bastion_hostname} -N #{hostname} -c #{@knife_file.path}"
+          Util::KernelHelper.shell "chef exec knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -G ubuntu@#{bastion_hostname} -N #{environment} -c #{@knife_file.path}"
         end
         fail "failed to bootstrap instance: #{hostname}" unless Util::KernelHelper.success?
         # rubocop:enable Metrics/LineLength

@@ -1,7 +1,7 @@
 require 'formatron/s3/chef_server_keys'
 
 class Formatron
-  module Chef
+  class Chef
     # Download the Chef Server keys
     class Keys
       def initialize(aws:, bucket:, name:, target:)

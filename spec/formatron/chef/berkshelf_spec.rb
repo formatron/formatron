@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'formatron/chef/berkshelf'
 
 class Formatron
-  # rubocop:disable Metrics/ModuleLength
-  module Chef
+  # rubocop:disable Metrics/ClassLength
+  class Chef
     describe Berkshelf do
       before(:each) do
         @config = 'config'
@@ -163,5 +163,5 @@ class Formatron
       end
     end
   end
-  # rubocop:enable Metrics/ModuleLength
+  # rubocop:enable Metrics/ClassLength
 end

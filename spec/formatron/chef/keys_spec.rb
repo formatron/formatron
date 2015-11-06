@@ -3,7 +3,7 @@ require 'formatron/chef/keys'
 
 class Formatron
   # namespacing for tests
-  module Chef
+  class Chef
     describe Keys do
       before :each do
         @aws = instance_double 'Formatron::AWS'

@@ -92,10 +92,6 @@ describe Formatron do
       :organization_pem_key
     ) { @organization_pem_key }
 
-    @chef = class_double(
-      'Formatron::Chef'
-    ).as_stubbed_const
-
     @formatron = Formatron.new(
       credentials: @credentials,
       directory: @directory,
@@ -103,35 +99,33 @@ describe Formatron do
     )
   end
 
-  describe('::new') do
-    it 'should create an AWS instance' do
-      expect(@aws_class).to have_received(:new).once.with(
-        credentials: @credentials
-      )
-    end
+  it 'should create an AWS instance' do
+    expect(@aws_class).to have_received(:new).once.with(
+      credentials: @credentials
+    )
+  end
 
-    it 'should create a Formatronfile instance' do
-      expect(@formatronfile_class).to have_received(:new).once.with(
-        aws: @aws,
-        config: @config,
-        target: @target,
-        file: @file
-      )
-    end
+  it 'should create a Formatronfile instance' do
+    expect(@formatronfile_class).to have_received(:new).once.with(
+      aws: @aws,
+      config: @config,
+      target: @target,
+      file: @file
+    )
+  end
 
-    it 'should generate the bootstrap CloudFormation template' do
-      expect(@bootstrap_template).to have_received(:json).once.with(
-        hosted_zone_id: @hosted_zone_id,
-        hosted_zone_name: @hosted_zone_name,
-        bootstrap: @bootstrap,
-        bucket: @bucket,
-        config_key: @config_key,
-        user_pem_key: @user_pem_key,
-        organization_pem_key: @organization_pem_key,
-        ssl_cert_key: @ssl_cert_key,
-        ssl_key_key: @ssl_key_key
-      )
-    end
+  it 'should generate the bootstrap CloudFormation template' do
+    expect(@bootstrap_template).to have_received(:json).once.with(
+      hosted_zone_id: @hosted_zone_id,
+      hosted_zone_name: @hosted_zone_name,
+      bootstrap: @bootstrap,
+      bucket: @bucket,
+      config_key: @config_key,
+      user_pem_key: @user_pem_key,
+      organization_pem_key: @organization_pem_key,
+      ssl_cert_key: @ssl_cert_key,
+      ssl_key_key: @ssl_key_key
+    )
   end
 
   describe '#protected?' do
@@ -195,14 +189,41 @@ describe Formatron do
 
   describe '#provision' do
     before :each do
+      @chef_class = class_double(
+        'Formatron::Chef'
+      ).as_stubbed_const
+      @chef = instance_double 'Formatron::Chef'
+      allow(@chef_class).to receive(:new) { @chef }
       allow(@chef).to receive(:provision)
     end
 
     skip 'should provision the instances with Chef' do
       @formatron.provision
-      expect(@chef).to have_received(:provision).once.with(
+      expect(@chef_class).to have_received(:new).once.with(
         aws: @aws,
-        target: @target
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        username: @username,
+        organization: @organization,
+        ssl_verify: @ssl_verify,
+        chef_sub_domain: @chef_sub_domain,
+        private_key: @private_key,
+        bastion_sub_domain: @bastion_sub_domain,
+        hosted_zone_name: @hosted_zone_name,
+        server_stack: @name
+      )
+      expect(@chef).to have_received(:provision).once.with(
+        sub_domain: @bastion_sub_domain,
+        cookbook: @bastion_cookbook
+      )
+      expect(@chef).to have_received(:provision).once.with(
+        sub_domain: @nat_sub_domain,
+        cookbook: @nat_cookbook
+      )
+      expect(@chef).to have_received(:provision).once.with(
+        sub_domain: @chef_sub_domain,
+        cookbook: @chef_cookbook
       )
     end
   end
@@ -213,6 +234,11 @@ describe Formatron do
       allow(@s3_cloud_formation_template).to receive(:destroy)
       allow(@s3_chef_server_cert).to receive(:destroy)
       allow(@cloud_formation).to receive(:destroy)
+      @chef_class = class_double(
+        'Formatron::Chef'
+      ).as_stubbed_const
+      @chef = instance_double 'Formatron::Chef'
+      allow(@chef_class).to receive(:new) { @chef }
       allow(@chef).to receive(:destroy)
     end
 
@@ -257,9 +283,28 @@ describe Formatron do
 
     skip 'should cleanup the Chef Server configuration for the instances' do
       @formatron.destroy
-      expect(@chef).to have_received(:destroy).once.with(
+      expect(@chef_class).to have_received(:new).once.with(
         aws: @aws,
-        target: @target
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        username: @username,
+        organization: @organization,
+        ssl_verify: @ssl_verify,
+        chef_sub_domain: @chef_sub_domain,
+        private_key: @private_key,
+        bastion_sub_domain: @bastion_sub_domain,
+        hosted_zone_name: @hosted_zone_name,
+        server_stack: @name
+      )
+      expect(@chef).to have_received(:destroy).once.with(
+        sub_domain: @bastion_sub_domain
+      )
+      expect(@chef).to have_received(:destroy).once.with(
+        sub_domain: @nat_sub_domain
+      )
+      expect(@chef).to have_received(:destroy).once.with(
+        sub_domain: @chef_sub_domain
       )
     end
   end

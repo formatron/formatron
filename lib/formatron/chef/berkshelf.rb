@@ -2,10 +2,10 @@ require 'formatron/util/kernel_helper'
 require 'English'
 
 class Formatron
-  module Chef
+  class Chef
     # Wrapper for the berkshelf cli
     class Berkshelf
-      CONFIG_FILE = <<-EOH.gsub(/^ {8}/, '')
+      CONFIG_FILE_CONTENTS = <<-EOH.gsub(/^ {8}/, '')
         {
           "chef": {
             "chef_server_url": "%{server_url}",
@@ -20,7 +20,7 @@ class Formatron
 
       def initialize(keys:, chef_server_url:, username:, ssl_verify:)
         @config_file = Tempfile.new 'formatron-berkshelf-'
-        @config_file.write CONFIG_FILE % {
+        @config_file.write CONFIG_FILE_CONTENTS % {
           server_url: chef_server_url,
           user: username,
           key_file: keys.user_key,

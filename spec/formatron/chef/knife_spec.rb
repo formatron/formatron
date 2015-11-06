@@ -12,15 +12,16 @@ ENVIRONMENT_CREATE_COMMAND = 'chef exec knife environment create ' \
                              "created by formatron'"
 BOOTSTRAP_COMMAND = 'chef exec knife bootstrap hostname ' \
                     '--sudo -x ubuntu -i private_key -E ' \
-                    "#{ENVIRONMENT} -r cookbook -N hostname -c knife_file"
+                    "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} -c knife_file"
 BOOTSTRAP_COMMAND_WITH_BASTION = 'chef exec knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i private_key -E ' \
                                  "#{ENVIRONMENT} -r cookbook -G " \
-                                 'ubuntu@bastion -N hostname -c knife_file'
+                                 "ubuntu@bastion -N #{ENVIRONMENT} " \
+                                 '-c knife_file'
 
 class Formatron
-  # rubocop:disable Metrics/ModuleLength
-  module Chef
+  # rubocop:disable Metrics/ClassLength
+  class Chef
     describe Knife do
       before(:each) do
         @keys = instance_double 'Formatron::Chef::Keys'
@@ -279,5 +280,5 @@ class Formatron
       end
     end
   end
-  # rubocop:enable Metrics/ModuleLength
+  # rubocop:enable Metrics/ClassLength
 end
