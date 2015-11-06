@@ -18,6 +18,10 @@ BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  "#{ENVIRONMENT} -r cookbook -G " \
                                  "ubuntu@bastion -N #{ENVIRONMENT} " \
                                  '-c knife_file'
+DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -c knife_file"
+DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -c knife_file"
+DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -c " \
+                             'knife_file'
 
 class Formatron
   # rubocop:disable Metrics/ClassLength
@@ -276,6 +280,162 @@ class Formatron
               )
             end.to raise_error(
               'failed to bootstrap instance: hostname'
+            )
+          end
+        end
+      end
+
+      describe '#delete_node' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true
+          )
+        end
+
+        context 'when the delete command succeeds' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { true }
+          end
+
+          it 'should delete the node' do
+            @knife.delete_node(
+              node: ENVIRONMENT
+            )
+            expect(@kernel_helper_class).to have_received(:shell).once
+            expect(@kernel_helper_class).to have_received(:shell).with(
+              DELETE_NODE_COMMAND
+            )
+          end
+        end
+
+        context 'when the delete command fails' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { false }
+          end
+
+          it 'should fail' do
+            expect do
+              @knife.delete_node(
+                node: ENVIRONMENT
+              )
+            end.to raise_error(
+              "failed to delete node: #{ENVIRONMENT}"
+            )
+          end
+        end
+      end
+
+      describe '#delete_client' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true
+          )
+        end
+
+        context 'when the delete command succeeds' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { true }
+          end
+
+          it 'should delete the client' do
+            @knife.delete_client(
+              client: ENVIRONMENT
+            )
+            expect(@kernel_helper_class).to have_received(:shell).once
+            expect(@kernel_helper_class).to have_received(:shell).with(
+              DELETE_CLIENT_COMMAND
+            )
+          end
+        end
+
+        context 'when the delete command fails' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { false }
+          end
+
+          it 'should fail' do
+            expect do
+              @knife.delete_client(
+                client: ENVIRONMENT
+              )
+            end.to raise_error(
+              "failed to delete client: #{ENVIRONMENT}"
+            )
+          end
+        end
+      end
+
+      describe '#delete_environment' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true
+          )
+        end
+
+        context 'when the delete command succeeds' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { true }
+          end
+
+          it 'should delete the environment' do
+            @knife.delete_environment(
+              environment: ENVIRONMENT
+            )
+            expect(@kernel_helper_class).to have_received(:shell).once
+            expect(@kernel_helper_class).to have_received(:shell).with(
+              DELETE_ENVIRONMENT_COMMAND
+            )
+          end
+        end
+
+        context 'when the delete command fails' do
+          before(:each) do
+            @kernel_helper_class = class_double(
+              'Formatron::Util::KernelHelper'
+            ).as_stubbed_const
+            allow(@kernel_helper_class).to receive :shell
+            allow(@kernel_helper_class).to receive(:success?) { false }
+          end
+
+          it 'should fail' do
+            expect do
+              @knife.delete_environment(
+                environment: ENVIRONMENT
+              )
+            end.to raise_error(
+              "failed to delete environment: #{ENVIRONMENT}"
             )
           end
         end

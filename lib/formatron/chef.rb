@@ -89,7 +89,9 @@ class Formatron
     # rubocop:enable Metrics/MethodLength
 
     def destroy(sub_domain:)
-      puts sub_domain
+      @knife.delete_node node: sub_domain
+      @knife.delete_client client: sub_domain
+      @knife.delete_environment environment: sub_domain
     end
 
     def _chef_server_url

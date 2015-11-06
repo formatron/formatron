@@ -49,6 +49,9 @@ class Formatron
       allow(@knife_class).to receive(:new) { @knife }
       allow(@knife).to receive(:create_environment)
       allow(@knife).to receive(:bootstrap)
+      allow(@knife).to receive(:delete_node)
+      allow(@knife).to receive(:delete_client)
+      allow(@knife).to receive(:delete_environment)
     end
 
     context 'when the Chef Server CloudFormation stack is not ready' do
@@ -196,9 +199,22 @@ class Formatron
           )
         end
 
-        it 'should do something useful' do
-          pending
-          fail
+        it 'should delete the node' do
+          expect(@knife).to have_received(:delete_node).once.with(
+            node: @sub_domain
+          )
+        end
+
+        it 'should delete the client' do
+          expect(@knife).to have_received(:delete_client).once.with(
+            client: @sub_domain
+          )
+        end
+
+        it 'should delete the environment' do
+          expect(@knife).to have_received(:delete_environment).once.with(
+            environment: @sub_domain
+          )
         end
       end
     end

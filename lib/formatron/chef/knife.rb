@@ -50,6 +50,27 @@ class Formatron
         # rubocop:enable Metrics/LineLength
       end
       # rubocop:enable Metrics/MethodLength
+
+      def delete_node(node:)
+        # rubocop:disable Metrics/LineLength
+        Util::KernelHelper.shell "knife node delete #{node} -c #{@knife_file.path}"
+        fail "failed to delete node: #{node}" unless Util::KernelHelper.success?
+        # rubocop:enable Metrics/LineLength
+      end
+
+      def delete_client(client:)
+        # rubocop:disable Metrics/LineLength
+        Util::KernelHelper.shell "knife client delete #{client} -c #{@knife_file.path}"
+        fail "failed to delete client: #{client}" unless Util::KernelHelper.success?
+        # rubocop:enable Metrics/LineLength
+      end
+
+      def delete_environment(environment:)
+        # rubocop:disable Metrics/LineLength
+        Util::KernelHelper.shell "knife environment delete #{environment} -c #{@knife_file.path}"
+        fail "failed to delete environment: #{environment}" unless Util::KernelHelper.success?
+        # rubocop:enable Metrics/LineLength
+      end
     end
   end
 end

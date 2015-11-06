@@ -122,6 +122,7 @@ class Formatron
     _destroy_chef_server_cert unless @chef_ssl_cert.nil?
     _destroy_template
     _destroy_stack
+    _destroy_chef_instances
   end
 
   def _deploy_configuration
@@ -202,6 +203,41 @@ class Formatron
     )
   end
 
+  # rubocop:disable Metrics/AbcSize
+  # rubocop:disable Metrics/MethodLength
+  def _destroy_chef_instances
+    bootstrap = @formatronfile.bootstrap
+    bastion = bootstrap.bastion
+    nat = bootstrap.nat
+    chef_server = bootstrap.chef_server
+    bastion_sub_domain = bastion.sub_domain
+    chef = Chef.new(
+      aws: @aws,
+      bucket: @bucket,
+      name: @name,
+      target: @target,
+      username: chef_server.username,
+      organization: chef_server.organization.short_name,
+      ssl_verify: chef_server.ssl_verify,
+      chef_sub_domain: chef_server.sub_domain,
+      private_key: bootstrap.ec2.private_key,
+      bastion_sub_domain: bastion_sub_domain,
+      hosted_zone_name: @hosted_zone_name,
+      server_stack: @name
+    )
+    chef.destroy(
+      sub_domain: bastion_sub_domain
+    )
+    chef.destroy(
+      sub_domain: nat.sub_domain
+    )
+    chef.destroy(
+      sub_domain: chef_server.sub_domain
+    )
+  end
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/AbcSize
+
   private(
     :_initialize_from_bootstrap,
     :_deploy_configuration,
@@ -209,7 +245,8 @@ class Formatron
     :_deploy_stack,
     :_destroy_configuration,
     :_destroy_template,
-    :_destroy_stack
+    :_destroy_stack,
+    :_destroy_chef_instances
   )
 end
 # rubocop:enable Metrics/ClassLength

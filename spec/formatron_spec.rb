@@ -314,7 +314,7 @@ describe Formatron do
       )
     end
 
-    skip 'should cleanup the Chef Server configuration for the instances' do
+    it 'should cleanup the Chef Server configuration for the instances' do
       @formatron.destroy
       expect(@chef_class).to have_received(:new).once.with(
         aws: @aws,
@@ -322,7 +322,7 @@ describe Formatron do
         name: @name,
         target: @target,
         username: @username,
-        organization: @organization,
+        organization: @organization_short_name,
         ssl_verify: @ssl_verify,
         chef_sub_domain: @chef_sub_domain,
         private_key: @private_key,
