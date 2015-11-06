@@ -38,21 +38,21 @@ class Formatron
         name: server_stack,
         target: @target
       )
-      keys = Keys.new(
+      @keys = Keys.new(
         aws: @aws,
         bucket: bucket,
         name: server_stack,
         target: @target
       )
       @knife = Knife.new(
-        keys: keys,
+        keys: @keys,
         chef_server_url: chef_server_url,
         username: username,
         organization: organization,
         ssl_verify: ssl_verify
       )
       @berkshelf = Berkshelf.new(
-        keys: keys,
+        keys: @keys,
         chef_server_url: chef_server_url,
         username: username,
         ssl_verify: ssl_verify
@@ -92,6 +92,12 @@ class Formatron
       @knife.delete_node node: sub_domain
       @knife.delete_client client: sub_domain
       @knife.delete_environment environment: sub_domain
+    end
+
+    def unlink
+      @keys.unlink
+      @knife.unlink
+      @berkshelf.unlink
     end
 
     def _chef_server_url

@@ -113,6 +113,8 @@ class Formatron
       sub_domain: chef_server.sub_domain,
       cookbook: chef_server.cookbook
     )
+  ensure
+    chef.unlink
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
@@ -234,6 +236,8 @@ class Formatron
     chef.destroy(
       sub_domain: chef_server.sub_domain
     )
+  ensure
+    chef.unlink
   end
   # rubocop:enable Metrics/MethodLength
   # rubocop:enable Metrics/AbcSize

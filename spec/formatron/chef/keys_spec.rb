@@ -24,6 +24,7 @@ class Formatron
           :organization_pem_path
         ) { @organization_pem_path }
         allow(Dir).to receive(:mktmpdir) { @directory }
+        allow(FileUtils).to receive :rm_rf
         @keys = Keys.new(
           aws: @aws,
           bucket: @bucket,
@@ -61,6 +62,13 @@ class Formatron
           expect(@s3_chef_server_keys).to have_received(
             :organization_pem_path
           ).once.with(directory: @directory)
+        end
+      end
+
+      describe '#unlink' do
+        it 'should clean up the temporary files' do
+          @keys.unlink
+          expect(FileUtils).to have_received(:rm_rf).with @directory
         end
       end
     end

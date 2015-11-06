@@ -71,6 +71,10 @@ class Formatron
         fail "failed to delete environment: #{environment}" unless Util::KernelHelper.success?
         # rubocop:enable Metrics/LineLength
       end
+
+      def unlink
+        @knife_file.unlink
+      end
     end
   end
 end

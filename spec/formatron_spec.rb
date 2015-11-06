@@ -228,6 +228,7 @@ describe Formatron do
       @chef = instance_double 'Formatron::Chef'
       allow(@chef_class).to receive(:new) { @chef }
       allow(@chef).to receive(:provision)
+      allow(@chef).to receive(:unlink)
     end
 
     it 'should provision the instances with Chef' do
@@ -273,6 +274,7 @@ describe Formatron do
       @chef = instance_double 'Formatron::Chef'
       allow(@chef_class).to receive(:new) { @chef }
       allow(@chef).to receive(:destroy)
+      allow(@chef).to receive(:unlink)
     end
 
     it 'should delete the configuration from S3' do

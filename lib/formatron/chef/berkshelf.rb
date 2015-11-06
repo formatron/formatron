@@ -39,6 +39,10 @@ class Formatron
         fail "failed to apply cookbooks to opscode environment: #{environment}" unless Util::KernelHelper.success?
         # rubocop:enable Metrics/LineLength
       end
+
+      def unlink
+        @config_file.unlink
+      end
     end
   end
 end

@@ -33,6 +33,7 @@ class Formatron
       ).as_stubbed_const
       @keys = instance_double 'Formatron::Chef::Keys'
       allow(@keys_class).to receive(:new) { @keys }
+      allow(@keys).to receive :unlink
       @berkshelf_class = class_double(
         'Formatron::Chef::Berkshelf'
       ).as_stubbed_const
@@ -42,6 +43,7 @@ class Formatron
         @berkshelf
       end
       allow(@berkshelf).to receive(:upload)
+      allow(@berkshelf).to receive :unlink
       @knife_class = class_double(
         'Formatron::Chef::Knife'
       ).as_stubbed_const
@@ -52,6 +54,7 @@ class Formatron
       allow(@knife).to receive(:delete_node)
       allow(@knife).to receive(:delete_client)
       allow(@knife).to receive(:delete_environment)
+      allow(@knife).to receive :unlink
     end
 
     context 'when the Chef Server CloudFormation stack is not ready' do
@@ -134,7 +137,7 @@ class Formatron
         )
       end
 
-      describe '::provision' do
+      describe '#provision' do
         context 'when the CloudFormation stack is not ready' do
           before :each do
             expect(@cloud_formation).to receive(:stack_ready!).once.with(
@@ -192,7 +195,7 @@ class Formatron
         end
       end
 
-      describe '::destroy' do
+      describe '#destroy' do
         before :each do
           @chef.destroy(
             sub_domain: @sub_domain
@@ -215,6 +218,24 @@ class Formatron
           expect(@knife).to have_received(:delete_environment).once.with(
             environment: @sub_domain
           )
+        end
+      end
+
+      describe 'unlink' do
+        before :each do
+          @chef.unlink
+        end
+
+        it 'should clean up temporary keys' do
+          expect(@keys).to have_received :unlink
+        end
+
+        it 'should clean up temporary knife config' do
+          expect(@knife).to have_received :unlink
+        end
+
+        it 'should clean up temporary Berkshelf config' do
+          expect(@berkshelf).to have_received :unlink
         end
       end
     end

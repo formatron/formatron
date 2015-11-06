@@ -10,6 +10,7 @@ class Formatron
         @tempfile = instance_double('Tempfile')
         allow(@tempfile).to receive(:write)
         allow(@tempfile).to receive(:close)
+        allow(@tempfile).to receive(:unlink)
         allow(@tempfile).to receive(:path) { @config }
         @tempfile_class = class_double('Tempfile').as_stubbed_const
         allow(@tempfile_class).to receive(:new) { @tempfile }
@@ -46,6 +47,16 @@ class Formatron
           EOH
         )
         expect(@tempfile).to have_received :close
+      end
+
+      describe '#unlink' do
+        before(:each) do
+          @berkshelf.unlink
+        end
+
+        it 'should delete the Berkshelf config file' do
+          expect(@tempfile).to have_received(:unlink).with(no_args).once
+        end
       end
 
       describe '#upload' do

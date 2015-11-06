@@ -39,6 +39,7 @@ class Formatron
         @knife_tempfile = instance_double('Tempfile')
         allow(@knife_tempfile).to receive(:write)
         allow(@knife_tempfile).to receive(:close)
+        allow(@knife_tempfile).to receive(:unlink)
         allow(@knife_tempfile).to receive(:path) do
           'knife_file'
         end
@@ -105,6 +106,23 @@ class Formatron
             EOH
           ).once
           expect(@knife_tempfile).to have_received(:close).with(no_args).once
+        end
+      end
+
+      describe '#unlink' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: false
+          )
+          @knife.unlink
+        end
+
+        it 'should delete the knife config file' do
+          expect(@knife_tempfile).to have_received(:unlink).with(no_args).once
         end
       end
 

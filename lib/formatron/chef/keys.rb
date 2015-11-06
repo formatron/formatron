@@ -22,6 +22,10 @@ class Formatron
       def organization_key
         S3::ChefServerKeys.organization_pem_path directory: @directory
       end
+
+      def unlink
+        FileUtils.rm_rf @directory
+      end
     end
   end
 end
