@@ -118,11 +118,11 @@ class Formatron
   # rubocop:enable Metrics/MethodLength
 
   def destroy
+    _destroy_chef_instances
     _destroy_configuration
     _destroy_chef_server_cert unless @chef_ssl_cert.nil?
     _destroy_template
     _destroy_stack
-    _destroy_chef_instances
   end
 
   def _deploy_configuration

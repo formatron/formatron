@@ -18,9 +18,9 @@ BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  "#{ENVIRONMENT} -r cookbook -G " \
                                  "ubuntu@bastion -N #{ENVIRONMENT} " \
                                  '-c knife_file'
-DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -c knife_file"
-DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -c knife_file"
-DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -c " \
+DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -y -c knife_file"
+DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -y -c knife_file"
+DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -y -c " \
                              'knife_file'
 
 class Formatron
