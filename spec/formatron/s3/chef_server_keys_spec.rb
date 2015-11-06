@@ -4,7 +4,7 @@ require 'formatron/aws'
 require 'formatron/s3/chef_server_keys'
 
 class Formatron
-  # namespacing for tests
+  # rubocop:disable Metrics/ModuleLength
   module S3
     describe ChefServerCert do
       target = 'target'
@@ -49,6 +49,35 @@ class Formatron
             name: name,
             target: target,
             directory: directory
+          )
+        end
+      end
+
+      describe '::destroy' do
+        it 'should delete the user and organization keys from S3' do
+          expect(@s3_path).to receive(:key).once.with(
+            name: name,
+            target: target,
+            sub_key: 'user.pem'
+          ) { user_pem_key }
+          expect(@s3_path).to receive(:key).once.with(
+            name: name,
+            target: target,
+            sub_key: 'organization.pem'
+          ) { organization_pem_key }
+          expect(@aws).to receive(:delete_file).once.with(
+            bucket: bucket,
+            key: user_pem_key
+          )
+          expect(@aws).to receive(:delete_file).once.with(
+            bucket: bucket,
+            key: organization_pem_key
+          )
+          ChefServerKeys.destroy(
+            aws: @aws,
+            bucket: bucket,
+            name: name,
+            target: target
           )
         end
       end
@@ -106,4 +135,5 @@ class Formatron
       end
     end
   end
+  # rubocop:enable Metrics/ModuleLength
 end

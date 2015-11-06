@@ -5,6 +5,7 @@ require_relative 'chef/knife'
 
 class Formatron
   # manage the instance provisioning with Chef
+  # rubocop:disable Metrics/ClassLength
   class Chef
     # rubocop:disable Metrics/MethodLength
     # rubocop:disable Metrics/ParameterLists
@@ -29,14 +30,10 @@ class Formatron
       @chef_sub_domain = chef_sub_domain
       @hosted_zone_name = hosted_zone_name
       @organization = organization
+      @server_stack = server_stack
       chef_server_url = _chef_server_url
       @bastion_hostname = _hostname(
         sub_domain: bastion_sub_domain
-      )
-      CloudFormation.stack_ready!(
-        aws: @aws,
-        name: server_stack,
-        target: @target
       )
       @keys = Keys.new(
         aws: @aws,
@@ -60,6 +57,17 @@ class Formatron
     end
     # rubocop:enable Metrics/ParameterLists
     # rubocop:enable Metrics/MethodLength
+
+    def init
+      CloudFormation.stack_ready!(
+        aws: @aws,
+        name: @server_stack,
+        target: @target
+      )
+      @keys.init
+      @knife.init
+      @berkshelf.init
+    end
 
     # rubocop:disable Metrics/MethodLength
     def provision(
@@ -114,4 +122,5 @@ class Formatron
       :_hostname
     )
   end
+  # rubocop:enable Metrics/ClassLength
 end

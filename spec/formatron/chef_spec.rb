@@ -34,6 +34,7 @@ class Formatron
       @keys = instance_double 'Formatron::Chef::Keys'
       allow(@keys_class).to receive(:new) { @keys }
       allow(@keys).to receive :unlink
+      allow(@keys).to receive :init
       @berkshelf_class = class_double(
         'Formatron::Chef::Berkshelf'
       ).as_stubbed_const
@@ -44,6 +45,7 @@ class Formatron
       end
       allow(@berkshelf).to receive(:upload)
       allow(@berkshelf).to receive :unlink
+      allow(@berkshelf).to receive :init
       @knife_class = class_double(
         'Formatron::Chef::Knife'
       ).as_stubbed_const
@@ -55,6 +57,49 @@ class Formatron
       allow(@knife).to receive(:delete_client)
       allow(@knife).to receive(:delete_environment)
       allow(@knife).to receive :unlink
+      allow(@knife).to receive :init
+      @chef = Chef.new(
+        aws: @aws,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        username: @username,
+        organization: @organization,
+        ssl_verify: @ssl_verify,
+        chef_sub_domain: @chef_sub_domain,
+        private_key: @private_key,
+        bastion_sub_domain: @bastion_sub_domain,
+        hosted_zone_name: @hosted_zone_name,
+        server_stack: @server_stack
+      )
+    end
+
+    it 'should create a keys instance' do
+      expect(@keys_class).to have_received(:new).once.with(
+        aws: @aws,
+        bucket: @bucket,
+        name: @server_stack,
+        target: @target
+      )
+    end
+
+    it 'should create a knife instance' do
+      expect(@knife_class).to have_received(:new).once.with(
+        keys: @keys,
+        chef_server_url: @chef_server_url,
+        username: @username,
+        organization: @organization,
+        ssl_verify: @ssl_verify
+      )
+    end
+
+    it 'should create a berkshelf instance' do
+      expect(@berkshelf_class).to have_received(:new).once.with(
+        keys: @keys,
+        chef_server_url: @chef_server_url,
+        username: @username,
+        ssl_verify: @ssl_verify
+      )
     end
 
     context 'when the Chef Server CloudFormation stack is not ready' do
@@ -66,23 +111,12 @@ class Formatron
         ) { fail 'not ready' }
       end
 
-      it 'should error' do
-        expect do
-          @chef = Chef.new(
-            aws: @aws,
-            bucket: @bucket,
-            name: @name,
-            target: @target,
-            username: @username,
-            organization: @organization,
-            ssl_verify: @ssl_verify,
-            chef_sub_domain: @chef_sub_domain,
-            private_key: @private_key,
-            bastion_sub_domain: @bastion_sub_domain,
-            hosted_zone_name: @hosted_zone_name,
-            server_stack: @server_stack
-          )
-        end.to raise_error 'not ready'
+      describe '#init' do
+        it 'should error' do
+          expect do
+            @chef.init
+          end.to raise_error 'not ready'
+        end
       end
     end
 
@@ -93,48 +127,21 @@ class Formatron
           name: @server_stack,
           target: @target
         )
-        @chef = Chef.new(
-          aws: @aws,
-          bucket: @bucket,
-          name: @name,
-          target: @target,
-          username: @username,
-          organization: @organization,
-          ssl_verify: @ssl_verify,
-          chef_sub_domain: @chef_sub_domain,
-          private_key: @private_key,
-          bastion_sub_domain: @bastion_sub_domain,
-          hosted_zone_name: @hosted_zone_name,
-          server_stack: @server_stack
-        )
+        @chef.init
       end
 
-      it 'should download the chef keys' do
-        expect(@keys_class).to have_received(:new).once.with(
-          aws: @aws,
-          bucket: @bucket,
-          name: @server_stack,
-          target: @target
-        )
-      end
+      describe '#init' do
+        it 'should download the chef keys' do
+          expect(@keys).to have_received :init
+        end
 
-      it 'should create a knife client' do
-        expect(@knife_class).to have_received(:new).once.with(
-          keys: @keys,
-          chef_server_url: @chef_server_url,
-          username: @username,
-          organization: @organization,
-          ssl_verify: @ssl_verify
-        )
-      end
+        it 'should init a knife client' do
+          expect(@knife).to have_received :init
+        end
 
-      it 'should create a berkshelf client' do
-        expect(@berkshelf_class).to have_received(:new).once.with(
-          keys: @keys,
-          chef_server_url: @chef_server_url,
-          username: @username,
-          ssl_verify: @ssl_verify
-        )
+        it 'should init a berkshelf client' do
+          expect(@berkshelf).to have_received :init
+        end
       end
 
       describe '#provision' do

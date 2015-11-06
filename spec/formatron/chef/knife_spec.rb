@@ -56,6 +56,7 @@ class Formatron
             organization: @organization,
             ssl_verify: true
           )
+          @knife.init
         end
 
         it 'should create a temporary file for the knife ' \
@@ -87,6 +88,7 @@ class Formatron
             organization: @organization,
             ssl_verify: false
           )
+          @knife.init
         end
 
         it 'should create a temporary file for the knife ' \
@@ -118,6 +120,7 @@ class Formatron
             organization: @organization,
             ssl_verify: false
           )
+          @knife.init
           @knife.unlink
         end
 
@@ -135,6 +138,7 @@ class Formatron
             organization: @organization,
             ssl_verify: true
           )
+          @knife.init
         end
 
         context 'when the environment already exists' do
@@ -228,6 +232,7 @@ class Formatron
             organization: @organization,
             ssl_verify: true
           )
+          @knife.init
         end
 
         context 'when the host is the bastion' do
@@ -312,6 +317,7 @@ class Formatron
             organization: @organization,
             ssl_verify: true
           )
+          @knife.init
         end
 
         context 'when the delete command succeeds' do
@@ -364,6 +370,7 @@ class Formatron
             organization: @organization,
             ssl_verify: true
           )
+          @knife.init
         end
 
         context 'when the delete command succeeds' do
@@ -416,6 +423,7 @@ class Formatron
             organization: @organization,
             ssl_verify: true
           )
+          @knife.init
         end
 
         context 'when the delete command succeeds' do

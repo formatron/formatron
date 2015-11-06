@@ -68,6 +68,29 @@ class Formatron
         name: @name, target: @target
       )
     )
+    bastion = bootstrap.bastion
+    nat = bootstrap.nat
+    chef_server = bootstrap.chef_server
+    @bastion_sub_domain = bastion.sub_domain
+    @nat_sub_domain = nat.sub_domain
+    @chef_server_sub_domain = chef_server.sub_domain
+    @bastion_cookbook = bastion.cookbook
+    @nat_cookbook = nat.cookbook
+    @chef_server_cookbook = chef_server.cookbook
+    @chef = Chef.new(
+      aws: @aws,
+      bucket: @bucket,
+      name: @name,
+      target: @target,
+      username: chef_server.username,
+      organization: chef_server.organization.short_name,
+      ssl_verify: chef_server.ssl_verify,
+      chef_sub_domain: @chef_server_sub_domain,
+      private_key: bootstrap.ec2.private_key,
+      bastion_sub_domain: @bastion_sub_domain,
+      hosted_zone_name: @hosted_zone_name,
+      server_stack: @name
+    )
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
@@ -80,49 +103,30 @@ class Formatron
   end
 
   # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
   def provision
-    bootstrap = @formatronfile.bootstrap
-    bastion = bootstrap.bastion
-    nat = bootstrap.nat
-    chef_server = bootstrap.chef_server
-    bastion_sub_domain = bastion.sub_domain
-    chef = Chef.new(
-      aws: @aws,
-      bucket: @bucket,
-      name: @name,
-      target: @target,
-      username: chef_server.username,
-      organization: chef_server.organization.short_name,
-      ssl_verify: chef_server.ssl_verify,
-      chef_sub_domain: chef_server.sub_domain,
-      private_key: bootstrap.ec2.private_key,
-      bastion_sub_domain: bastion_sub_domain,
-      hosted_zone_name: @hosted_zone_name,
-      server_stack: @name
+    @chef.init
+    @chef.provision(
+      sub_domain: @bastion_sub_domain,
+      cookbook: @bastion_cookbook
     )
-    chef.provision(
-      sub_domain: bastion_sub_domain,
-      cookbook: bastion.cookbook
+    @chef.provision(
+      sub_domain: @nat_sub_domain,
+      cookbook: @nat_cookbook
     )
-    chef.provision(
-      sub_domain: nat.sub_domain,
-      cookbook: nat.cookbook
-    )
-    chef.provision(
-      sub_domain: chef_server.sub_domain,
-      cookbook: chef_server.cookbook
+    @chef.provision(
+      sub_domain: @chef_server_sub_domain,
+      cookbook: @chef_server_cookbook
     )
   ensure
-    chef.unlink
+    @chef.unlink
   end
-  # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
   def destroy
     _destroy_chef_instances
     _destroy_configuration
     _destroy_chef_server_cert unless @chef_ssl_cert.nil?
+    _destroy_chef_server_keys unless @chef_ssl_cert.nil?
     _destroy_template
     _destroy_stack
   end
@@ -177,6 +181,8 @@ class Formatron
       name: @name,
       target: @target
     )
+  rescue => error
+    puts error.message
   end
 
   def _destroy_chef_server_cert
@@ -186,6 +192,19 @@ class Formatron
       name: @name,
       target: @target
     )
+  rescue => error
+    puts error.message
+  end
+
+  def _destroy_chef_server_keys
+    S3::ChefServerKeys.destroy(
+      aws: @aws,
+      bucket: @bucket,
+      name: @name,
+      target: @target
+    )
+  rescue => error
+    puts error.message
   end
 
   def _destroy_template
@@ -195,6 +214,8 @@ class Formatron
       name: @name,
       target: @target
     )
+  rescue => error
+    puts error.message
   end
 
   def _destroy_stack
@@ -203,44 +224,28 @@ class Formatron
       name: @name,
       target: @target
     )
+  rescue => error
+    puts error.message
   end
 
-  # rubocop:disable Metrics/AbcSize
   # rubocop:disable Metrics/MethodLength
   def _destroy_chef_instances
-    bootstrap = @formatronfile.bootstrap
-    bastion = bootstrap.bastion
-    nat = bootstrap.nat
-    chef_server = bootstrap.chef_server
-    bastion_sub_domain = bastion.sub_domain
-    chef = Chef.new(
-      aws: @aws,
-      bucket: @bucket,
-      name: @name,
-      target: @target,
-      username: chef_server.username,
-      organization: chef_server.organization.short_name,
-      ssl_verify: chef_server.ssl_verify,
-      chef_sub_domain: chef_server.sub_domain,
-      private_key: bootstrap.ec2.private_key,
-      bastion_sub_domain: bastion_sub_domain,
-      hosted_zone_name: @hosted_zone_name,
-      server_stack: @name
+    @chef.init
+    @chef.destroy(
+      sub_domain: @bastion_sub_domain
     )
-    chef.destroy(
-      sub_domain: bastion_sub_domain
+    @chef.destroy(
+      sub_domain: @nat_sub_domain
     )
-    chef.destroy(
-      sub_domain: nat.sub_domain
+    @chef.destroy(
+      sub_domain: @chef_server_sub_domain
     )
-    chef.destroy(
-      sub_domain: chef_server.sub_domain
-    )
+  rescue => error
+    puts error.message
   ensure
-    chef.unlink
+    @chef.unlink
   end
   # rubocop:enable Metrics/MethodLength
-  # rubocop:enable Metrics/AbcSize
 
   private(
     :_initialize_from_bootstrap,

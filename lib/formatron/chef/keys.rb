@@ -5,12 +5,19 @@ class Formatron
     # Download the Chef Server keys
     class Keys
       def initialize(aws:, bucket:, name:, target:)
+        @aws = aws
+        @bucket = bucket
+        @name = name
+        @target = target
+      end
+
+      def init
         @directory = Dir.mktmpdir 'formatron-chef-server-keys-'
         S3::ChefServerKeys.get(
-          aws: aws,
-          bucket: bucket,
-          name: name,
-          target: target,
+          aws: @aws,
+          bucket: @bucket,
+          name: @name,
+          target: @target,
           directory: @directory
         )
       end
@@ -24,7 +31,7 @@ class Formatron
       end
 
       def unlink
-        FileUtils.rm_rf @directory
+        FileUtils.rm_rf @directory unless @directory.nil?
       end
     end
   end

@@ -34,6 +34,30 @@ class Formatron
       end
       # rubocop:enable Metrics/MethodLength
 
+      # rubocop:disable Metrics/MethodLength
+      def self.destroy(
+        aws:,
+        bucket:,
+        name:,
+        target:
+      )
+        aws.delete_file(
+          bucket: bucket,
+          key: user_pem_key(
+            name: name,
+            target: target
+          )
+        )
+        aws.delete_file(
+          bucket: bucket,
+          key: organization_pem_key(
+            name: name,
+            target: target
+          )
+        )
+      end
+      # rubocop:enable Metrics/MethodLength
+
       def self.user_pem_key(name:, target:)
         Path.key(
           name: name,

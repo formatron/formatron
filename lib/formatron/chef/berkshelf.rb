@@ -19,12 +19,19 @@ class Formatron
       EOH
 
       def initialize(keys:, chef_server_url:, username:, ssl_verify:)
+        @keys = keys
+        @chef_server_url = chef_server_url
+        @username = username
+        @ssl_verify = ssl_verify
+      end
+
+      def init
         @config_file = Tempfile.new 'formatron-berkshelf-'
         @config_file.write CONFIG_FILE_CONTENTS % {
-          server_url: chef_server_url,
-          user: username,
-          key_file: keys.user_key,
-          ssl_verify: ssl_verify
+          server_url: @chef_server_url,
+          user: @username,
+          key_file: @keys.user_key,
+          ssl_verify: @ssl_verify
         }
         @config_file.close
       end
@@ -41,7 +48,7 @@ class Formatron
       end
 
       def unlink
-        @config_file.unlink
+        @config_file.unlink unless @config_file.nil?
       end
     end
   end

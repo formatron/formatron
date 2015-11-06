@@ -26,27 +26,30 @@ class Formatron
           username: @username,
           ssl_verify: @ssl_verify
         )
+        @berkshelf.init
       end
 
-      it 'should create a config file' do
-        expect(@tempfile_class).to have_received(:new).once.with(
-          'formatron-berkshelf-'
-        )
-        expect(@tempfile).to have_received(:write).once.with(
-          <<-EOH.gsub(/^ {12}/, '')
-            {
-              "chef": {
-                "chef_server_url": "#{@chef_server_url}",
-                "node_name": "#{@username}",
-                "client_key": "#{@user_key}"
-              },
-              "ssl": {
-                "verify": #{@ssl_verify}
+      describe '#init' do
+        it 'should create a config file' do
+          expect(@tempfile_class).to have_received(:new).once.with(
+            'formatron-berkshelf-'
+          )
+          expect(@tempfile).to have_received(:write).once.with(
+            <<-EOH.gsub(/^ {14}/, '')
+              {
+                "chef": {
+                  "chef_server_url": "#{@chef_server_url}",
+                  "node_name": "#{@username}",
+                  "client_key": "#{@user_key}"
+                },
+                "ssl": {
+                  "verify": #{@ssl_verify}
+                }
               }
-            }
-          EOH
-        )
-        expect(@tempfile).to have_received :close
+            EOH
+          )
+          expect(@tempfile).to have_received :close
+        end
       end
 
       describe '#unlink' do

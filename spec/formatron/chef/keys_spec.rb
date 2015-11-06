@@ -31,20 +31,23 @@ class Formatron
           name: @name,
           target: @target
         )
+        @keys.init
       end
 
-      it 'should download the Chef Server ' \
-         'keys to a temporary directory' do
-        expect(Dir).to have_received(:mktmpdir).once.with(
-          'formatron-chef-server-keys-'
-        )
-        expect(@s3_chef_server_keys).to have_received(:get).once.with(
-          aws: @aws,
-          bucket: @bucket,
-          name: @name,
-          target: @target,
-          directory: @directory
-        )
+      describe '#init' do
+        it 'should download the Chef Server ' \
+           'keys to a temporary directory' do
+          expect(Dir).to have_received(:mktmpdir).once.with(
+            'formatron-chef-server-keys-'
+          )
+          expect(@s3_chef_server_keys).to have_received(:get).once.with(
+            aws: @aws,
+            bucket: @bucket,
+            name: @name,
+            target: @target,
+            directory: @directory
+          )
+        end
       end
 
       describe '#user_key' do

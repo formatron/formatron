@@ -5,18 +5,25 @@ class Formatron
   class Chef
     # Wrapper for the knife cli
     class Knife
-      # rubocop:disable Metrics/MethodLength
       def initialize(
         keys:, chef_server_url:, username:, organization:, ssl_verify:
       )
+        @keys = keys
+        @chef_server_url = chef_server_url
+        @username = username
+        @organization = organization
         @ssl_verify = ssl_verify
+      end
+
+      # rubocop:disable Metrics/MethodLength
+      def init
         @knife_file = Tempfile.new('formatron-knife-')
         @knife_file.write <<-EOH.gsub(/^ {10}/, '')
-          chef_server_url '#{chef_server_url}'
-          validation_client_name '#{organization}-validator'
-          validation_key '#{keys.organization_key}'
-          node_name '#{username}'
-          client_key '#{keys.user_key}'
+          chef_server_url '#{@chef_server_url}'
+          validation_client_name '#{@organization}-validator'
+          validation_key '#{@keys.organization_key}'
+          node_name '#{@username}'
+          client_key '#{@keys.user_key}'
           verify_api_cert #{@ssl_verify}
           ssl_verify_mode #{@ssl_verify ? ':verify_peer' : ':verify_none'}
         EOH
@@ -73,7 +80,7 @@ class Formatron
       end
 
       def unlink
-        @knife_file.unlink
+        @knife_file.unlink unless @knife_file.nil?
       end
     end
   end
