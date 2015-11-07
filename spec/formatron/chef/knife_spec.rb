@@ -15,9 +15,9 @@ BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} -c knife_file"
 BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i private_key -E ' \
-                                 "#{ENVIRONMENT} -r cookbook -G " \
-                                 "ubuntu@bastion -N #{ENVIRONMENT} " \
-                                 '-c knife_file'
+                                 "#{ENVIRONMENT} -r cookbook " \
+                                 "-N #{ENVIRONMENT} " \
+                                 '-c knife_file -G ubuntu@bastion'
 DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -y -c " \
@@ -143,25 +143,21 @@ class Formatron
 
         context 'when the environment already exists' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive(:shell) do |command|
-              case command
-              when ENVIRONMENT_CHECK_COMMAND
-                allow(@kernel_helper_class).to receive(:success?) { true }
-              when ENVIRONMENT_CREATE_COMMAND
-                allow(@kernel_helper_class).to receive(:success?) { true }
-              else
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              end
-            end
+            allow(@shell).to receive(:exec).with(
+              ENVIRONMENT_CHECK_COMMAND
+            ) { true }
+            allow(@shell).to receive(:exec).with(
+              ENVIRONMENT_CREATE_COMMAND
+            ) { true }
           end
 
           it 'should do nothing' do
             @knife.create_environment environment: ENVIRONMENT
-            expect(@kernel_helper_class).to have_received(:shell).once
-            expect(@kernel_helper_class).to have_received(:shell).with(
+            expect(@shell).to have_received(:exec).once
+            expect(@shell).to have_received(:exec).with(
               ENVIRONMENT_CHECK_COMMAND
             )
           end
@@ -169,28 +165,24 @@ class Formatron
 
         context 'when the environment does not exist' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive(:shell) do |command|
-              case command
-              when ENVIRONMENT_CHECK_COMMAND
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              when ENVIRONMENT_CREATE_COMMAND
-                allow(@kernel_helper_class).to receive(:success?) { true }
-              else
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              end
-            end
+            allow(@shell).to receive(:exec).with(
+              ENVIRONMENT_CHECK_COMMAND
+            ) { false }
+            allow(@shell).to receive(:exec).with(
+              ENVIRONMENT_CREATE_COMMAND
+            ) { true }
           end
 
           it 'should create the environment' do
             @knife.create_environment environment: ENVIRONMENT
-            expect(@kernel_helper_class).to have_received(:shell).twice
-            expect(@kernel_helper_class).to have_received(:shell).with(
+            expect(@shell).to have_received(:exec).twice
+            expect(@shell).to have_received(:exec).with(
               ENVIRONMENT_CHECK_COMMAND
             )
-            expect(@kernel_helper_class).to have_received(:shell).with(
+            expect(@shell).to have_received(:exec).with(
               ENVIRONMENT_CREATE_COMMAND
             )
           end
@@ -198,19 +190,15 @@ class Formatron
 
         context 'when the environment fails to create' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive(:shell) do |command|
-              case command
-              when ENVIRONMENT_CHECK_COMMAND
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              when ENVIRONMENT_CREATE_COMMAND
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              else
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              end
-            end
+            allow(@shell).to receive(:exec).with(
+              ENVIRONMENT_CHECK_COMMAND
+            ) { false }
+            allow(@shell).to receive(:exec).with(
+              ENVIRONMENT_CREATE_COMMAND
+            ) { false }
           end
 
           it 'should fail' do
@@ -237,11 +225,12 @@ class Formatron
 
         context 'when the host is the bastion' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { true }
+            allow(@shell).to receive(:exec).with(
+              BOOTSTRAP_COMMAND
+            ) { true }
           end
 
           it 'should bootstrap the host directly' do
@@ -252,20 +241,18 @@ class Formatron
               hostname: 'hostname',
               private_key: 'private_key'
             )
-            expect(@kernel_helper_class).to have_received(:shell).once
-            expect(@kernel_helper_class).to have_received(:shell).with(
-              BOOTSTRAP_COMMAND
-            )
+            expect(@shell).to have_received(:exec).once
           end
         end
 
         context 'when the host is not the bastion' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { true }
+            allow(@shell).to receive(:exec).with(
+              BOOTSTRAP_COMMAND_WITH_BASTION
+            ) { true }
           end
 
           it 'should bootstrap the host directly' do
@@ -276,20 +263,18 @@ class Formatron
               hostname: 'hostname',
               private_key: 'private_key'
             )
-            expect(@kernel_helper_class).to have_received(:shell).once
-            expect(@kernel_helper_class).to have_received(:shell).with(
-              BOOTSTRAP_COMMAND_WITH_BASTION
-            )
+            expect(@shell).to have_received(:exec).once
           end
         end
 
         context 'when the bootstrap command fails' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { false }
+            allow(@shell).to receive(:exec).with(
+              BOOTSTRAP_COMMAND_WITH_BASTION
+            ) { false }
           end
 
           it 'should fail' do
@@ -322,31 +307,30 @@ class Formatron
 
         context 'when the delete command succeeds' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { true }
+            allow(@shell).to receive(:exec).with(
+              DELETE_NODE_COMMAND
+            ) { true }
           end
 
           it 'should delete the node' do
             @knife.delete_node(
               node: ENVIRONMENT
             )
-            expect(@kernel_helper_class).to have_received(:shell).once
-            expect(@kernel_helper_class).to have_received(:shell).with(
-              DELETE_NODE_COMMAND
-            )
+            expect(@shell).to have_received(:exec).once
           end
         end
 
         context 'when the delete command fails' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { false }
+            allow(@shell).to receive(:exec).with(
+              DELETE_NODE_COMMAND
+            ) { false }
           end
 
           it 'should fail' do
@@ -375,31 +359,30 @@ class Formatron
 
         context 'when the delete command succeeds' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { true }
+            allow(@shell).to receive(:exec).with(
+              DELETE_CLIENT_COMMAND
+            ) { true }
           end
 
           it 'should delete the client' do
             @knife.delete_client(
               client: ENVIRONMENT
             )
-            expect(@kernel_helper_class).to have_received(:shell).once
-            expect(@kernel_helper_class).to have_received(:shell).with(
-              DELETE_CLIENT_COMMAND
-            )
+            expect(@shell).to have_received(:exec).once
           end
         end
 
         context 'when the delete command fails' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { false }
+            allow(@shell).to receive(:exec).with(
+              DELETE_CLIENT_COMMAND
+            ) { false }
           end
 
           it 'should fail' do
@@ -428,31 +411,30 @@ class Formatron
 
         context 'when the delete command succeeds' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { true }
+            allow(@shell).to receive(:exec).with(
+              DELETE_ENVIRONMENT_COMMAND
+            ) { true }
           end
 
           it 'should delete the environment' do
             @knife.delete_environment(
               environment: ENVIRONMENT
             )
-            expect(@kernel_helper_class).to have_received(:shell).once
-            expect(@kernel_helper_class).to have_received(:shell).with(
-              DELETE_ENVIRONMENT_COMMAND
-            )
+            expect(@shell).to have_received(:exec).once
           end
         end
 
         context 'when the delete command fails' do
           before(:each) do
-            @kernel_helper_class = class_double(
-              'Formatron::Util::KernelHelper'
+            @shell = class_double(
+              'Formatron::Util::Shell'
             ).as_stubbed_const
-            allow(@kernel_helper_class).to receive :shell
-            allow(@kernel_helper_class).to receive(:success?) { false }
+            allow(@shell).to receive(:exec).with(
+              DELETE_ENVIRONMENT_COMMAND
+            ) { false }
           end
 
           it 'should fail' do

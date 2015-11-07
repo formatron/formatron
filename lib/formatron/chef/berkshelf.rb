@@ -1,4 +1,4 @@
-require 'formatron/util/kernel_helper'
+require 'formatron/util/shell'
 require 'English'
 
 class Formatron
@@ -38,12 +38,12 @@ class Formatron
 
       def upload(cookbook:, environment:)
         # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "berks install -b #{File.join(cookbook, 'Berksfile')}"
-        fail "failed to download cookbooks for opscode environment: #{environment}" unless Util::KernelHelper.success?
-        Util::KernelHelper.shell "berks upload -c #{@config_file.path} -b #{File.join(cookbook, 'Berksfile')}"
-        fail "failed to upload cookbooks for opscode environment: #{environment}" unless Util::KernelHelper.success?
-        Util::KernelHelper.shell "berks apply #{environment} -c #{@config_file.path} -b #{File.join(cookbook, 'Berksfile.lock')}"
-        fail "failed to apply cookbooks to opscode environment: #{environment}" unless Util::KernelHelper.success?
+        command = "berks install -b #{File.join(cookbook, 'Berksfile')}"
+        fail "failed to download cookbooks for opscode environment: #{environment}" unless Util::Shell.exec command
+        command = "berks upload -c #{@config_file.path} -b #{File.join(cookbook, 'Berksfile')}"
+        fail "failed to upload cookbooks for opscode environment: #{environment}" unless Util::Shell.exec command
+        command = "berks apply #{environment} -c #{@config_file.path} -b #{File.join(cookbook, 'Berksfile.lock')}"
+        fail "failed to apply cookbooks to opscode environment: #{environment}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 

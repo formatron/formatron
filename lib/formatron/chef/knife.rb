@@ -1,4 +1,4 @@
-require 'formatron/util/kernel_helper'
+require 'formatron/util/shell'
 require 'English'
 
 class Formatron
@@ -33,13 +33,28 @@ class Formatron
 
       def create_environment(environment:)
         # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "knife environment show #{environment} -c #{@knife_file.path}"
-        Util::KernelHelper.shell "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'" unless Util::KernelHelper.success?
-        fail "failed to create opscode environment: #{environment}" unless Util::KernelHelper.success?
+        _attempt_to_create_environment environment unless _environment_exists environment
         # rubocop:enable Metrics/LineLength
       end
 
-      # rubocop:disable Metrics/MethodLength
+      def _environment_exists(environment)
+        # rubocop:disable Metrics/LineLength
+        Util::Shell.exec "knife environment show #{environment} -c #{@knife_file.path}"
+        # rubocop:enable Metrics/LineLength
+      end
+
+      def _attempt_to_create_environment(environment)
+        # rubocop:disable Metrics/LineLength
+        fail "failed to create opscode environment: #{environment}" unless _create_environment environment
+        # rubocop:enable Metrics/LineLength
+      end
+
+      def _create_environment(environment)
+        # rubocop:disable Metrics/LineLength
+        Util::Shell.exec "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'"
+        # rubocop:enable Metrics/LineLength
+      end
+
       def bootstrap(
         environment:,
         bastion_hostname:,
@@ -48,40 +63,40 @@ class Formatron
         private_key:
       )
         # rubocop:disable Metrics/LineLength
-        if bastion_hostname.eql? hostname
-          Util::KernelHelper.shell "knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
-        else
-          Util::KernelHelper.shell "knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -G ubuntu@#{bastion_hostname} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
-        end
-        fail "failed to bootstrap instance: #{hostname}" unless Util::KernelHelper.success?
+        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
+        command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
+        fail "failed to bootstrap instance: #{hostname}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
-      # rubocop:enable Metrics/MethodLength
 
       def delete_node(node:)
-        # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "knife node delete #{node} -y -c #{@knife_file.path}"
-        fail "failed to delete node: #{node}" unless Util::KernelHelper.success?
-        # rubocop:enable Metrics/LineLength
+        command = "knife node delete #{node} -y -c #{@knife_file.path}"
+        fail "failed to delete node: #{node}" unless Util::Shell.exec command
       end
 
       def delete_client(client:)
         # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "knife client delete #{client} -y -c #{@knife_file.path}"
-        fail "failed to delete client: #{client}" unless Util::KernelHelper.success?
+        command = "knife client delete #{client} -y -c #{@knife_file.path}"
+        fail "failed to delete client: #{client}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
       def delete_environment(environment:)
         # rubocop:disable Metrics/LineLength
-        Util::KernelHelper.shell "knife environment delete #{environment} -y -c #{@knife_file.path}"
-        fail "failed to delete environment: #{environment}" unless Util::KernelHelper.success?
+        command = "knife environment delete #{environment} -y -c #{@knife_file.path}"
+        fail "failed to delete environment: #{environment}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
       def unlink
         @knife_file.unlink unless @knife_file.nil?
       end
+
+      private(
+        :_create_environment,
+        :_attempt_to_create_environment,
+        :_environment_exists
+      )
     end
   end
 end

@@ -1,4 +1,5 @@
 require_relative 'path'
+require 'formatron/logger'
 
 class Formatron
   module S3
@@ -18,22 +19,24 @@ class Formatron
         cert:,
         key:
       )
+        cert_key = self.cert_key name: name, target: target
+        Formatron::LOG.info do
+          "Upload Chef Server SSL certifcate to #{bucket}/#{cert_key}"
+        end
         aws.upload_file(
           kms_key: kms_key,
           bucket: bucket,
-          key: cert_key(
-            name: name,
-            target: target
-          ),
+          key: cert_key,
           content: cert
         )
+        key_key = self.key_key name: name, target: target
+        Formatron::LOG.info do
+          "Upload Chef Server SSL key to #{bucket}/#{key_key}"
+        end
         aws.upload_file(
           kms_key: kms_key,
           bucket: bucket,
-          key: key_key(
-            name: name,
-            target: target
-          ),
+          key: key_key,
           content: key
         )
       end
@@ -42,19 +45,21 @@ class Formatron
 
       # rubocop:disable Metrics/MethodLength
       def self.destroy(aws:, bucket:, name:, target:)
+        cert_key = self.cert_key name: name, target: target
+        Formatron::LOG.info do
+          "Delete Chef Server SSL certificate from #{bucket}/#{cert_key}"
+        end
         aws.delete_file(
           bucket: bucket,
-          key: cert_key(
-            name: name,
-            target: target
-          )
+          key: cert_key
         )
+        key_key = self.key_key name: name, target: target
+        Formatron::LOG.info do
+          "Delete Chef Server SSL key from #{bucket}/#{key_key}"
+        end
         aws.delete_file(
           bucket: bucket,
-          key: key_key(
-            name: name,
-            target: target
-          )
+          key: key_key
         )
       end
       # rubocop:enable Metrics/MethodLength

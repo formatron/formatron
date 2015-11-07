@@ -1,11 +1,17 @@
 require_relative 's3/cloud_formation_template'
+require 'formatron/logger'
 
 class Formatron
   # manage the CloudFormation stack
   module CloudFormation
+    # rubocop:disable Metrics/MethodLength
     def self.deploy(aws:, bucket:, name:, target:)
+      stack_name = _stack_name name, target
+      Formatron::LOG.info do
+        "Deploy CloudFormation stack: #{stack_name}"
+      end
       aws.deploy_stack(
-        stack_name: _stack_name(name, target),
+        stack_name: stack_name,
         template_url: S3::CloudFormationTemplate.url(
           region: aws.region,
           bucket: bucket,
@@ -14,9 +20,14 @@ class Formatron
         )
       )
     end
+    # rubocop:enable Metrics/MethodLength
 
     def self.destroy(aws:, name:, target:)
-      aws.delete_stack _stack_name(name, target)
+      stack_name = _stack_name name, target
+      Formatron::LOG.info do
+        "Destroy CloudFormation stack: #{stack_name}"
+      end
+      aws.delete_stack stack_name
     end
 
     def self.stack_ready!(aws:, name:, target:)

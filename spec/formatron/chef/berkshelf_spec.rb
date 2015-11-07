@@ -66,21 +66,16 @@ class Formatron
         before :each do
           @cookbook = 'cookbook'
           @environment = 'environment'
-          @kernel_helper_class = class_double(
-            'Formatron::Util::KernelHelper'
+          @shell = class_double(
+            'Formatron::Util::Shell'
           ).as_stubbed_const
         end
 
         context 'when the berks install fails' do
           before(:each) do
-            allow(@kernel_helper_class).to receive(:shell) do |command|
-              case command
-              when "berks install -b #{@cookbook}/Berksfile"
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              else
-                allow(@kernel_helper_class).to receive(:success?) { true }
-              end
-            end
+            allow(@shell).to receive(:exec).with(
+              "berks install -b #{@cookbook}/Berksfile"
+            ) { false }
           end
 
           it 'should fail' do
@@ -97,15 +92,12 @@ class Formatron
 
         context 'when the berks upload fails' do
           before(:each) do
-            allow(@kernel_helper_class).to receive(:shell) do |command|
-              case command
-              when "berks upload -c #{@config} " \
-                   "-b #{@cookbook}/Berksfile"
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              else
-                allow(@kernel_helper_class).to receive(:success?) { true }
-              end
-            end
+            allow(@shell).to receive(:exec).with(
+              "berks install -b #{@cookbook}/Berksfile"
+            ) { true }
+            allow(@shell).to receive(:exec).with(
+              "berks upload -c #{@config} -b #{@cookbook}/Berksfile"
+            ) { false }
           end
 
           it 'should fail' do
@@ -122,15 +114,16 @@ class Formatron
 
         context 'when the berks apply fails' do
           before(:each) do
-            allow(@kernel_helper_class).to receive(:shell) do |command|
-              case command
-              when "berks apply #{@environment} -c #{@config} " \
-                   "-b #{@cookbook}/Berksfile.lock"
-                allow(@kernel_helper_class).to receive(:success?) { false }
-              else
-                allow(@kernel_helper_class).to receive(:success?) { true }
-              end
-            end
+            allow(@shell).to receive(:exec).with(
+              "berks install -b #{@cookbook}/Berksfile"
+            ) { true }
+            allow(@shell).to receive(:exec).with(
+              "berks upload -c #{@config} -b #{@cookbook}/Berksfile"
+            ) { true }
+            allow(@shell).to receive(:exec).with(
+              "berks apply #{@environment} -c #{@config} " \
+              "-b #{@cookbook}/Berksfile.lock"
+            ) { false }
           end
 
           it 'should fail' do
@@ -147,28 +140,27 @@ class Formatron
 
         context 'when all the berks commands succeed' do
           before(:each) do
-            allow(@kernel_helper_class).to receive(:shell)
-            allow(@kernel_helper_class).to receive(:success?) { true }
+            allow(@shell).to receive(:exec) { true }
             @berkshelf.upload(
               cookbook: @cookbook, environment: @environment
             )
           end
 
           it 'should install cookbooks' do
-            expect(@kernel_helper_class).to have_received(:shell).with(
+            expect(@shell).to have_received(:exec).with(
               "berks install -b #{@cookbook}/Berksfile"
             ).once
           end
 
           it 'should upload cookbooks' do
-            expect(@kernel_helper_class).to have_received(:shell).with(
+            expect(@shell).to have_received(:exec).with(
               "berks upload -c #{@config} " \
               "-b #{@cookbook}/Berksfile"
             ).once
           end
 
           it 'should apply cookbooks to the environment' do
-            expect(@kernel_helper_class).to have_received(:shell).with(
+            expect(@shell).to have_received(:exec).with(
               "berks apply #{@environment} -c #{@config} " \
               "-b #{@cookbook}/Berksfile.lock"
             ).once

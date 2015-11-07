@@ -1,4 +1,5 @@
 require 'formatron/cloud_formation'
+require 'formatron/logger'
 require_relative 'chef/keys'
 require_relative 'chef/berkshelf'
 require_relative 'chef/knife'
@@ -74,6 +75,9 @@ class Formatron
       sub_domain:,
       cookbook:
     )
+      Formatron::LOG.info do
+        "Provision #{sub_domain} with Chef cookbook: #{cookbook}"
+      end
       CloudFormation.stack_ready!(
         aws: @aws,
         name: @name,
@@ -97,6 +101,9 @@ class Formatron
     # rubocop:enable Metrics/MethodLength
 
     def destroy(sub_domain:)
+      Formatron::LOG.info do
+        "Delete Chef configuration for node: #{sub_domain}"
+      end
       @knife.delete_node node: sub_domain
       @knife.delete_client client: sub_domain
       @knife.delete_environment environment: sub_domain

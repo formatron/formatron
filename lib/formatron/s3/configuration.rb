@@ -1,4 +1,5 @@
 require_relative 'path'
+require 'formatron/logger'
 
 class Formatron
   module S3
@@ -8,25 +9,27 @@ class Formatron
 
       # rubocop:disable Metrics/ParameterLists
       def self.deploy(aws:, kms_key:, bucket:, name:, target:, config:)
+        key = self.key name: name, target: target
+        Formatron::LOG.info do
+          "Upload configuration to #{bucket}/#{key}"
+        end
         aws.upload_file(
           kms_key: kms_key,
           bucket: bucket,
-          key: key(
-            name: name,
-            target: target
-          ),
+          key: key,
           content: "#{JSON.pretty_generate(config)}\n"
         )
       end
       # rubocop:enable Metrics/ParameterLists
 
       def self.destroy(aws:, bucket:, name:, target:)
+        key = self.key name: name, target: target
+        Formatron::LOG.info do
+          "Delete configuration from #{bucket}/#{key}"
+        end
         aws.delete_file(
           bucket: bucket,
-          key: key(
-            name: name,
-            target: target
-          )
+          key: key
         )
       end
 
