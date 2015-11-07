@@ -183,7 +183,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    LOG.error error
+    LOG.warn error
   end
 
   def _destroy_chef_server_cert
@@ -194,7 +194,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    LOG.error error
+    LOG.warn error
   end
 
   def _destroy_chef_server_keys
@@ -205,7 +205,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    LOG.error error
+    LOG.warn error
   end
 
   def _destroy_template
@@ -216,7 +216,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    LOG.error error
+    LOG.warn error
   end
 
   def _destroy_stack
@@ -226,7 +226,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    LOG.error error
+    LOG.warn error
   end
 
   # rubocop:disable Metrics/MethodLength
@@ -242,7 +242,7 @@ class Formatron
       sub_domain: @chef_server_sub_domain
     )
   rescue => error
-    LOG.error error
+    LOG.warn error
   ensure
     @chef.unlink
   end
