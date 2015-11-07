@@ -8,6 +8,7 @@ require 'formatron/s3/cloud_formation_template'
 require 'formatron/cloud_formation'
 require 'formatron/cloud_formation/bootstrap_template'
 require 'formatron/chef'
+require 'formatron/logger'
 
 # manages a Formatron stack
 # rubocop:disable Metrics/ClassLength
@@ -182,7 +183,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    puts error.message
+    LOG.error error
   end
 
   def _destroy_chef_server_cert
@@ -193,7 +194,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    puts error.message
+    LOG.error error
   end
 
   def _destroy_chef_server_keys
@@ -204,7 +205,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    puts error.message
+    LOG.error error
   end
 
   def _destroy_template
@@ -215,7 +216,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    puts error.message
+    LOG.error error
   end
 
   def _destroy_stack
@@ -225,7 +226,7 @@ class Formatron
       target: @target
     )
   rescue => error
-    puts error.message
+    LOG.error error
   end
 
   # rubocop:disable Metrics/MethodLength
@@ -241,7 +242,7 @@ class Formatron
       sub_domain: @chef_server_sub_domain
     )
   rescue => error
-    puts error.message
+    LOG.error error
   ensure
     @chef.unlink
   end
