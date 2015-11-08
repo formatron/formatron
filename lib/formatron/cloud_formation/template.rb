@@ -177,7 +177,8 @@ class Formatron
         resources["#{name}#{SUBNET}"] = Resources::EC2.subnet(
           vpc: VPC,
           cidr: subnet.cidr,
-          availability_zone: subnet.availability_zone
+          availability_zone: subnet.availability_zone,
+          map_public_ip_on_launch: subnet.public?
         )
         resources["#{name}#{SUBNET_ROUTE_TABLE_ASSOCIATION}"] =
           Resources::EC2.subnet_route_table_association(
@@ -495,9 +496,6 @@ class Formatron
           instance_type: instance_type,
           key_name: bootstrap.ec2.key_pair,
           subnet: ref("#{instance.subnet}#{SUBNET}"),
-          associate_public_ip_address: bootstrap.vpc.subnets[
-            instance.subnet
-          ].public?,
           name: "#{instance.sub_domain}.#{hosted_zone_name}",
           wait_condition_handle: "#{prefix}#{WAIT_CONDITION_HANDLE}",
           security_group: "#{prefix}#{SECURITY_GROUP}",

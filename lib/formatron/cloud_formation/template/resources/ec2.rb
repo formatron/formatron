@@ -70,12 +70,18 @@ class Formatron
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
-          def self.subnet(vpc:, cidr:, availability_zone:)
+          def self.subnet(
+            vpc:,
+            cidr:,
+            availability_zone:,
+            map_public_ip_on_launch:
+          )
             {
               Type: 'AWS::EC2::Subnet',
               Properties: {
                 VpcId: Template.ref(vpc),
                 CidrBlock: cidr,
+                MapPublicIpOnLaunch: map_public_ip_on_launch,
                 AvailabilityZone: Template.join(
                   Template.ref('AWS::Region'),
                   availability_zone
@@ -239,7 +245,6 @@ class Formatron
             instance_type:,
             key_name:,
             subnet:,
-            associate_public_ip_address:,
             name:,
             wait_condition_handle:,
             security_group:,
@@ -289,13 +294,8 @@ class Formatron
                 SourceDestCheck: source_dest_check,
                 InstanceType: instance_type,
                 KeyName: key_name,
-                NetworkInterfaces: [{
-                  AssociatePublicIpAddress: associate_public_ip_address,
-                  DeviceIndex: '0',
-                  DeleteOnTermination: true,
-                  GroupSet: [Template.ref(security_group)],
-                  SubnetId: subnet
-                }],
+                SubnetId: subnet,
+                SecurityGroupIds: [Template.ref(security_group)],
                 Tags: [{
                   Key: 'Name',
                   Value: name

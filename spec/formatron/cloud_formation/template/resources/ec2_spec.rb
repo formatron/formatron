@@ -117,17 +117,20 @@ class Formatron
               vpc = 'vpc'
               cidr = 'cidr'
               availability_zone = 'availability_zone'
+              map_public_ip_on_launch = 'map_public_ip_on_launch'
               expect(
                 EC2.subnet(
                   vpc: vpc,
                   cidr: cidr,
-                  availability_zone: availability_zone
+                  availability_zone: availability_zone,
+                  map_public_ip_on_launch: map_public_ip_on_launch
                 )
               ).to eql(
                 Type: 'AWS::EC2::Subnet',
                 Properties: {
                   VpcId: { Ref: vpc },
                   CidrBlock: cidr,
+                  MapPublicIpOnLaunch: map_public_ip_on_launch,
                   AvailabilityZone: {
                     'Fn::Join' => [
                       '', [
@@ -378,7 +381,6 @@ class Formatron
               instance_type = 'instance_type'
               key_name = 'key_name'
               subnet = 'subnet'
-              associate_public_ip_address = 'associate_public_ip_address'
               name = 'name'
               wait_condition_handle = 'wait_condition_handle'
               security_group = 'security_group'
@@ -394,7 +396,6 @@ class Formatron
                   instance_type: instance_type,
                   key_name: key_name,
                   subnet: subnet,
-                  associate_public_ip_address: associate_public_ip_address,
                   name: name,
                   wait_condition_handle: wait_condition_handle,
                   security_group: security_group,
@@ -451,13 +452,8 @@ class Formatron
                   SourceDestCheck: source_dest_check,
                   InstanceType: instance_type,
                   KeyName: key_name,
-                  NetworkInterfaces: [{
-                    AssociatePublicIpAddress: associate_public_ip_address,
-                    DeviceIndex: '0',
-                    DeleteOnTermination: true,
-                    GroupSet: [{ Ref: security_group }],
-                    SubnetId: subnet
-                  }],
+                  SubnetId: subnet,
+                  SecurityGroupIds: [{ Ref: security_group }],
                   Tags: [{
                     Key: 'Name',
                     Value: name

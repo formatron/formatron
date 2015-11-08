@@ -244,7 +244,8 @@ class Formatron
             expect(@ec2).to receive(:subnet).once.with(
               vpc: vpc,
               cidr: @cidr,
-              availability_zone: @availability_zone
+              availability_zone: @availability_zone,
+              map_public_ip_on_launch: false
             ) { subnet }
             expect(@ec2).to receive(
               :subnet_route_table_association
@@ -297,7 +298,8 @@ class Formatron
               expect(@ec2).to receive(:subnet).once.with(
                 vpc: vpc,
                 cidr: @cidr,
-                availability_zone: @availability_zone
+                availability_zone: @availability_zone,
+                map_public_ip_on_launch: true
               ) { subnet }
               expect(@ec2).to receive(
                 :subnet_route_table_association
@@ -359,7 +361,8 @@ class Formatron
               expect(@ec2).to receive(:subnet).once.with(
                 vpc: vpc,
                 cidr: @cidr,
-                availability_zone: @availability_zone
+                availability_zone: @availability_zone,
+                map_public_ip_on_launch: true
               ) { subnet }
               expect(@ec2).to receive(
                 :subnet_route_table_association
@@ -524,7 +527,6 @@ class Formatron
           )
           allow(@instance).to receive(:subnet) { @subnet_name }
           allow(@instance).to receive(:sub_domain) { @sub_domain }
-          allow(@subnet).to receive(:public?) { @public }
           allow(@subnet).to receive(
             :availability_zone
           ) { @availability_zone }
@@ -623,7 +625,6 @@ class Formatron
             instance_type: 't2.micro',
             key_name: @key_pair,
             subnet: { Ref: "#{@subnet_name}Subnet" },
-            associate_public_ip_address: @public,
             name: "#{@sub_domain}.#{@hosted_zone_name}",
             wait_condition_handle: "#{@prefix}WaitConditionHandle",
             security_group: "#{@prefix}SecurityGroup",
