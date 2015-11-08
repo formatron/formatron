@@ -26,12 +26,15 @@ class Formatron
       directory: directory,
       target: target
     )
-    @formatronfile = Formatronfile.new(
-      aws: @aws,
-      config: @config,
-      target: target,
-      file: File.join(directory, FORMATRONFILE)
-    )
+    @formatronfile = Formatronfile.new parent: self
+    # rubocop:disable Lint/Eval
+    block = eval <<-EOH
+      lambda do |formatron, config, target|
+        #{File.read File.join(directory, FORMATRONFILE)}
+      end
+    EOH
+    # rubocop:enable Lint/Eval
+    block.call @formatronfile, @config, @target
     @name = @formatronfile.name
     @bucket = @formatronfile.bucket
     _initialize_from_bootstrap unless @formatronfile.bootstrap.nil?

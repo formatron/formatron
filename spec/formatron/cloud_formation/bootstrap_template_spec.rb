@@ -6,7 +6,7 @@ class Formatron
   # namespacing for tests
   # rubocop:disable Metrics/ModuleLength
   module CloudFormation
-    describe BootstrapTemplate do
+    xdescribe BootstrapTemplate do
       before :each do
         @hosted_zone_id = 'hosted_zone_id'
         @hosted_zone_name = 'hosted_zone_name'

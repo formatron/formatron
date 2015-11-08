@@ -1,17 +1,12 @@
+require 'formatron/util/dsl'
+
 class Formatron
   class Formatronfile
     # dependency configuration
     class Dependency
-      attr_reader(
-        :name
-      )
+      extend Util::DSL
 
-      def initialize(aws:, bucket:, target:, name:)
-        @aws = aws
-        @bucket = bucket
-        @target = target
-        @name = name
-      end
+      dsl_initialize_hash
     end
   end
 end

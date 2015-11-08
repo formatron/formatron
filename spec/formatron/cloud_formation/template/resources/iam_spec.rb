@@ -4,7 +4,7 @@ require 'formatron/cloud_formation' \
 
 class Formatron
   module CloudFormation
-    module Template
+    class Template
       # namespacing for tests
       # rubocop:disable Metrics/ModuleLength
       module Resources

@@ -2,7 +2,7 @@ require_relative '../../template'
 
 class Formatron
   module CloudFormation
-    module Template
+    class Template
       module Resources
         # Generates CloudFormation template IAM resources
         module IAM
