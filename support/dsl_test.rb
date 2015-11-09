@@ -92,6 +92,31 @@ class Formatron
           end
         end
       end
+
+      # rubocop:disable Metrics/AbcSize
+      # rubocop:disable Metrics/MethodLength
+      def dsl_block_array(symbol, cls)
+        describe "##{symbol}" do
+          it "should add an entry to the #{symbol} array " \
+             'and yield to the given block' do
+            subs = [double, double]
+            cls = class_double(
+              described_class.const_get(cls).name
+            ).as_stubbed_const
+            expect(@dsl_instance.send(symbol)).to eql([])
+            subs.each do |sub|
+              expect(sub).to receive(:test).with no_args
+              expect(cls).to receive(:new).with(
+                parent: @dsl_instance
+              ) { sub }
+              @dsl_instance.send symbol, &:test
+            end
+            expect(@dsl_instance.send(symbol)).to eql(subs)
+          end
+        end
+      end
+      # rubocop:enable Metrics/AbcSize
+      # rubocop:enable Metrics/MethodLength
     end
   end
 end

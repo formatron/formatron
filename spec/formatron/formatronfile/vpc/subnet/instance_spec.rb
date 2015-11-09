@@ -12,6 +12,8 @@ class Formatron
           dsl_property :guid
           dsl_property :subnet
           dsl_block :chef, 'Chef'
+          dsl_block :policy, 'Policy'
+          dsl_block :security_group, 'SecurityGroup'
         end
       end
     end

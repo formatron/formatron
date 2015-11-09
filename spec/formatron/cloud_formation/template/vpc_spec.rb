@@ -3,7 +3,7 @@ require 'formatron/cloud_formation/template/vpc'
 
 class Formatron
   module CloudFormation
-    # namespacing tests
+    # rubocop:disable Metrics/ClassLength
     class Template
       describe VPC do
         include TemplateTest
@@ -16,12 +16,21 @@ class Formatron
             template_cls: 'Formatron::CloudFormation::Template::VPC::Subnet',
             formatronfile_cls: 'Formatron::Formatronfile::VPC::Subnet'
           )
+          formatron = instance_double 'Formatron'
+          hosted_zone_name = 'hosted_zone_name'
+          allow(formatron).to receive(:hosted_zone_name) { hosted_zone_name }
+          formatronfile = instance_double 'Formatron::Formatronfile'
+          allow(formatronfile).to receive(:dsl_parent) { formatron }
           formatronfile_vpc = instance_double 'Formatron::Formatronfile::VPC'
+          allow(formatronfile_vpc).to receive(:dsl_parent) { formatronfile }
           allow(formatronfile_vpc).to receive(
             :subnet
           ) { @formatronfile_instances[:subnet] }
           @ec2 = class_double(
-            'Formatron::CloudFormation::Template::Resources::EC2'
+            'Formatron::CloudFormation::Resources::EC2'
+          ).as_stubbed_const
+          @route53 = class_double(
+            'Formatron::CloudFormation::Resources::Route53'
           ).as_stubbed_const
           guid = 'guid'
           allow(formatronfile_vpc).to receive(:guid) { guid }
@@ -41,18 +50,24 @@ class Formatron
             vpc: @logical_id,
             gateway: @internet_gateway_id
           ) { @vpc_gateway_attachment }
-          @public_route_table_id = "publicRouteTable#{guid}"
+          @public_route_table_id = "routeTable#{guid}"
           @public_route_table = 'public_route_table'
           allow(@ec2).to receive(:route_table).with(
             vpc: @logical_id
           ) { @public_route_table }
-          @public_route_id = "publicRoute#{guid}"
+          @public_route_id = "route#{guid}"
           @public_route = 'public_route'
           allow(@ec2).to receive(:route).with(
             vpc_gateway_attachment: @vpc_gateway_attachment_id,
             route_table: @public_route_table_id,
             internet_gateway: @internet_gateway_id
           ) { @public_route }
+          @private_hosted_zone_id = "hostedZone#{guid}"
+          @private_hosted_zone = 'private_hosted_zone'
+          allow(@route53).to receive(:hosted_zone).with(
+            name: hosted_zone_name,
+            vpc: @logical_id
+          ) { @private_hosted_zone }
           @template_vpc = VPC.new vpc: formatronfile_vpc
         end
 
@@ -102,8 +117,20 @@ class Formatron
               @public_route_id => @public_route
             )
           end
+
+          it 'should add a private hosted zone' do
+            expect(@resources).to include(
+              @private_hosted_zone_id => @private_hosted_zone
+            )
+            expect(@outputs).to include(
+              @private_hosted_zone_id => {
+                Value: { Ref: @private_hosted_zone_id }
+              }
+            )
+          end
         end
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

@@ -99,6 +99,16 @@ class Formatron
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
+  def instance(name:)
+    puts name
+  end
+
+  def hosted_zone_name
+  end
+
+  def kms_key
+  end
+
   def deploy
     _deploy_configuration
     _deploy_chef_server_cert unless @chef_ssl_cert.nil?

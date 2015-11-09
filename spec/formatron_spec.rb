@@ -134,6 +134,21 @@ xdescribe Formatron do
     )
   end
 
+  describe '#instance' do
+    skip 'should return the formatronfile instance matching the name' do
+    end
+  end
+
+  describe '#hosted_zone_name' do
+    skip 'should return the hosted zone name for the configuration' do
+    end
+  end
+
+  describe '#kms_key' do
+    skip 'should return the KMS key ID for the configuration' do
+    end
+  end
+
   describe '#protected?' do
     it 'should return whether the target should be protected from changes' do
       expect(@formatron.protected?).to eql @protected

@@ -5,6 +5,8 @@ class Formatron
         class Subnet
           # generates CloudFormation NAT resources
           class NAT
+            ROUTE_TABLE_PREFIX = 'routeTable'
+
             def initialize(nat:)
               @nat = nat
             end
