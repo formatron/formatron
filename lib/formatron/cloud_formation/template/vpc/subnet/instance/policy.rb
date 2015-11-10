@@ -10,15 +10,10 @@ class Formatron
             class Policy
               POLICY_PREFIX = 'policy'
 
-              def initialize(policy:)
+              def initialize(policy:, instance_guid:, kms_key:)
                 @policy = policy
-                @instance = @policy.dsl_parent
-                @subnet = @instance.dsl_parent
-                @vpc = @subnet.dsl_parent
-                @formatronfile = @vpc.dsl_parent
-                @formatron = @formatronfile.dsl_parent
-                @kms_key = @formatron.kms_key
-                @guid = @instance.guid
+                @kms_key = kms_key
+                @guid = instance_guid
                 @policy_id = "#{POLICY_PREFIX}#{@guid}"
                 @role_id = "#{Instance::ROLE_PREFIX}#{@guid}"
               end

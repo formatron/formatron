@@ -10,8 +10,20 @@ class Formatron
       before :each do
         @results = {}
         @formatronfile_instances = {}
+        hosted_zone_name = 'hosted_zone_name'
+        key_pair = 'key_pair'
+        kms_key = 'kms_key'
+        instances = 'instances'
+        hosted_zone_id = 'hosted_zone_id'
         test_instances(
           tag: :vpc,
+          args: {
+            hosted_zone_name: hosted_zone_name,
+            key_pair: key_pair,
+            kms_key: kms_key,
+            instances: instances,
+            hosted_zone_id: hosted_zone_id
+          },
           template_cls: 'Formatron::CloudFormation::Template::VPC',
           formatronfile_cls: 'Formatron::Formatronfile::VPC'
         )
@@ -19,7 +31,14 @@ class Formatron
         allow(formatronfile).to receive(:vpc) { @formatronfile_instances[:vpc] }
         allow(formatronfile).to receive(:name) { 'name' }
         stub_const('Formatron::AWS::REGIONS', 'regions')
-        @template = Template.new formatronfile: formatronfile
+        @template = Template.new(
+          formatronfile: formatronfile,
+          hosted_zone_name: hosted_zone_name,
+          key_pair: key_pair,
+          kms_key: kms_key,
+          instances: instances,
+          hosted_zone_id: hosted_zone_id
+        )
       end
 
       it 'should add the VPCs' do

@@ -26,19 +26,16 @@ class Formatron
             EPHEMERAL_PORT_END = 65_535
 
             # rubocop:disable Metrics/MethodLength
-            # rubocop:disable Metrics/AbcSize
-            def initialize(acl:)
+            def initialize(acl:, subnet_guid:, vpc_guid:, vpc_cidr:)
               @acl = acl
-              @subnet = acl.dsl_parent
-              @vpc = @subnet.dsl_parent
-              @subnet_guid = @subnet.guid
-              @vpc_guid = @vpc.guid
-              @vpc_cidr = @vpc.cidr
+              @subnet_guid = subnet_guid
+              @vpc_guid = vpc_guid
+              @vpc_cidr = vpc_cidr
               @network_acl_id = "#{NETWORK_ACL_PREFIX}#{@subnet_guid}"
               @subnet_network_acl_association_id =
                 "#{SUBNET_NETWORK_ACL_ASSOCIATION_PREFIX}#{@subnet_guid}"
-              @vpc_id = "#{VPC::PREFIX}#{@vpc_guid}"
-              @subnet_id = "#{Subnet::PREFIX}#{@subnet_guid}"
+              @vpc_id = "#{VPC::VPC_PREFIX}#{@vpc_guid}"
+              @subnet_id = "#{Subnet::SUBNET_PREFIX}#{@subnet_guid}"
               @network_acl_entry_vpc_inbound_id =
                 "#{VPC_INBOUND_NETWORK_ACL_ENTRY_PREFIX}#{@subnet_guid}"
               @network_acl_entry_external_inbound_tcp_id =
@@ -51,7 +48,6 @@ class Formatron
                 "#{OUTBOUND_NETWORK_ACL_ENTRY_PREFIX}#{@subnet_guid}"
               @source_cidrs = @acl.source_cidr
             end
-            # rubocop:enable Metrics/AbcSize
             # rubocop:enable Metrics/MethodLength
 
             def merge(resources:)

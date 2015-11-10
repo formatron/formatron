@@ -10,6 +10,15 @@ class Formatron
           include TemplateTest
 
           before :each do
+            @subnet_guid = 'subnet_guid'
+            @key_pair = 'key_pair'
+            @availability_zone = 'availability_zone'
+            @hosted_zone_name = 'hosted_zone_name'
+            @vpc_guid = 'vpc_guid'
+            @vpc_cidr = 'vpc_cidr'
+            @kms_key = 'kms_key'
+            @public_hosted_zone_id = 'public_hosted_zone_id'
+            @private_hosted_zone_id = 'private_hosted_zone_id'
             @formatronfile_subnet = instance_double(
               'Formatron::Formatronfile::VPC::Subnet'
             )
@@ -23,6 +32,17 @@ class Formatron
             }.each do |symbol, cls|
               test_instances(
                 tag: symbol,
+                args: {
+                  key_pair: @key_pair,
+                  availability_zone: @availability_zone,
+                  subnet_guid: @subnet_guid,
+                  hosted_zone_name: @hosted_zone_name,
+                  vpc_guid: @vpc_guid,
+                  vpc_cidr: @vpc_cidr,
+                  kms_key: @kms_key,
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  public_hosted_zone_id: nil
+                },
                 template_cls: 'Formatron::CloudFormation::Template' \
                               "::VPC::Subnet::#{cls}",
                 formatronfile_cls: 'Formatron::Formatronfile' \
@@ -32,17 +52,9 @@ class Formatron
                 symbol
               ) { @formatronfile_instances[symbol] }
             end
-            @formatronfile_vpc = instance_double 'Formatron::Formatronfile::VPC'
-            @vpc_guid = 'vpc_guid'
-            allow(@formatronfile_vpc).to receive(:guid) { @vpc_guid }
-            allow(@formatronfile_subnet).to receive(
-              :dsl_parent
-            ) { @formatronfile_vpc }
-            @subnet_guid = 'subnet_guid'
             allow(@formatronfile_subnet).to receive(:guid) { @subnet_guid }
             @subnet_cidr = 'subnet_cidr'
             allow(@formatronfile_subnet).to receive(:cidr) { @subnet_cidr }
-            @availability_zone = 'availability_zone'
             allow(@formatronfile_subnet).to receive(
               :availability_zone
             ) { @availability_zone }
@@ -80,13 +92,26 @@ class Formatron
               '::VPC::Subnet::ACL'
             )
             allow(template_acl_class).to receive(:new).with(
-              acl: formatronfile_acl
+              acl: formatronfile_acl,
+              subnet_guid: @subnet_guid,
+              vpc_guid: @vpc_guid,
+              vpc_cidr: @vpc_cidr
             ) { template_acl }
             allow(template_acl).to receive(:merge) do |resources:|
               resources[:acl] = @acl
             end
             allow(@formatronfile_subnet).to receive(:acl) { formatronfile_acl }
-            @template_subnet = Subnet.new subnet: @formatronfile_subnet
+            @template_subnet = Subnet.new(
+              subnet: @formatronfile_subnet,
+              vpc_guid: @vpc_guid,
+              vpc_cidr: @vpc_cidr,
+              key_pair: @key_pair,
+              hosted_zone_name: @hosted_zone_name,
+              kms_key: @kms_key,
+              instances: [],
+              public_hosted_zone_id: @public_hosted_zone_id,
+              private_hosted_zone_id: @private_hosted_zone_id
+            )
           end
 
           describe '#merge' do
@@ -130,19 +155,43 @@ class Formatron
               before :each do
                 @resources = {}
                 @outputs = {}
-                formatronfile = instance_double 'Formatron::Formatronfile'
-                allow(@formatronfile_vpc).to receive(
-                  :dsl_parent
-                ) { formatronfile }
-                formatron = instance_double 'Formatron'
-                allow(formatronfile).to receive(:dsl_parent) { formatron }
+                @results = {}
+                @formatronfile_instances = {}
+                {
+                  nat: 'NAT',
+                  bastion: 'Bastion',
+                  chef_server: 'ChefServer',
+                  instance: 'Instance'
+                }.each do |symbol, cls|
+                  test_instances(
+                    tag: symbol,
+                    args: {
+                      key_pair: @key_pair,
+                      availability_zone: @availability_zone,
+                      subnet_guid: @subnet_guid,
+                      hosted_zone_name: @hosted_zone_name,
+                      vpc_guid: @vpc_guid,
+                      vpc_cidr: @vpc_cidr,
+                      kms_key: @kms_key,
+                      private_hosted_zone_id: @private_hosted_zone_id,
+                      public_hosted_zone_id: @public_hosted_zone_id
+                    },
+                    template_cls: 'Formatron::CloudFormation::Template' \
+                                  "::VPC::Subnet::#{cls}",
+                    formatronfile_cls: 'Formatron::Formatronfile' \
+                                       "::VPC::Subnet::#{cls}"
+                  )
+                  allow(@formatronfile_subnet).to receive(
+                    symbol
+                  ) { @formatronfile_instances[symbol] }
+                end
                 gateway = 'gateway'
                 gateway_instance = instance_double(
                   'Formatron::Formatronfile::VPC::Subnet::NAT'
                 )
-                allow(formatron).to receive(:instance).with(
-                  name: gateway
-                ) { gateway_instance }
+                instances = {
+                  gateway => gateway_instance
+                }
                 gateway_guid = 'gateway_guid'
                 allow(gateway_instance).to receive(:guid) { gateway_guid }
                 allow(@formatronfile_subnet).to receive(
@@ -167,7 +216,17 @@ class Formatron
                   route_table: private_route_table_id,
                   subnet: @logical_id
                 ) { @private_subnet_route_table_association }
-                @template_subnet = Subnet.new subnet: @formatronfile_subnet
+                @template_subnet = Subnet.new(
+                  subnet: @formatronfile_subnet,
+                  vpc_guid: @vpc_guid,
+                  vpc_cidr: @vpc_cidr,
+                  key_pair: @key_pair,
+                  hosted_zone_name: @hosted_zone_name,
+                  kms_key: @kms_key,
+                  instances: instances,
+                  public_hosted_zone_id: @public_hosted_zone_id,
+                  private_hosted_zone_id: @private_hosted_zone_id
+                )
                 @template_subnet.merge resources: @resources, outputs: @outputs
               end
 

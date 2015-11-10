@@ -11,17 +11,18 @@ class Formatron
               SECURITY_GROUP_PREFIX = 'securityGroup'
 
               # rubocop:disable Metrics/MethodLength
-              def initialize(security_group:)
+              def initialize(
+                security_group:,
+                instance_guid:,
+                vpc_guid:,
+                vpc_cidr:
+              )
                 @security_group = security_group
-                @instance = @security_group.dsl_parent
-                @key = @instance.dsl_key
-                @subnet = @instance.dsl_parent
-                @vpc = @subnet.dsl_parent
-                @vpc_guid = @vpc.guid
-                @cidr = @vpc.cidr
-                @guid = @instance.guid
+                @vpc_guid = vpc_guid
+                @cidr = vpc_cidr
+                @guid = instance_guid
                 @security_group_id = "#{SECURITY_GROUP_PREFIX}#{@guid}"
-                @vpc_id = "#{VPC::PREFIX}#{@vpc_guid}"
+                @vpc_id = "#{VPC::VPC_PREFIX}#{@vpc_guid}"
                 @open_tcp_ports = @security_group.open_tcp_port
                 @open_udp_ports = @security_group.open_udp_port
               end
@@ -30,7 +31,7 @@ class Formatron
               # rubocop:disable Metrics/MethodLength
               def merge(resources:)
                 resources[@security_group_id] = Resources::EC2.security_group(
-                  group_description: "#{@key} security group",
+                  group_description: 'Formatron instance security group',
                   vpc: @vpc_id,
                   egress: _base_egress_rules,
                   ingress: _base_ingress_rules.concat(

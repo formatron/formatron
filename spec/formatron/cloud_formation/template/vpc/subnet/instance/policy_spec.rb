@@ -6,48 +6,16 @@ class Formatron
     class Template
       class VPC
         class Subnet
-          # rubocop:disable Metrics/ClassLength
+          # namespacing for tests
           class Instance
             describe Policy do
               describe '#merge' do
                 before :each do
-                  formatron = instance_double(
-                    'Formatron'
-                  )
                   kms_key = 'kms_key'
-                  allow(formatron).to receive(:kms_key) { kms_key }
-                  formatronfile = instance_double(
-                    'Formatron::Formatronfile'
-                  )
-                  allow(formatronfile).to receive(
-                    :dsl_parent
-                  ) { formatron }
-                  formatronfile_vpc = instance_double(
-                    'Formatron::Formatronfile::VPC'
-                  )
-                  allow(formatronfile_vpc).to receive(
-                    :dsl_parent
-                  ) { formatronfile }
-                  formatronfile_subnet = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet'
-                  )
-                  allow(formatronfile_subnet).to receive(
-                    :dsl_parent
-                  ) { formatronfile_vpc }
-                  formatronfile_instance = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet::Instance'
-                  )
-                  allow(formatronfile_instance).to receive(
-                    :dsl_parent
-                  ) { formatronfile_subnet }
                   guid = 'guid'
-                  allow(formatronfile_instance).to receive(:guid) { guid }
                   formatronfile_policy = instance_double(
                     'Formatron::Formatronfile::VPC::Subnet::Instance::Policy'
                   )
-                  allow(formatronfile_policy).to receive(
-                    :dsl_parent
-                  ) { formatronfile_instance }
 
                   statements = [{
                     actions: %w(kms:Decrypt kms:Encrypt kms:GenerateDataKey*),
@@ -104,7 +72,9 @@ class Formatron
                   ) { @policy }
 
                   template_policy = Policy.new(
-                    policy: formatronfile_policy
+                    policy: formatronfile_policy,
+                    instance_guid: guid,
+                    kms_key: kms_key
                   )
                   @resources = {}
                   template_policy.merge resources: @resources
@@ -118,7 +88,6 @@ class Formatron
               end
             end
           end
-          # rubocop:enable Metrics/ClassLength
         end
       end
     end

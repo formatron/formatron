@@ -11,55 +11,27 @@ class Formatron
             describe '#merge' do
               before :each do
                 key_pair = 'key_pair'
-                formatronfile_ec2 = instance_double(
-                  'Formatron::Formatronfile::Global::EC2'
-                )
-                allow(formatronfile_ec2).to receive(
-                  :key_pair
-                ) { key_pair }
-                formatronfile_global = instance_double(
-                  'Formatron::Formatronfile::Global'
-                )
-                allow(formatronfile_global).to receive(
-                  :ec2
-                ) { formatronfile_ec2 }
-                formatron = instance_double(
-                  'Formatron'
-                )
-                formatronfile = instance_double(
-                  'Formatron::Formatronfile'
-                )
-                allow(formatronfile).to receive(
-                  :dsl_parent
-                ) { formatron }
-                allow(formatronfile).to receive(
-                  :global
-                ) { formatronfile_global }
-                formatronfile_vpc = instance_double(
-                  'Formatron::Formatronfile::VPC'
-                )
-                allow(formatronfile_vpc).to receive(
-                  :dsl_parent
-                ) { formatronfile }
-                formatronfile_subnet = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet'
-                )
-                allow(formatronfile_subnet).to receive(
-                  :dsl_parent
-                ) { formatronfile_vpc }
+                guid = 'guid'
+                vpc_guid = 'vpc_guid'
+                vpc_cidr = 'vpc_cidr'
+                kms_key = 'kms_key'
+                private_hosted_zone_id = 'private_hosted_zone_id'
+                public_hosted_zone_id = 'public_hosted_zone_id'
                 formatronfile_instance = instance_double(
                   'Formatron::Formatronfile::VPC::Subnet::Instance'
                 )
-                allow(formatronfile_instance).to receive(
-                  :dsl_parent
-                ) { formatronfile_subnet }
-                guid = 'guid'
                 allow(formatronfile_instance).to receive(:guid) { guid }
                 iam = class_double(
                   'Formatron::CloudFormation::Resources::IAM'
                 ).as_stubbed_const
                 ec2 = class_double(
                   'Formatron::CloudFormation::Resources::EC2'
+                ).as_stubbed_const
+                cloud_formation = class_double(
+                  'Formatron::CloudFormation::Resources::CloudFormation'
+                ).as_stubbed_const
+                route53 = class_double(
+                  'Formatron::CloudFormation::Resources::Route53'
                 ).as_stubbed_const
 
                 @role_id = "role#{guid}"
@@ -92,7 +64,9 @@ class Formatron
                   '::VPC::Subnet::Instance::Policy'
                 ).as_stubbed_const
                 allow(template_policy_class).to receive(:new).with(
-                  policy: formatronfile_policy
+                  policy: formatronfile_policy,
+                  instance_guid: guid,
+                  kms_key: kms_key
                 ) { template_policy }
                 allow(template_policy).to receive(:merge) do |resources:|
                   resources[@policy_id] = @policy
@@ -116,8 +90,17 @@ class Formatron
                   'Formatron::CloudFormation::Template' \
                   '::VPC::Subnet::Instance::SecurityGroup'
                 ).as_stubbed_const
+                stub_const(
+                  'Formatron::CloudFormation::Template' \
+                  '::VPC::Subnet::Instance::SecurityGroup' \
+                  '::SECURITY_GROUP_PREFIX',
+                  'securityGroup'
+                )
                 allow(template_security_group_class).to receive(:new).with(
-                  security_group: formatronfile_security_group
+                  security_group: formatronfile_security_group,
+                  instance_guid: guid,
+                  vpc_guid: vpc_guid,
+                  vpc_cidr: vpc_cidr
                 ) { template_security_group }
                 allow(template_security_group).to receive(
                   :merge
@@ -127,9 +110,29 @@ class Formatron
 
                 @wait_condition_handle_id = "waitConditionHandle#{guid}"
                 @wait_condition_handle = 'wait_condition_handle'
+                allow(cloud_formation).to receive(:wait_condition_handle).with(
+                  no_args
+                ) { @wait_condition_handle }
 
-                setup = 'setup'
-                allow(formatronfile_instance).to receive(:setup) { setup }
+                template_setup = instance_double(
+                  'Formatron::CloudFormation::Template' \
+                  '::VPC::Subnet::Instance::Setup'
+                )
+                @setup = 'setup'
+                allow(template_setup).to receive(:merge) do |instance:|
+                  instance[:setup] = @setup
+                end
+                template_setup_class = class_double(
+                  'Formatron::CloudFormation::Template' \
+                  '::VPC::Subnet::Instance::Setup'
+                ).as_stubbed_const
+                formatronfile_setup = 'formatronfile_setup'
+                allow(template_setup_class).to receive(:new).with(
+                  setup: formatronfile_setup
+                ) { template_setup }
+                allow(formatronfile_instance).to receive(
+                  :setup
+                ) { formatronfile_setup }
                 sub_domain = 'sub_domain'
                 allow(formatronfile_instance).to receive(
                   :sub_domain
@@ -143,22 +146,12 @@ class Formatron
                   :instance_type
                 ) { instance_type }
                 availability_zone = 'availability_zone'
-                allow(formatronfile_subnet).to receive(
-                  :availability_zone
-                ) { availability_zone }
                 subnet_guid = 'subnet_guid'
-                allow(formatronfile_subnet).to receive(
-                  :guid
-                ) { subnet_guid }
                 subnet_id = "subnet#{subnet_guid}"
                 hosted_zone_name = 'hosted_zone_name'
-                allow(formatron).to receive(
-                  :hosted_zone_name
-                ) { hosted_zone_name }
                 @instance_id = "instance#{guid}"
                 @instance = 'instance'
                 allow(ec2).to receive(:instance).with(
-                  setup: setup,
                   instance_profile: @instance_profile_id,
                   availability_zone: availability_zone,
                   instance_type: instance_type,
@@ -169,10 +162,50 @@ class Formatron
                   security_group: @security_group_id,
                   logical_id: @instance_id,
                   source_dest_check: source_dest_check
-                ) { @instance }
+                ) do
+                  {
+                    instance: @instance
+                  }
+                end
+
+                @wait_condition_id = "waitCondition#{guid}"
+                @wait_condition = 'wait_condition'
+                allow(cloud_formation).to receive(:wait_condition).with(
+                  wait_condition_handle: @wait_condition_handle_id,
+                  instance: @instance_id
+                ) { @wait_condition }
+
+                @private_record_set_id = "privateRecordSet#{guid}"
+                @private_record_set = 'private_record_set'
+                allow(route53).to receive(:record_set).with(
+                  hosted_zone_id: private_hosted_zone_id,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: hosted_zone_name,
+                  instance: @instance_id,
+                  attribute: 'PrivateIp'
+                ) { @private_record_set }
+
+                @public_record_set_id = "publicRecordSet#{guid}"
+                @public_record_set = 'public_record_set'
+                allow(route53).to receive(:record_set).with(
+                  hosted_zone_id: public_hosted_zone_id,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: hosted_zone_name,
+                  instance: @instance_id,
+                  attribute: 'PublicIp'
+                ) { @public_record_set }
 
                 template_instance = Instance.new(
-                  instance: formatronfile_instance
+                  instance: formatronfile_instance,
+                  key_pair: key_pair,
+                  availability_zone: availability_zone,
+                  subnet_guid: subnet_guid,
+                  hosted_zone_name: hosted_zone_name,
+                  vpc_guid: vpc_guid,
+                  vpc_cidr: vpc_cidr,
+                  kms_key: kms_key,
+                  private_hosted_zone_id: private_hosted_zone_id,
+                  public_hosted_zone_id: public_hosted_zone_id
                 )
                 @resources = {}
                 @outputs = {}
@@ -203,9 +236,41 @@ class Formatron
                 )
               end
 
-              it 'should add an instance' do
+              it 'should add a wait condition handle' do
                 expect(@resources).to include(
-                  @instance_id => @instance
+                  @wait_condition_handle_id => @wait_condition_handle
+                )
+              end
+
+              it 'should add an instance with its setup scripts' do
+                expect(@resources).to include(
+                  @instance_id => {
+                    instance: @instance,
+                    setup: @setup
+                  }
+                )
+                expect(@outputs).to include(
+                  @instance_id => {
+                    Value: { Ref: @instance_id }
+                  }
+                )
+              end
+
+              it 'should add a wait condition' do
+                expect(@resources).to include(
+                  @wait_condition_id => @wait_condition
+                )
+              end
+
+              it 'should add a private hosted zone record set' do
+                expect(@resources).to include(
+                  @private_record_set_id => @private_record_set
+                )
+              end
+
+              it 'should add a public hosted zone record set' do
+                expect(@resources).to include(
+                  @public_record_set_id => @public_record_set
                 )
               end
             end

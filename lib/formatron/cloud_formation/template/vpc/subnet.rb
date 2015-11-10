@@ -12,26 +12,46 @@ class Formatron
       class VPC
         # generates CloudFormation subnet resources
         class Subnet
-          PREFIX = 'subnet'
+          SUBNET_PREFIX = 'subnet'
           SUBNET_ROUTE_TABLE_ASSOCIATION_PREFIX = 'subnetRouteTableAssociation'
 
           # rubocop:disable Metrics/MethodLength
-          def initialize(subnet:)
+          # rubocop:disable Metrics/ParameterLists
+          # rubocop:disable Metrics/AbcSize
+          def initialize(
+            subnet:,
+            vpc_guid:,
+            vpc_cidr:,
+            key_pair:,
+            hosted_zone_name:,
+            kms_key:,
+            instances:,
+            private_hosted_zone_id:,
+            public_hosted_zone_id:
+          )
             @subnet = subnet
-            @vpc = subnet.dsl_parent
             @guid = @subnet.guid
-            @vpc_guid = @vpc.guid
-            @subnet_id = "#{PREFIX}#{@guid}"
+            @vpc_guid = vpc_guid
+            @vpc_cidr = vpc_cidr
+            @subnet_id = "#{SUBNET_PREFIX}#{@guid}"
             @subnet_route_table_association_id =
               "#{SUBNET_ROUTE_TABLE_ASSOCIATION_PREFIX}#{@guid}"
-            @vpc_id = "#{VPC::PREFIX}#{@vpc_guid}"
+            @vpc_id = "#{VPC::VPC_PREFIX}#{@vpc_guid}"
             @public_route_table_id =
               "#{VPC::ROUTE_TABLE_PREFIX}#{@vpc_guid}"
             @gateway = @subnet.gateway
             @availability_zone = @subnet.availability_zone
             @cidr = @subnet.cidr
             @acl = @subnet.acl
+            @key_pair = key_pair
+            @hosted_zone_name = hosted_zone_name
+            @kms_key = kms_key
+            @instances = instances
+            @private_hosted_zone_id = private_hosted_zone_id
+            @public_hosted_zone_id = public_hosted_zone_id
           end
+          # rubocop:enable Metrics/AbcSize
+          # rubocop:enable Metrics/ParameterLists
           # rubocop:enable Metrics/MethodLength
 
           # rubocop:disable Metrics/MethodLength
@@ -43,7 +63,19 @@ class Formatron
               instance: Instance
             }.each do |symbol, cls|
               @subnet.send(symbol).each do |_, instance|
-                instance = cls.new symbol => instance
+                instance = cls.new(
+                  symbol => instance,
+                  key_pair: @key_pair,
+                  availability_zone: @availability_zone,
+                  subnet_guid: @guid,
+                  hosted_zone_name: @hosted_zone_name,
+                  vpc_guid: @vpc_guid,
+                  vpc_cidr: @vpc_cidr,
+                  kms_key: @kms_key,
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  public_hosted_zone_id:
+                    @gateway.nil? ? nil : @public_hosted_zone_id
+                )
                 instance.merge resources: resources, outputs: outputs
               end
             end
@@ -63,14 +95,10 @@ class Formatron
             outputs[@subnet_id] = Template.output Template.ref(@subnet_id)
           end
 
-          # rubocop:disable Metrics/MethodLength
           def _add_subnet_route_table_association(resources)
             route_table = @public_route_table_id
-            puts @gateway
             unless @gateway.nil?
-              gateway_guid = @vpc.dsl_parent.dsl_parent.instance(
-                name: @gateway
-              ).guid
+              gateway_guid = @instances[@gateway].guid
               route_table = "#{NAT::ROUTE_TABLE_PREFIX}#{gateway_guid}"
             end
             resources[@subnet_route_table_association_id] =
@@ -79,10 +107,14 @@ class Formatron
                 subnet: @subnet_id
               )
           end
-          # rubocop:enable Metrics/MethodLength
 
           def _add_acl(resources)
-            acl = ACL.new acl: @acl
+            acl = ACL.new(
+              acl: @acl,
+              subnet_guid: @guid,
+              vpc_guid: @vpc_guid,
+              vpc_cidr: @vpc_cidr
+            )
             acl.merge resources: resources
           end
 

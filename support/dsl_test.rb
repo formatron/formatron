@@ -4,18 +4,13 @@ class Formatron
     module DSLTest
       def dsl_before_block
         before :each do
-          @dsl_instance = described_class.new(
-            parent: 'parent'
-          )
+          @dsl_instance = described_class.new
         end
       end
 
       def dsl_before_hash
         before :each do
-          @dsl_instance = described_class.new(
-            parent: 'parent',
-            key: 'key'
-          )
+          @dsl_instance = described_class.new key: 'key'
         end
       end
 
@@ -39,9 +34,7 @@ class Formatron
               described_class.const_get(cls).name
             ).as_stubbed_const
             expect(sub).to receive(:test).with no_args
-            expect(cls).to receive(
-              :new
-            ).with(parent: @dsl_instance) { sub }
+            expect(cls).to receive(:new) { sub }
             expect(@dsl_instance.send(symbol)).to be_nil
             @dsl_instance.send symbol, &:test
             expect(@dsl_instance.send(symbol)).to eql(sub)
@@ -68,7 +61,6 @@ class Formatron
             subs.each do |key, sub|
               expect(sub).to receive(:test).with no_args
               expect(cls).to receive(:new).with(
-                parent: @dsl_instance,
                 key: key
               ) { sub }
               @dsl_instance.send symbol, key, &:test
@@ -106,9 +98,7 @@ class Formatron
             expect(@dsl_instance.send(symbol)).to eql([])
             subs.each do |sub|
               expect(sub).to receive(:test).with no_args
-              expect(cls).to receive(:new).with(
-                parent: @dsl_instance
-              ) { sub }
+              expect(cls).to receive(:new) { sub }
               @dsl_instance.send symbol, &:test
             end
             expect(@dsl_instance.send(symbol)).to eql(subs)

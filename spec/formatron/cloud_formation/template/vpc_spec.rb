@@ -11,18 +11,30 @@ class Formatron
         before :each do
           @results = {}
           @formatronfile_instances = {}
+          guid = 'guid'
+          @private_hosted_zone_id = "hostedZone#{guid}"
+          cidr = 'cidr'
+          key_pair = 'key_pair'
+          hosted_zone_name = 'hosted_zone_name'
+          kms_key = 'kms_key'
+          instances = 'instances'
+          hosted_zone_id = 'hosted_zone_id'
           test_instances(
             tag: :subnet,
+            args: {
+              vpc_guid: guid,
+              vpc_cidr: cidr,
+              key_pair: key_pair,
+              hosted_zone_name: hosted_zone_name,
+              kms_key: kms_key,
+              instances: instances,
+              private_hosted_zone_id: @private_hosted_zone_id,
+              public_hosted_zone_id: hosted_zone_id
+            },
             template_cls: 'Formatron::CloudFormation::Template::VPC::Subnet',
             formatronfile_cls: 'Formatron::Formatronfile::VPC::Subnet'
           )
-          formatron = instance_double 'Formatron'
-          hosted_zone_name = 'hosted_zone_name'
-          allow(formatron).to receive(:hosted_zone_name) { hosted_zone_name }
-          formatronfile = instance_double 'Formatron::Formatronfile'
-          allow(formatronfile).to receive(:dsl_parent) { formatron }
           formatronfile_vpc = instance_double 'Formatron::Formatronfile::VPC'
-          allow(formatronfile_vpc).to receive(:dsl_parent) { formatronfile }
           allow(formatronfile_vpc).to receive(
             :subnet
           ) { @formatronfile_instances[:subnet] }
@@ -32,9 +44,7 @@ class Formatron
           @route53 = class_double(
             'Formatron::CloudFormation::Resources::Route53'
           ).as_stubbed_const
-          guid = 'guid'
           allow(formatronfile_vpc).to receive(:guid) { guid }
-          cidr = 'cidr'
           allow(formatronfile_vpc).to receive(:cidr) { cidr }
           @vpc = 'vpc'
           allow(@ec2).to receive(:vpc).with(
@@ -62,13 +72,19 @@ class Formatron
             route_table: @public_route_table_id,
             internet_gateway: @internet_gateway_id
           ) { @public_route }
-          @private_hosted_zone_id = "hostedZone#{guid}"
           @private_hosted_zone = 'private_hosted_zone'
           allow(@route53).to receive(:hosted_zone).with(
             name: hosted_zone_name,
             vpc: @logical_id
           ) { @private_hosted_zone }
-          @template_vpc = VPC.new vpc: formatronfile_vpc
+          @template_vpc = VPC.new(
+            vpc: formatronfile_vpc,
+            hosted_zone_name: hosted_zone_name,
+            key_pair: key_pair,
+            kms_key: kms_key,
+            instances: instances,
+            hosted_zone_id: hosted_zone_id
+          )
         end
 
         describe '#merge' do

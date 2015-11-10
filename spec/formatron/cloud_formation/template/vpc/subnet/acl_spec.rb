@@ -13,22 +13,8 @@ class Formatron
                 formatronfile_acl = instance_double(
                   'Formatron::Formatronfile::VPC::Subnet::ACL'
                 )
-                formatronfile_subnet = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet'
-                )
-                allow(formatronfile_acl).to receive(
-                  :dsl_parent
-                ) { formatronfile_subnet }
-                formatronfile_vpc = instance_double(
-                  'Formatron::Formatronfile::VPC'
-                )
-                allow(formatronfile_subnet).to receive(
-                  :dsl_parent
-                ) { formatronfile_vpc }
                 vpc_guid = 'vpc_guid'
-                allow(formatronfile_vpc).to receive(:guid) { vpc_guid }
                 vpc_cidr = 'vpc_cidr'
-                allow(formatronfile_vpc).to receive(:cidr) { vpc_cidr }
                 ec2 = class_double(
                   'Formatron::CloudFormation::Resources::EC2'
                 ).as_stubbed_const
@@ -39,7 +25,6 @@ class Formatron
                 ) { @network_acl }
                 subnet_guid = 'subnet_guid'
                 subnet_id = "subnet#{subnet_guid}"
-                allow(formatronfile_subnet).to receive(:guid) { subnet_guid }
                 @network_acl_id = "networkAcl#{subnet_guid}"
                 @subnet_network_acl_association_id =
                   "subnetNetworkAclAssociation#{subnet_guid}"
@@ -131,7 +116,12 @@ class Formatron
                 allow(formatronfile_acl).to receive(
                   :source_cidr
                 ) { source_cidrs }
-                template_acl = ACL.new acl: formatronfile_acl
+                template_acl = ACL.new(
+                  acl: formatronfile_acl,
+                  subnet_guid: subnet_guid,
+                  vpc_guid: vpc_guid,
+                  vpc_cidr: vpc_cidr
+                )
                 template_acl.merge resources: @resources
               end
 

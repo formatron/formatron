@@ -6,8 +6,9 @@ class Formatron
   module CloudFormation
     class Template
       # generates CloudFormation VPC resources
+      # rubocop:disable Metrics/ClassLength
       class VPC
-        PREFIX = 'vpc'
+        VPC_PREFIX = 'vpc'
         INTERNET_GATEWAY_PREFIX = 'internetGateway'
         VPC_GATEWAY_ATTACHMENT_PREFIX = 'vpcGatewayAttachment'
         ROUTE_TABLE_PREFIX = 'routeTable'
@@ -15,12 +16,20 @@ class Formatron
         HOSTED_ZONE_PREFIX = 'hostedZone'
 
         # rubocop:disable Metrics/MethodLength
-        def initialize(vpc:)
+        # rubocop:disable Metrics/ParameterLists
+        def initialize(
+          vpc:,
+          hosted_zone_name:,
+          key_pair:,
+          kms_key:,
+          instances:,
+          hosted_zone_id:
+        )
           @vpc = vpc
           @cidr = vpc.cidr
           @guid = vpc.guid
-          @hosted_zone_name = vpc.dsl_parent.dsl_parent.hosted_zone_name
-          @logical_id = "#{PREFIX}#{@guid}"
+          @hosted_zone_name = hosted_zone_name
+          @logical_id = "#{VPC_PREFIX}#{@guid}"
           @internet_gateway_id = "#{INTERNET_GATEWAY_PREFIX}#{@guid}"
           @vpc_gateway_attachment_id =
             "#{VPC_GATEWAY_ATTACHMENT_PREFIX}#{@guid}"
@@ -30,12 +39,28 @@ class Formatron
             "#{ROUTE_PREFIX}#{@guid}"
           @private_hosted_zone_id =
             "#{HOSTED_ZONE_PREFIX}#{@guid}"
+          @key_pair = key_pair
+          @kms_key = kms_key
+          @instances = instances
+          @hosted_zone_id = hosted_zone_id
         end
+        # rubocop:enable Metrics/ParameterLists
         # rubocop:enable Metrics/MethodLength
 
+        # rubocop:disable Metrics/MethodLength
         def merge(resources:, outputs:)
           @vpc.subnet.each do |_, subnet|
-            template_subnet = Subnet.new subnet: subnet
+            template_subnet = Subnet.new(
+              subnet: subnet,
+              vpc_guid: @guid,
+              vpc_cidr: @cidr,
+              key_pair: @key_pair,
+              hosted_zone_name: @hosted_zone_name,
+              kms_key: @kms_key,
+              instances: @instances,
+              private_hosted_zone_id: @private_hosted_zone_id,
+              public_hosted_zone_id: @hosted_zone_id
+            )
             template_subnet.merge resources: resources, outputs: outputs
           end
           _add_vpc resources, outputs
@@ -45,6 +70,7 @@ class Formatron
           _add_route resources
           _add_private_hosted_zone resources, outputs
         end
+        # rubocop:enable Metrics/MethodLength
 
         def _add_vpc(resources, outputs)
           resources[@logical_id] = Resources::EC2.vpc cidr: @cidr
@@ -101,6 +127,7 @@ class Formatron
           :_add_private_hosted_zone
         )
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end

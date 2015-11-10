@@ -9,10 +9,30 @@ class Formatron
         class Subnet
           describe Bastion do
             before :each do
+              key_pair = 'key_pair'
+              availability_zone = 'availability_zone'
+              subnet_guid = 'subnet_guid'
+              hosted_zone_name = 'hosted_zone_name'
+              vpc_guid = 'vpc_guid'
+              vpc_cidr = 'vpc_cidr'
+              kms_key = 'kms_key'
+              private_hosted_zone_id = 'private_hosted_zone_id'
+              public_hosted_zone_id = 'public_hosted_zone_id'
               formatronfile_bastion = instance_double(
                 'Formatron::Formatronfile::VPC::Subnet::Bastion'
               )
-              @template_bastion = Bastion.new bastion: formatronfile_bastion
+              @template_bastion = Bastion.new(
+                bastion: formatronfile_bastion,
+                key_pair: key_pair,
+                availability_zone: availability_zone,
+                subnet_guid: subnet_guid,
+                hosted_zone_name: hosted_zone_name,
+                vpc_guid: vpc_guid,
+                vpc_cidr: vpc_cidr,
+                kms_key: kms_key,
+                private_hosted_zone_id: private_hosted_zone_id,
+                public_hosted_zone_id: public_hosted_zone_id
+              )
             end
 
             describe '#merge' do

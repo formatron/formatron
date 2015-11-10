@@ -14,33 +14,10 @@ class Formatron
                   guid = 'guid'
                   vpc_guid = 'vpc_guid'
                   cidr = 'cidr'
-                  formatronfile_vpc = instance_double(
-                    'Formatron::Formatronfile::VPC'
-                  )
-                  allow(formatronfile_vpc).to receive(:guid) { vpc_guid }
-                  allow(formatronfile_vpc).to receive(:cidr) { cidr }
-                  formatronfile_subnet = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet'
-                  )
-                  allow(formatronfile_subnet).to receive(
-                    :dsl_parent
-                  ) { formatronfile_vpc }
-                  formatronfile_instance = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet::Instance'
-                  )
-                  allow(formatronfile_instance).to receive(
-                    :dsl_parent
-                  ) { formatronfile_subnet }
-                  allow(formatronfile_instance).to receive(:guid) { guid }
-                  key = 'key'
-                  allow(formatronfile_instance).to receive(:dsl_key) { key }
                   formatronfile_security_group = instance_double(
                     'Formatron::Formatronfile::VPC::Subnet' \
                     '::Instance::SecurityGroup'
                   )
-                  allow(formatronfile_security_group).to receive(
-                    :dsl_parent
-                  ) { formatronfile_instance }
 
                   open_tcp_ports = []
                   open_udp_ports = []
@@ -110,7 +87,7 @@ class Formatron
                     'Formatron::CloudFormation::Resources::EC2'
                   ).as_stubbed_const
                   allow(ec2).to receive(:security_group).with(
-                    group_description: "#{key} security group",
+                    group_description: 'Formatron instance security group',
                     vpc: vpc_id,
                     egress: egress_rules,
                     ingress: ingress_rules.concat(
@@ -121,7 +98,10 @@ class Formatron
                   ) { @security_group }
 
                   template_security_group = SecurityGroup.new(
-                    security_group: formatronfile_security_group
+                    security_group: formatronfile_security_group,
+                    instance_guid: 'guid',
+                    vpc_guid: 'vpc_guid',
+                    vpc_cidr: 'cidr'
                   )
                   @resources = {}
                   template_security_group.merge resources: @resources

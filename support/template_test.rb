@@ -6,6 +6,7 @@ class Formatron
       # rubocop:disable Metrics/AbcSize
       def test_instances(
         tag:,
+        args: {},
         template_cls:,
         formatronfile_cls:
       )
@@ -18,7 +19,8 @@ class Formatron
           template_instance = instance_double template_cls
           formatronfile_instance = instance_double formatronfile_cls
           allow(template_class).to receive(:new).with(
-            tag => formatronfile_instance
+            tag => formatronfile_instance,
+            **args
           ) { template_instance }
           allow(template_instance).to receive(:merge) do |resources:, outputs:|
             resources[tag] ||= []

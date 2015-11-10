@@ -7,16 +7,39 @@ class Formatron
     class Template
       REGION_MAP = 'regionMap'
 
-      def initialize(formatronfile:)
+      # rubocop:disable Metrics/MethodLength
+      # rubocop:disable Metrics/ParameterLists
+      def initialize(
+        formatronfile:,
+        hosted_zone_name:,
+        key_pair:,
+        kms_key:,
+        instances:,
+        hosted_zone_id:
+      )
         @formatronfile = formatronfile
+        @hosted_zone_name = hosted_zone_name
+        @key_pair = key_pair
+        @kms_key = kms_key
+        @instances = instances
+        @hosted_zone_id = hosted_zone_id
       end
+      # rubocop:enable Metrics/ParameterLists
+      # rubocop:enable Metrics/MethodLength
 
       # rubocop:disable Metrics/MethodLength
       def hash
         resources = {}
         outputs = {}
         @formatronfile.vpc.each do |_, vpc|
-          template_vpc = VPC.new vpc: vpc
+          template_vpc = VPC.new(
+            vpc: vpc,
+            hosted_zone_name: @hosted_zone_name,
+            key_pair: @key_pair,
+            kms_key: @kms_key,
+            instances: @instances,
+            hosted_zone_id: @hosted_zone_id
+          )
           template_vpc.merge resources: resources, outputs: outputs
         end
         {
