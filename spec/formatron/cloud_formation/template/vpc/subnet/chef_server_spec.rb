@@ -18,11 +18,11 @@ class Formatron
               kms_key = 'kms_key'
               private_hosted_zone_id = 'private_hosted_zone_id'
               public_hosted_zone_id = 'public_hosted_zone_id'
-              formatronfile_chef_server = instance_double(
-                'Formatron::Formatronfile::VPC::Subnet::ChefServer'
+              dsl_chef_server = instance_double(
+                'Formatron::DSL::Formatron::VPC::Subnet::ChefServer'
               )
               @template_chef_server = ChefServer.new(
-                chef_server: formatronfile_chef_server,
+                chef_server: dsl_chef_server,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,

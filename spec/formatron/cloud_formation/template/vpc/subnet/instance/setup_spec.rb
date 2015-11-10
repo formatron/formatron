@@ -12,13 +12,13 @@ class Formatron
               describe '#merge' do
                 before :each do
                   @files = {}
-                  formatronfile_setup = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet' \
+                  dsl_setup = instance_double(
+                    'Formatron::DSL::Formatron::VPC::Subnet' \
                     '::Instance::Setup'
                   )
                   variables_file_content = []
-                  formatronfile_variables = {}
-                  formatronfile_scripts = []
+                  dsl_variables = {}
+                  dsl_scripts = []
                   (0..9).each do |index|
                     script = "script#{index}"
                     @files["/tmp/formatron/script-#{index}.sh"] = {
@@ -27,18 +27,18 @@ class Formatron
                       owner: 'root',
                       group: 'root'
                     }
-                    formatronfile_scripts.push script
+                    dsl_scripts.push script
                     value = "value#{index}"
                     key = "key#{index}"
                     variables_file_content.concat(["#{key}=", value, "\n"])
-                    formatronfile_variable = instance_double(
-                      'Formatron::Formatronfile::VPC::Subnet' \
+                    dsl_variable = instance_double(
+                      'Formatron::DSL::Formatron::VPC::Subnet' \
                       '::Instance::Setup::Variable'
                     )
-                    allow(formatronfile_variable).to receive(
+                    allow(dsl_variable).to receive(
                       :value
                     ) { value }
-                    formatronfile_variables[key] = formatronfile_variable
+                    dsl_variables[key] = dsl_variable
                   end
                   @files['/tmp/formatron/script-variables'] = {
                     content: { 'Fn::Join' => ['', variables_file_content] },
@@ -46,14 +46,14 @@ class Formatron
                     owner: 'root',
                     group: 'root'
                   }
-                  allow(formatronfile_setup).to receive(
+                  allow(dsl_setup).to receive(
                     :script
-                  ) { formatronfile_scripts }
-                  allow(formatronfile_setup).to receive(
+                  ) { dsl_scripts }
+                  allow(dsl_setup).to receive(
                     :variable
-                  ) { formatronfile_variables }
+                  ) { dsl_variables }
 
-                  template_setup = Setup.new setup: formatronfile_setup
+                  template_setup = Setup.new setup: dsl_setup
                   @instance = {}
                   template_setup.merge instance: @instance
                 end

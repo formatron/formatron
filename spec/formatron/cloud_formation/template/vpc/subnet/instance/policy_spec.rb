@@ -13,8 +13,8 @@ class Formatron
                 before :each do
                   kms_key = 'kms_key'
                   guid = 'guid'
-                  formatronfile_policy = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet::Instance::Policy'
+                  dsl_policy = instance_double(
+                    'Formatron::DSL::Formatron::VPC::Subnet::Instance::Policy'
                   )
 
                   statements = [{
@@ -31,7 +31,7 @@ class Formatron
                       ]
                     }]
                   }]
-                  formatronfile_statements = []
+                  dsl_statements = []
                   (0..9).each do |index|
                     actions = []
                     resources = []
@@ -43,21 +43,21 @@ class Formatron
                       actions: actions,
                       resources: resources
                     )
-                    formatronfile_statement = instance_double(
-                      'Formatron::Formatronfile::VPC:Subneti' \
+                    dsl_statement = instance_double(
+                      'Formatron::DSL::Formatron::VPC:Subneti' \
                       '::Instance::Policy::Statement'
                     )
-                    allow(formatronfile_statement).to receive(
+                    allow(dsl_statement).to receive(
                       :action
                     ) { actions }
-                    allow(formatronfile_statement).to receive(
+                    allow(dsl_statement).to receive(
                       :resource
                     ) { resources }
-                    formatronfile_statements[index] = formatronfile_statement
+                    dsl_statements[index] = dsl_statement
                   end
-                  allow(formatronfile_policy).to receive(
+                  allow(dsl_policy).to receive(
                     :statement
-                  ) { formatronfile_statements }
+                  ) { dsl_statements }
 
                   @role_id = "role#{guid}"
                   @policy_id = "policy#{guid}"
@@ -72,7 +72,7 @@ class Formatron
                   ) { @policy }
 
                   template_policy = Policy.new(
-                    policy: formatronfile_policy,
+                    policy: dsl_policy,
                     instance_guid: guid,
                     kms_key: kms_key
                   )

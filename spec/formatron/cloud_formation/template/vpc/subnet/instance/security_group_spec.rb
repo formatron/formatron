@@ -14,8 +14,8 @@ class Formatron
                   guid = 'guid'
                   vpc_guid = 'vpc_guid'
                   cidr = 'cidr'
-                  formatronfile_security_group = instance_double(
-                    'Formatron::Formatronfile::VPC::Subnet' \
+                  dsl_security_group = instance_double(
+                    'Formatron::DSL::Formatron::VPC::Subnet' \
                     '::Instance::SecurityGroup'
                   )
 
@@ -73,10 +73,10 @@ class Formatron
                     )
                     open_udp_ports[index] = open_udp_port
                   end
-                  allow(formatronfile_security_group).to receive(
+                  allow(dsl_security_group).to receive(
                     :open_tcp_port
                   ) { open_tcp_ports }
-                  allow(formatronfile_security_group).to receive(
+                  allow(dsl_security_group).to receive(
                     :open_udp_port
                   ) { open_udp_ports }
 
@@ -98,7 +98,7 @@ class Formatron
                   ) { @security_group }
 
                   template_security_group = SecurityGroup.new(
-                    security_group: formatronfile_security_group,
+                    security_group: dsl_security_group,
                     instance_guid: 'guid',
                     vpc_guid: 'vpc_guid',
                     vpc_cidr: 'cidr'

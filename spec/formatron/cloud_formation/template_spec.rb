@@ -9,7 +9,7 @@ class Formatron
 
       before :each do
         @results = {}
-        @formatronfile_instances = {}
+        @dsl_instances = {}
         hosted_zone_name = 'hosted_zone_name'
         key_pair = 'key_pair'
         kms_key = 'kms_key'
@@ -25,14 +25,14 @@ class Formatron
             hosted_zone_id: hosted_zone_id
           },
           template_cls: 'Formatron::CloudFormation::Template::VPC',
-          formatronfile_cls: 'Formatron::Formatronfile::VPC'
+          dsl_cls: 'Formatron::DSL::Formatron::VPC'
         )
-        formatronfile = instance_double 'Formatron::Formatronfile'
-        allow(formatronfile).to receive(:vpc) { @formatronfile_instances[:vpc] }
-        allow(formatronfile).to receive(:name) { 'name' }
+        formatron = instance_double 'Formatron::DSL::Formatron'
+        allow(formatron).to receive(:vpc) { @dsl_instances[:vpc] }
+        allow(formatron).to receive(:name) { 'name' }
         stub_const('Formatron::AWS::REGIONS', 'regions')
         @template = Template.new(
-          formatronfile: formatronfile,
+          formatron: formatron,
           hosted_zone_name: hosted_zone_name,
           key_pair: key_pair,
           kms_key: kms_key,

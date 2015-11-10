@@ -19,11 +19,11 @@ class Formatron
             @kms_key = 'kms_key'
             @public_hosted_zone_id = 'public_hosted_zone_id'
             @private_hosted_zone_id = 'private_hosted_zone_id'
-            @formatronfile_subnet = instance_double(
-              'Formatron::Formatronfile::VPC::Subnet'
+            @dsl_subnet = instance_double(
+              'Formatron::DSL::Formatron::VPC::Subnet'
             )
             @results = {}
-            @formatronfile_instances = {}
+            @dsl_instances = {}
             {
               nat: 'NAT',
               bastion: 'Bastion',
@@ -45,20 +45,20 @@ class Formatron
                 },
                 template_cls: 'Formatron::CloudFormation::Template' \
                               "::VPC::Subnet::#{cls}",
-                formatronfile_cls: 'Formatron::Formatronfile' \
+                dsl_cls: 'Formatron::DSL::Formatron' \
                                    "::VPC::Subnet::#{cls}"
               )
-              allow(@formatronfile_subnet).to receive(
+              allow(@dsl_subnet).to receive(
                 symbol
-              ) { @formatronfile_instances[symbol] }
+              ) { @dsl_instances[symbol] }
             end
-            allow(@formatronfile_subnet).to receive(:guid) { @subnet_guid }
+            allow(@dsl_subnet).to receive(:guid) { @subnet_guid }
             @subnet_cidr = 'subnet_cidr'
-            allow(@formatronfile_subnet).to receive(:cidr) { @subnet_cidr }
-            allow(@formatronfile_subnet).to receive(
+            allow(@dsl_subnet).to receive(:cidr) { @subnet_cidr }
+            allow(@dsl_subnet).to receive(
               :availability_zone
             ) { @availability_zone }
-            allow(@formatronfile_subnet).to receive(
+            allow(@dsl_subnet).to receive(
               :gateway
             ) { nil }
             @subnet = 'subnet'
@@ -81,7 +81,7 @@ class Formatron
               subnet: @logical_id
             ) { @subnet_route_table_association }
             @acl = 'acl'
-            formatronfile_acl = instance_double 'Formatron::Formatronfile' \
+            dsl_acl = instance_double 'Formatron::DSL::Formatron' \
                                                  '::VPC::Subnet::ACL'
             template_acl_class = class_double(
               'Formatron::CloudFormation::Template' \
@@ -92,7 +92,7 @@ class Formatron
               '::VPC::Subnet::ACL'
             )
             allow(template_acl_class).to receive(:new).with(
-              acl: formatronfile_acl,
+              acl: dsl_acl,
               subnet_guid: @subnet_guid,
               vpc_guid: @vpc_guid,
               vpc_cidr: @vpc_cidr
@@ -100,9 +100,9 @@ class Formatron
             allow(template_acl).to receive(:merge) do |resources:|
               resources[:acl] = @acl
             end
-            allow(@formatronfile_subnet).to receive(:acl) { formatronfile_acl }
+            allow(@dsl_subnet).to receive(:acl) { dsl_acl }
             @template_subnet = Subnet.new(
-              subnet: @formatronfile_subnet,
+              subnet: @dsl_subnet,
               vpc_guid: @vpc_guid,
               vpc_cidr: @vpc_cidr,
               key_pair: @key_pair,
@@ -156,7 +156,7 @@ class Formatron
                 @resources = {}
                 @outputs = {}
                 @results = {}
-                @formatronfile_instances = {}
+                @dsl_instances = {}
                 {
                   nat: 'NAT',
                   bastion: 'Bastion',
@@ -178,23 +178,23 @@ class Formatron
                     },
                     template_cls: 'Formatron::CloudFormation::Template' \
                                   "::VPC::Subnet::#{cls}",
-                    formatronfile_cls: 'Formatron::Formatronfile' \
+                    dsl_cls: 'Formatron::DSL::Formatron' \
                                        "::VPC::Subnet::#{cls}"
                   )
-                  allow(@formatronfile_subnet).to receive(
+                  allow(@dsl_subnet).to receive(
                     symbol
-                  ) { @formatronfile_instances[symbol] }
+                  ) { @dsl_instances[symbol] }
                 end
                 gateway = 'gateway'
                 gateway_instance = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet::NAT'
+                  'Formatron::DSL::Formatron::VPC::Subnet::NAT'
                 )
                 instances = {
                   gateway => gateway_instance
                 }
                 gateway_guid = 'gateway_guid'
                 allow(gateway_instance).to receive(:guid) { gateway_guid }
-                allow(@formatronfile_subnet).to receive(
+                allow(@dsl_subnet).to receive(
                   :gateway
                 ) { gateway }
                 @private_subnet = 'private_subnet'
@@ -217,7 +217,7 @@ class Formatron
                   subnet: @logical_id
                 ) { @private_subnet_route_table_association }
                 @template_subnet = Subnet.new(
-                  subnet: @formatronfile_subnet,
+                  subnet: @dsl_subnet,
                   vpc_guid: @vpc_guid,
                   vpc_cidr: @vpc_cidr,
                   key_pair: @key_pair,

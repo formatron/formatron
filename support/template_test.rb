@@ -8,18 +8,18 @@ class Formatron
         tag:,
         args: {},
         template_cls:,
-        formatronfile_cls:
+        dsl_cls:
       )
         @results[tag] = []
-        @formatronfile_instances[tag] = {}
+        @dsl_instances[tag] = {}
         template_class = class_double(template_cls).as_stubbed_const
         (0..9).each do |index|
           value = "#{tag}#{index}"
           @results[tag][index] = value
           template_instance = instance_double template_cls
-          formatronfile_instance = instance_double formatronfile_cls
+          dsl_instance = instance_double dsl_cls
           allow(template_class).to receive(:new).with(
-            tag => formatronfile_instance,
+            tag => dsl_instance,
             **args
           ) { template_instance }
           allow(template_instance).to receive(:merge) do |resources:, outputs:|
@@ -28,8 +28,8 @@ class Formatron
             outputs[tag] ||= []
             outputs[tag][index] = value
           end
-          @formatronfile_instances[tag][value] =
-            formatronfile_instance
+          @dsl_instances[tag][value] =
+            dsl_instance
         end
       end
       # rubocop:enable Metrics/AbcSize

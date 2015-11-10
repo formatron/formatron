@@ -10,14 +10,14 @@ class Formatron
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/ParameterLists
       def initialize(
-        formatronfile:,
+        formatron:,
         hosted_zone_name:,
         key_pair:,
         kms_key:,
         instances:,
         hosted_zone_id:
       )
-        @formatronfile = formatronfile
+        @formatron = formatron
         @hosted_zone_name = hosted_zone_name
         @key_pair = key_pair
         @kms_key = kms_key
@@ -31,7 +31,7 @@ class Formatron
       def hash
         resources = {}
         outputs = {}
-        @formatronfile.vpc.each do |_, vpc|
+        @formatron.vpc.each do |_, vpc|
           template_vpc = VPC.new(
             vpc: vpc,
             hosted_zone_name: @hosted_zone_name,
@@ -44,7 +44,7 @@ class Formatron
         end
         {
           AWSTemplateFormatVersion: '2010-09-09',
-          Description: "Formatron stack: #{@formatronfile.name}",
+          Description: "Formatron stack: #{@formatron.name}",
           Mappings: {
             REGION_MAP => AWS::REGIONS
           },

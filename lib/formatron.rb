@@ -1,12 +1,11 @@
 require 'formatron/aws'
 require 'formatron/config'
-require 'formatron/formatronfile'
+require 'formatron/dsl'
 require 'formatron/s3/configuration'
 require 'formatron/s3/chef_server_cert'
 require 'formatron/s3/chef_server_keys'
 require 'formatron/s3/cloud_formation_template'
 require 'formatron/cloud_formation'
-require 'formatron/cloud_formation/bootstrap_template'
 require 'formatron/chef'
 require 'formatron/logger'
 
@@ -26,18 +25,13 @@ class Formatron
       directory: directory,
       target: target
     )
-    @formatronfile = Formatronfile.new parent: self
-    # rubocop:disable Lint/Eval
-    block = eval <<-EOH
-      lambda do |formatron, config, target|
-        #{File.read File.join(directory, FORMATRONFILE)}
-      end
-    EOH
-    # rubocop:enable Lint/Eval
-    block.call @formatronfile, @config, @target
-    @name = @formatronfile.name
-    @bucket = @formatronfile.bucket
-    _initialize_from_bootstrap unless @formatronfile.bootstrap.nil?
+    @dsl = DSL.new(
+      file: File.join(directory, FORMATRONFILE),
+      config: @config,
+      target: @target
+    )
+    @name = @dsl.formatron.name
+    @bucket = @dsl.formatron.bucket
   end
   # rubocop:enable Metrics/MethodLength
 
@@ -98,16 +92,6 @@ class Formatron
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
-
-  def instance(name:)
-    puts name
-  end
-
-  def hosted_zone_name
-  end
-
-  def kms_key
-  end
 
   def deploy
     _deploy_configuration

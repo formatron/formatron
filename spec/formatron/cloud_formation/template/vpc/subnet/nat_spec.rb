@@ -18,11 +18,11 @@ class Formatron
               kms_key = 'kms_key'
               private_hosted_zone_id = 'private_hosted_zone_id'
               public_hosted_zone_id = 'public_hosted_zone_id'
-              formatronfile_nat = instance_double(
-                'Formatron::Formatronfile::VPC::Subnet::NAT'
+              dsl_nat = instance_double(
+                'Formatron::DSL::Formatron::VPC::Subnet::NAT'
               )
               @template_nat = NAT.new(
-                nat: formatronfile_nat,
+                nat: dsl_nat,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,

@@ -17,10 +17,10 @@ class Formatron
                 kms_key = 'kms_key'
                 private_hosted_zone_id = 'private_hosted_zone_id'
                 public_hosted_zone_id = 'public_hosted_zone_id'
-                formatronfile_instance = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet::Instance'
+                dsl_instance = instance_double(
+                  'Formatron::DSL::Formatron::VPC::Subnet::Instance'
                 )
-                allow(formatronfile_instance).to receive(:guid) { guid }
+                allow(dsl_instance).to receive(:guid) { guid }
                 iam = class_double(
                   'Formatron::CloudFormation::Resources::IAM'
                 ).as_stubbed_const
@@ -46,12 +46,12 @@ class Formatron
                   role: @role_id
                 ) { @instance_profile }
 
-                formatronfile_policy = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet::Instance::Policy'
+                dsl_policy = instance_double(
+                  'Formatron::DSL::Formatron::VPC::Subnet::Instance::Policy'
                 )
-                allow(formatronfile_instance).to receive(
+                allow(dsl_instance).to receive(
                   :policy
-                ) { formatronfile_policy }
+                ) { dsl_policy }
 
                 @policy_id = "policy#{guid}"
                 @policy = 'policy'
@@ -64,7 +64,7 @@ class Formatron
                   '::VPC::Subnet::Instance::Policy'
                 ).as_stubbed_const
                 allow(template_policy_class).to receive(:new).with(
-                  policy: formatronfile_policy,
+                  policy: dsl_policy,
                   instance_guid: guid,
                   kms_key: kms_key
                 ) { template_policy }
@@ -72,13 +72,13 @@ class Formatron
                   resources[@policy_id] = @policy
                 end
 
-                formatronfile_security_group = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet' \
+                dsl_security_group = instance_double(
+                  'Formatron::DSL::Formatron::VPC::Subnet' \
                   '::Instance::SecurityGroup'
                 )
-                allow(formatronfile_instance).to receive(
+                allow(dsl_instance).to receive(
                   :security_group
-                ) { formatronfile_security_group }
+                ) { dsl_security_group }
 
                 @security_group_id = "securityGroup#{guid}"
                 @security_group = 'security_group'
@@ -97,7 +97,7 @@ class Formatron
                   'securityGroup'
                 )
                 allow(template_security_group_class).to receive(:new).with(
-                  security_group: formatronfile_security_group,
+                  security_group: dsl_security_group,
                   instance_guid: guid,
                   vpc_guid: vpc_guid,
                   vpc_cidr: vpc_cidr
@@ -126,23 +126,23 @@ class Formatron
                   'Formatron::CloudFormation::Template' \
                   '::VPC::Subnet::Instance::Setup'
                 ).as_stubbed_const
-                formatronfile_setup = 'formatronfile_setup'
+                dsl_setup = 'dsl_setup'
                 allow(template_setup_class).to receive(:new).with(
-                  setup: formatronfile_setup
+                  setup: dsl_setup
                 ) { template_setup }
-                allow(formatronfile_instance).to receive(
+                allow(dsl_instance).to receive(
                   :setup
-                ) { formatronfile_setup }
+                ) { dsl_setup }
                 sub_domain = 'sub_domain'
-                allow(formatronfile_instance).to receive(
+                allow(dsl_instance).to receive(
                   :sub_domain
                 ) { sub_domain }
                 source_dest_check = 'source_dest_check'
-                allow(formatronfile_instance).to receive(
+                allow(dsl_instance).to receive(
                   :source_dest_check
                 ) { source_dest_check }
                 instance_type = 'instance_type'
-                allow(formatronfile_instance).to receive(
+                allow(dsl_instance).to receive(
                   :instance_type
                 ) { instance_type }
                 availability_zone = 'availability_zone'
@@ -196,7 +196,7 @@ class Formatron
                 ) { @public_record_set }
 
                 template_instance = Instance.new(
-                  instance: formatronfile_instance,
+                  instance: dsl_instance,
                   key_pair: key_pair,
                   availability_zone: availability_zone,
                   subnet_guid: subnet_guid,

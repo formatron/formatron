@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'formatron'
 
-xdescribe Formatron do
+describe Formatron do
   before(:each) do
     @directory = 'test/directory'
     @credentials = 'test/credentials'
@@ -132,21 +132,6 @@ xdescribe Formatron do
       ssl_cert_key: @ssl_cert_key,
       ssl_key_key: @ssl_key_key
     )
-  end
-
-  describe '#instance' do
-    skip 'should return the formatronfile instance matching the name' do
-    end
-  end
-
-  describe '#hosted_zone_name' do
-    skip 'should return the hosted zone name for the configuration' do
-    end
-  end
-
-  describe '#kms_key' do
-    skip 'should return the KMS key ID for the configuration' do
-    end
   end
 
   describe '#protected?' do

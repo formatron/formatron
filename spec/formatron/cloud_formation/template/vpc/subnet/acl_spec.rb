@@ -10,8 +10,8 @@ class Formatron
           describe ACL do
             describe '#merge' do
               before :each do
-                formatronfile_acl = instance_double(
-                  'Formatron::Formatronfile::VPC::Subnet::ACL'
+                dsl_acl = instance_double(
+                  'Formatron::DSL::Formatron::VPC::Subnet::ACL'
                 )
                 vpc_guid = 'vpc_guid'
                 vpc_cidr = 'vpc_cidr'
@@ -113,11 +113,11 @@ class Formatron
                     number: 500 + index
                   ) { network_acl_entry_external_inbound }
                 end
-                allow(formatronfile_acl).to receive(
+                allow(dsl_acl).to receive(
                   :source_cidr
                 ) { source_cidrs }
                 template_acl = ACL.new(
-                  acl: formatronfile_acl,
+                  acl: dsl_acl,
                   subnet_guid: subnet_guid,
                   vpc_guid: vpc_guid,
                   vpc_cidr: vpc_cidr

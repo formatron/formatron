@@ -18,11 +18,11 @@ class Formatron
               kms_key = 'kms_key'
               private_hosted_zone_id = 'private_hosted_zone_id'
               public_hosted_zone_id = 'public_hosted_zone_id'
-              formatronfile_bastion = instance_double(
-                'Formatron::Formatronfile::VPC::Subnet::Bastion'
+              dsl_bastion = instance_double(
+                'Formatron::DSL::Formatron::VPC::Subnet::Bastion'
               )
               @template_bastion = Bastion.new(
-                bastion: formatronfile_bastion,
+                bastion: dsl_bastion,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
