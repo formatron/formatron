@@ -6,14 +6,9 @@ describe Formatron do
     @directory = 'test/directory'
     @credentials = 'test/credentials'
     @target = 'target'
-    @kms_key = 'kms_key'
-    @name = 'name'
-    @bucket = 'bucket'
-    @protected = 'protected'
     @config = 'config'
     @file = File.join @directory, 'Formatronfile'
     @cloud_formation_template = 'cloud_formation_template'
-    @hosted_zone_id = 'hosted_zone_id'
     @hosted_zone_name = 'hosted_zone_name'
     @config_key = 'config_key'
     @user_pem_key = 'user_pem_key'
@@ -22,6 +17,141 @@ describe Formatron do
     @ssl_key_key = 'ssl_key_key'
     @chef_ssl_cert = 'chef_ssl_cert'
     @chef_ssl_key = 'chef_ssl_key'
+
+    dsl = instance_double 'Formatron::DSL'
+    @dsl_class = class_double(
+      'Formatron::DSL'
+    ).as_stubbed_const
+    allow(@dsl_class).to receive(:new).with(
+      file: @file,
+      target: @target,
+      config: @config
+    ) { dsl }
+
+    @dsl_formatron = instance_double 'Formatron::DSL::Formatron'
+    allow(dsl).to receive(:formatron) { @dsl_formatron }
+    @name = 'name'
+    allow(@dsl_formatron).to receive(:name).with(no_args) { @name }
+    @bucket = 'bucket'
+    allow(@dsl_formatron).to receive(:bucket).with(no_args) { @bucket }
+
+    global = instance_double 'Formatron::DSL::Formatron::Global'
+    allow(@dsl_formatron).to receive(:global).with(no_args) { global }
+    @protect = 'protect'
+    allow(global).to receive(:protect).with(no_args) { @protect }
+    @kms_key = 'kms_key'
+    allow(global).to receive(:kms_key).with(no_args) { @kms_key }
+    @hosted_zone_id = 'hosted_zone_id'
+    allow(global).to receive(:hosted_zone_id).with(no_args) { @hosted_zone_id }
+
+    ec2 = instance_double 'Formatron::DSL::Formatron::Global::EC2'
+    allow(global).to receive(:ec2).with(no_args) { ec2 }
+    @key_pair = 'key_pair'
+    allow(ec2).to receive(:key_pair).with(no_args) { @key_pair }
+    @private_key = 'private_key'
+    allow(ec2).to receive(:private_key).with(no_args) { @private_key }
+
+    vpcs = {}
+    @all_instances = {}
+    (0..2).each do |vpc_index|
+      vpc_key = "vpc#{vpc_index}"
+      vpc = instance_double 'Formatron::DSL::Formatron::VPC'
+      vpcs[vpc_key] = vpc
+      subnets = {}
+      (0..2).each do |subnet_index|
+        subnet_index = "#{vpc_index}_#{subnet_index}"
+        subnet_key = "subnet#{subnet_index}"
+        subnet = instance_double 'Formatron::DSL::Formatron::VPC::Subnet'
+        subnets[subnet_key] = subnet
+        chef_servers = {}
+        (0..2).each do |chef_server_index|
+          chef_server_index = "#{subnet_index}_#{chef_server_index}"
+          chef_server_key = "chef_server#{chef_server_index}"
+          chef_server = instance_double 'Formatron::DSL::Formatron::VPC' \
+                                        '::Subnet::ChefServer'
+          chef_servers[chef_server_key] = chef_server
+          allow(chef_server).to receive(:username).with(
+            no_args
+          ) { "chef_server_username#{chef_server_index}" }
+          allow(chef_server).to receive(:ssl_verify).with(
+            no_args
+          ) { "chef_server_ssl_verify#{chef_server_index}" }
+          allow(chef_server).to receive(:sub_domain).with(
+            no_args
+          ) { "chef_server_sub_domain#{chef_server_index}" }
+
+          organization = instance_double 'Formatron::DSL::Formatron::VPC' \
+                                         '::Subnet::ChefServer::Organization'
+          allow(chef_server).to receive(:organization).with(
+            no_args
+          ) { organization }
+          allow(organization).to receive(:short_name).with(
+            no_args
+          ) { "organization#{chef_server_index}" }
+        end
+        @all_instances.merge! chef_servers
+        allow(subnet).to receive(:chef_server).with(no_args) { chef_servers }
+        bastions = {}
+        (0..2).each do |bastion_index|
+          bastion_index = "#{subnet_index}_#{bastion_index}"
+          bastion_key = "bastion#{bastion_index}"
+          bastion = instance_double 'Formatron::DSL::Formatron::VPC' \
+                                    '::Subnet::Bastion'
+          bastions[bastion_key] = bastion
+          bastion_sub_domain = "bastion_sub_domain#{bastion_index}"
+          @bastion_sub_domain ||= bastion_sub_domain
+          allow(bastion).to receive(:sub_domain).with(
+            no_args
+          ) { bastion_sub_domain }
+        end
+        @all_instances.merge! bastions
+        allow(subnet).to receive(:bastion).with(no_args) { bastions }
+        nats = {}
+        (0..2).each do |nat_index|
+          nat_index = "#{subnet_index}_#{nat_index}"
+          nat_key = "nat#{nat_index}"
+          nat = instance_double 'Formatron::DSL::Formatron::VPC' \
+                                '::Subnet::NAT'
+          nats[nat_key] = nat
+        end
+        @all_instances.merge! nats
+        allow(subnet).to receive(:nat).with(no_args) { nats }
+        instances = {}
+        (0..2).each do |instance_index|
+          instance_index = "#{subnet_index}_#{instance_index}"
+          instance_key = "instance#{instance_index}"
+          instance = instance_double 'Formatron::DSL::Formatron::VPC' \
+                                     '::Subnet::Instance'
+          instances[instance_key] = instance
+        end
+        @all_instances.merge! instances
+        allow(subnet).to receive(:instance).with(no_args) { instances }
+      end
+      allow(vpc).to receive(:subnet).with(no_args) { subnets }
+    end
+    allow(@dsl_formatron).to receive(:vpc).with(no_args) { vpcs }
+
+    @cloud_formation = class_double(
+      'Formatron::CloudFormation'
+    ).as_stubbed_const
+
+    @template_class = class_double(
+      'Formatron::CloudFormation::Template'
+    ).as_stubbed_const
+    @template = instance_double 'Formatron::CloudFormation::Template'
+    allow(@template_class).to receive(:new).with(
+      formatron: @dsl_formatron,
+      hosted_zone_name: @hosted_zone_name,
+      key_pair: @key_pair,
+      kms_key: @kms_key,
+      instances: @all_instances,
+      hosted_zone_id: @hosted_zone_id
+    ) { @template }
+    @template_hash = {
+      template: 'template'
+    }
+    allow(@template).to receive(:hash) { @template_hash }
+    @template_json = JSON.pretty_generate @template_hash
 
     @aws_class = class_double(
       'Formatron::AWS'
@@ -39,15 +169,6 @@ describe Formatron do
       directory: @directory,
       target: @target
     ) { @config }
-
-    @cloud_formation = class_double(
-      'Formatron::CloudFormation'
-    ).as_stubbed_const
-
-    @bootstrap_template = class_double(
-      'Formatron::CloudFormation::BootstrapTemplate'
-    ).as_stubbed_const
-    allow(@bootstrap_template).to receive(:json) { @cloud_formation_template }
 
     @s3_configuration = class_double(
       'Formatron::S3::Configuration'
@@ -94,49 +215,53 @@ describe Formatron do
     )
   end
 
-  it 'should create a Chef instance' do
-    expect(@chef_class).to have_received(:new).once.with(
-      aws: @aws,
-      bucket: @bucket,
-      name: @name,
-      target: @target,
-      username: @username,
-      organization: @organization_short_name,
-      ssl_verify: @ssl_verify,
-      chef_sub_domain: @chef_sub_domain,
-      private_key: @private_key,
-      bastion_sub_domain: @bastion_sub_domain,
-      hosted_zone_name: @hosted_zone_name,
-      server_stack: @name
-    )
+  it 'should create Chef instances' do
+    (0..2).each do |vpc_index|
+      (0..2).each do |subnet_index|
+        subnet_index = "#{vpc_index}_#{subnet_index}"
+        (0..2).each do |chef_server_index|
+          chef_server_index = "#{subnet_index}_#{chef_server_index}"
+          expect(@chef_class).to have_received(:new).once.with(
+            aws: @aws,
+            bucket: @bucket,
+            name: @name,
+            target: @target,
+            username: "chef_server_username#{chef_server_index}",
+            organization: "organization#{chef_server_index}",
+            ssl_verify: "chef_server_ssl_verify#{chef_server_index}",
+            chef_sub_domain: "chef_server_sub_domain#{chef_server_index}",
+            private_key: @private_key,
+            bastion_sub_domain: @bastion_sub_domain,
+            hosted_zone_name: @hosted_zone_name,
+            server_stack: @name
+          )
+        end
+      end
+    end
   end
 
-  it 'should create a Formatronfile instance' do
-    expect(@formatronfile_class).to have_received(:new).once.with(
-      aws: @aws,
+  it 'should create a DSL instance' do
+    expect(@dsl_class).to have_received(:new).once.with(
       config: @config,
       target: @target,
       file: @file
     )
   end
 
-  it 'should generate the bootstrap CloudFormation template' do
-    expect(@bootstrap_template).to have_received(:json).once.with(
-      hosted_zone_id: @hosted_zone_id,
+  it 'should generate the CloudFormation template' do
+    expect(@template_class).to have_received(:new).once.with(
+      formatron: @dsl_formatron,
       hosted_zone_name: @hosted_zone_name,
-      bootstrap: @bootstrap,
-      bucket: @bucket,
-      config_key: @config_key,
-      user_pem_key: @user_pem_key,
-      organization_pem_key: @organization_pem_key,
-      ssl_cert_key: @ssl_cert_key,
-      ssl_key_key: @ssl_key_key
+      key_pair: @key_pair,
+      kms_key: @kms_key,
+      instances: @all_instances,
+      hosted_zone_id: @hosted_zone_id
     )
   end
 
   describe '#protected?' do
     it 'should return whether the target should be protected from changes' do
-      expect(@formatron.protected?).to eql @protected
+      expect(@formatron.protected?).to eql @protect
     end
   end
 
@@ -167,7 +292,7 @@ describe Formatron do
         bucket: @bucket,
         name: @name,
         target: @target,
-        cloud_formation_template: @cloud_formation_template
+        cloud_formation_template: @template_json
       )
     end
 

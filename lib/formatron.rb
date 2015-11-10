@@ -30,67 +30,84 @@ class Formatron
       config: @config,
       target: @target
     )
-    @name = @dsl.formatron.name
-    @bucket = @dsl.formatron.bucket
+    _initialize
   end
   # rubocop:enable Metrics/MethodLength
 
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/AbcSize
-  def _initialize_from_bootstrap
-    bootstrap = @formatronfile.bootstrap
-    @protected = bootstrap.protect
-    @kms_key = bootstrap.kms_key
-    @chef_ssl_cert = bootstrap.chef_server.ssl_cert
-    @chef_ssl_key = bootstrap.chef_server.ssl_key
-    hosted_zone_id = bootstrap.hosted_zone_id
-    @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
-    @cloud_formation_template = CloudFormation::BootstrapTemplate.json(
-      hosted_zone_id: hosted_zone_id,
-      hosted_zone_name: @hosted_zone_name,
-      bootstrap: bootstrap,
-      bucket: @bucket,
-      config_key: S3::Configuration.key(
-        name: @name, target: @target
-      ),
-      user_pem_key: S3::ChefServerKeys.user_pem_key(
-        name: @name, target: @target
-      ),
-      organization_pem_key: S3::ChefServerKeys.organization_pem_key(
-        name: @name, target: @target
-      ),
-      ssl_cert_key: S3::ChefServerCert.cert_key(
-        name: @name, target: @target
-      ),
-      ssl_key_key: S3::ChefServerCert.key_key(
-        name: @name, target: @target
-      )
-    )
-    bastion = bootstrap.bastion
-    nat = bootstrap.nat
-    chef_server = bootstrap.chef_server
+  def _initialize
+    @formatron = @dsl.formatron
+    _initialize_instances
+    bastion = @bastions.values[0]
     @bastion_sub_domain = bastion.sub_domain
-    @nat_sub_domain = nat.sub_domain
-    @chef_server_sub_domain = chef_server.sub_domain
-    @bastion_cookbook = bastion.cookbook
-    @nat_cookbook = nat.cookbook
-    @chef_server_cookbook = chef_server.cookbook
-    @chef = Chef.new(
-      aws: @aws,
-      bucket: @bucket,
-      name: @name,
-      target: @target,
-      username: chef_server.username,
-      organization: chef_server.organization.short_name,
-      ssl_verify: chef_server.ssl_verify,
-      chef_sub_domain: @chef_server_sub_domain,
-      private_key: bootstrap.ec2.private_key,
-      bastion_sub_domain: @bastion_sub_domain,
+    @name = @formatron.name
+    @bucket = @formatron.bucket
+    global = @formatron.global
+    ec2 = global.ec2
+    key_pair = ec2.key_pair
+    @private_key = ec2.private_key
+    @protected = global.protect
+    @kms_key = global.kms_key
+    hosted_zone_id = global.hosted_zone_id
+    @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
+    @cloud_formation_template = CloudFormation::Template.new(
+      formatron: @formatron,
       hosted_zone_name: @hosted_zone_name,
-      server_stack: @name
-    )
+      key_pair: key_pair,
+      kms_key: @kms_key,
+      instances: @all_instances,
+      hosted_zone_id: hosted_zone_id
+    ).hash
+    _initialize_chef_clients
   end
   # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength
+
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
+  def _initialize_instances
+    @instances = {}
+    @chef_servers = {}
+    @bastions = {}
+    @nats = {}
+    @formatron.vpc.each do |_key, vpc|
+      vpc.subnet.each do |_key, subnet|
+        @chef_servers.merge! subnet.chef_server
+        @bastions.merge! subnet.bastion
+        @nats.merge! subnet.nat
+        @instances.merge! subnet.instance
+      end
+    end
+    @all_instances = {}
+    @all_instances.merge! @chef_servers
+    @all_instances.merge! @bastions
+    @all_instances.merge! @nats
+    @all_instances.merge! @instances
+  end
+  # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength
+
+  # rubocop:disable Metrics/MethodLength
+  def _initialize_chef_clients
+    @chef_clients = {}
+    @chef_servers.each do |key, chef_server|
+      @chef_clients[key] = Chef.new(
+        aws: @aws,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        username: chef_server.username,
+        organization: chef_server.organization.short_name,
+        ssl_verify: chef_server.ssl_verify,
+        chef_sub_domain: chef_server.sub_domain,
+        private_key: @private_key,
+        bastion_sub_domain: @bastion_sub_domain,
+        hosted_zone_name: @hosted_zone_name,
+        server_stack: @name
+      )
+    end
+  end
   # rubocop:enable Metrics/MethodLength
 
   def deploy
@@ -159,7 +176,8 @@ class Formatron
       bucket: @bucket,
       name: @name,
       target: @target,
-      cloud_formation_template: @cloud_formation_template
+      cloud_formation_template:
+        JSON.pretty_generate(@cloud_formation_template)
     )
   end
 
@@ -246,7 +264,9 @@ class Formatron
   # rubocop:enable Metrics/MethodLength
 
   private(
-    :_initialize_from_bootstrap,
+    :_initialize,
+    :_initialize_instances,
+    :_initialize_chef_clients,
     :_deploy_configuration,
     :_deploy_template,
     :_deploy_stack,
