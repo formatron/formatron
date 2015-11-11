@@ -13,10 +13,6 @@ describe Formatron do
     @config_key = 'config_key'
     @user_pem_key = 'user_pem_key'
     @organization_pem_key = 'organization_pem_key'
-    @ssl_cert_key = 'ssl_cert_key'
-    @ssl_key_key = 'ssl_key_key'
-    @chef_ssl_cert = 'chef_ssl_cert'
-    @chef_ssl_key = 'chef_ssl_key'
 
     dsl = instance_double 'Formatron::DSL'
     @dsl_class = class_double(
@@ -51,34 +47,98 @@ describe Formatron do
     @private_key = 'private_key'
     allow(ec2).to receive(:private_key).with(no_args) { @private_key }
 
+    @aws_class = class_double(
+      'Formatron::AWS'
+    ).as_stubbed_const
+    @aws = instance_double('Formatron::AWS')
+    allow(@aws_class).to receive(:new) { @aws }
+    allow(@aws).to receive(
+      :hosted_zone_name
+    ).with(@hosted_zone_id) { @hosted_zone_name }
+
     vpcs = {}
     @all_instances = {}
+    @chef_class = class_double(
+      'Formatron::Chef'
+    ).as_stubbed_const
+    @chef_clients = []
+    @bastion_sub_domain = 'bastion_sub_domain0_0_0'
     (0..2).each do |vpc_index|
+      vpc_chef_clients = @chef_clients[vpc_index] = []
       vpc_key = "vpc#{vpc_index}"
       vpc = instance_double 'Formatron::DSL::Formatron::VPC'
       vpcs[vpc_key] = vpc
       subnets = {}
       (0..2).each do |subnet_index|
+        subnet_chef_clients = vpc_chef_clients[subnet_index] = []
         subnet_index = "#{vpc_index}_#{subnet_index}"
         subnet_key = "subnet#{subnet_index}"
         subnet = instance_double 'Formatron::DSL::Formatron::VPC::Subnet'
         subnets[subnet_key] = subnet
         chef_servers = {}
         (0..2).each do |chef_server_index|
+          chef = subnet_chef_clients[chef_server_index] = instance_double(
+            'Formatron::Chef'
+          )
           chef_server_index = "#{subnet_index}_#{chef_server_index}"
+          username = "chef_server_username#{chef_server_index}"
+          organization_name = "organization#{chef_server_index}"
+          ssl_verify = "chef_server_ssl_verify#{chef_server_index}"
+          sub_domain = "chef_server_sub_domain#{chef_server_index}"
+          guid = "chef_server_guid#{chef_server_index}"
+          allow(@chef_class).to receive(:new).with(
+            aws: @aws,
+            bucket: @bucket,
+            name: @name,
+            target: @target,
+            username: username,
+            organization: organization_name,
+            ssl_verify: ssl_verify,
+            chef_sub_domain: sub_domain,
+            private_key: @private_key,
+            bastion_sub_domain: @bastion_sub_domain,
+            hosted_zone_name: @hosted_zone_name,
+            server_stack: @name,
+            guid: guid
+          ) { chef }
+          allow(chef).to receive :init
+          allow(chef).to receive :unlink
+          allow(chef).to receive :provision
+          allow(chef).to receive :destroy
           chef_server_key = "chef_server#{chef_server_index}"
           chef_server = instance_double 'Formatron::DSL::Formatron::VPC' \
                                         '::Subnet::ChefServer'
           chef_servers[chef_server_key] = chef_server
+          dsl_chef = instance_double(
+            'Formatron::DSL::VPC::Subnet::Instance::Chef'
+          )
+          allow(dsl_chef).to receive(:server).with(
+            no_args
+          ) { chef_server_key }
+          allow(dsl_chef).to receive(:cookbook).with(
+            no_args
+          ) { "chef_server_cookbook#{chef_server_index}" }
+          allow(chef_server).to receive(:chef).with(
+            no_args
+          ) { dsl_chef }
           allow(chef_server).to receive(:username).with(
             no_args
-          ) { "chef_server_username#{chef_server_index}" }
+          ) { username }
           allow(chef_server).to receive(:ssl_verify).with(
             no_args
-          ) { "chef_server_ssl_verify#{chef_server_index}" }
+          ) { ssl_verify }
           allow(chef_server).to receive(:sub_domain).with(
             no_args
-          ) { "chef_server_sub_domain#{chef_server_index}" }
+          ) { sub_domain }
+          allow(chef_server).to receive(:guid).with(
+            no_args
+          ) { guid }
+          allow(chef_server).to receive(:ssl_cert).with(
+            no_args
+          ) { "chef_server_ssl_cert#{chef_server_index}" }
+          allow(chef_server).to receive(:ssl_key).with(
+            no_args
+          ) { "chef_server_ssl_key#{chef_server_index}" }
 
           organization = instance_double 'Formatron::DSL::Formatron::VPC' \
                                          '::Subnet::ChefServer::Organization'
@@ -87,7 +147,7 @@ describe Formatron do
           ) { organization }
           allow(organization).to receive(:short_name).with(
             no_args
-          ) { "organization#{chef_server_index}" }
+          ) { organization_name }
         end
         @all_instances.merge! chef_servers
         allow(subnet).to receive(:chef_server).with(no_args) { chef_servers }
@@ -98,11 +158,21 @@ describe Formatron do
           bastion = instance_double 'Formatron::DSL::Formatron::VPC' \
                                     '::Subnet::Bastion'
           bastions[bastion_key] = bastion
-          bastion_sub_domain = "bastion_sub_domain#{bastion_index}"
-          @bastion_sub_domain ||= bastion_sub_domain
+          dsl_chef = instance_double(
+            'Formatron::DSL::VPC::Subnet::Instance::Chef'
+          )
+          allow(dsl_chef).to receive(:server).with(
+            no_args
+          ) { "chef_server#{bastion_index}" }
+          allow(dsl_chef).to receive(:cookbook).with(
+            no_args
+          ) { "bastion_cookbook#{bastion_index}" }
+          allow(bastion).to receive(:chef).with(
+            no_args
+          ) { dsl_chef }
           allow(bastion).to receive(:sub_domain).with(
             no_args
-          ) { bastion_sub_domain }
+          ) { "bastion_sub_domain#{bastion_index}" }
         end
         @all_instances.merge! bastions
         allow(subnet).to receive(:bastion).with(no_args) { bastions }
@@ -113,6 +183,21 @@ describe Formatron do
           nat = instance_double 'Formatron::DSL::Formatron::VPC' \
                                 '::Subnet::NAT'
           nats[nat_key] = nat
+          dsl_chef = instance_double(
+            'Formatron::DSL::VPC::Subnet::Instance::Chef'
+          )
+          allow(dsl_chef).to receive(:server).with(
+            no_args
+          ) { "chef_server#{nat_index}" }
+          allow(dsl_chef).to receive(:cookbook).with(
+            no_args
+          ) { "nat_cookbook#{nat_index}" }
+          allow(nat).to receive(:chef).with(
+            no_args
+          ) { dsl_chef }
+          allow(nat).to receive(:sub_domain).with(
+            no_args
+          ) { "nat_sub_domain#{nat_index}" }
         end
         @all_instances.merge! nats
         allow(subnet).to receive(:nat).with(no_args) { nats }
@@ -123,6 +208,21 @@ describe Formatron do
           instance = instance_double 'Formatron::DSL::Formatron::VPC' \
                                      '::Subnet::Instance'
           instances[instance_key] = instance
+          dsl_chef = instance_double(
+            'Formatron::DSL::VPC::Subnet::Instance::Chef'
+          )
+          allow(dsl_chef).to receive(:server).with(
+            no_args
+          ) { "chef_server#{instance_index}" }
+          allow(dsl_chef).to receive(:cookbook).with(
+            no_args
+          ) { "instance_cookbook#{instance_index}" }
+          allow(instance).to receive(:chef).with(
+            no_args
+          ) { dsl_chef }
+          allow(instance).to receive(:sub_domain).with(
+            no_args
+          ) { "instance_sub_domain#{instance_index}" }
         end
         @all_instances.merge! instances
         allow(subnet).to receive(:instance).with(no_args) { instances }
@@ -152,15 +252,6 @@ describe Formatron do
     }
     allow(@template).to receive(:hash) { @template_hash }
     @template_json = JSON.pretty_generate @template_hash
-
-    @aws_class = class_double(
-      'Formatron::AWS'
-    ).as_stubbed_const
-    @aws = instance_double('Formatron::AWS')
-    allow(@aws_class).to receive(:new) { @aws }
-    allow(@aws).to receive(
-      :hosted_zone_name
-    ).with(@hosted_zone_id) { @hosted_zone_name }
 
     @config_class = class_double(
       'Formatron::Config'
@@ -194,14 +285,6 @@ describe Formatron do
     ) { @organization_pem_key }
     allow(@s3_chef_server_keys).to receive(:destroy)
 
-    @chef_class = class_double(
-      'Formatron::Chef'
-    ).as_stubbed_const
-    @chef = instance_double 'Formatron::Chef'
-    allow(@chef_class).to receive(:new) { @chef }
-    allow(@chef).to receive(:unlink)
-    allow(@chef).to receive(:init)
-
     @formatron = Formatron.new(
       credentials: @credentials,
       directory: @directory,
@@ -233,7 +316,8 @@ describe Formatron do
             private_key: @private_key,
             bastion_sub_domain: @bastion_sub_domain,
             hosted_zone_name: @hosted_zone_name,
-            server_stack: @name
+            server_stack: @name,
+            guid: "chef_server_guid#{chef_server_index}"
           )
         end
       end
@@ -306,41 +390,60 @@ describe Formatron do
     end
 
     it 'should upload the Chef Server SSL certificate and key to S3' do
-      expect(@s3_chef_server_cert).to have_received(:deploy).once.with(
-        aws: @aws,
-        kms_key: @kms_key,
-        bucket: @bucket,
-        name: @name,
-        target: @target,
-        cert: @chef_ssl_cert,
-        key: @chef_ssl_key
-      )
+      (0..2).each do |vpc_index|
+        (0..2).each do |subnet_index|
+          subnet_index = "#{vpc_index}_#{subnet_index}"
+          (0..2).each do |chef_server_index|
+            chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(@s3_chef_server_cert).to have_received(:deploy).once.with(
+              aws: @aws,
+              kms_key: @kms_key,
+              bucket: @bucket,
+              name: @name,
+              target: @target,
+              guid: "chef_server_guid#{chef_server_index}",
+              cert: "chef_server_ssl_cert#{chef_server_index}",
+              key: "chef_server_ssl_key#{chef_server_index}"
+            )
+          end
+        end
+      end
     end
   end
 
   describe '#provision' do
     before :each do
-      allow(@chef).to receive :provision
       @formatron.provision
     end
 
-    it 'should create the chef client config' do
-      expect(@chef).to have_received :init
-    end
-
     it 'should provision the instances with Chef' do
-      expect(@chef).to have_received(:provision).once.with(
-        sub_domain: @bastion_sub_domain,
-        cookbook: @bastion_cookbook
-      )
-      expect(@chef).to have_received(:provision).once.with(
-        sub_domain: @nat_sub_domain,
-        cookbook: @nat_cookbook
-      )
-      expect(@chef).to have_received(:provision).once.with(
-        sub_domain: @chef_sub_domain,
-        cookbook: @chef_cookbook
-      )
+      (0..2).each do |vpc_index|
+        vpc_chef_clients = @chef_clients[vpc_index]
+        (0..2).each do |subnet_index|
+          subnet_chef_clients = vpc_chef_clients[subnet_index]
+          subnet_index = "#{vpc_index}_#{subnet_index}"
+          (0..2).each do |chef_server_index|
+            chef = subnet_chef_clients[chef_server_index]
+            chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(chef).to have_received(:provision).once.with(
+              sub_domain: "chef_server_sub_domain#{chef_server_index}",
+              cookbook: "chef_server_cookbook#{chef_server_index}"
+            )
+            expect(chef).to have_received(:provision).once.with(
+              sub_domain: "bastion_sub_domain#{chef_server_index}",
+              cookbook: "bastion_cookbook#{chef_server_index}"
+            )
+            expect(chef).to have_received(:provision).once.with(
+              sub_domain: "nat_sub_domain#{chef_server_index}",
+              cookbook: "nat_cookbook#{chef_server_index}"
+            )
+            expect(chef).to have_received(:provision).once.with(
+              sub_domain: "instance_sub_domain#{chef_server_index}",
+              cookbook: "instance_cookbook#{chef_server_index}"
+            )
+          end
+        end
+      end
     end
   end
 
@@ -350,12 +453,7 @@ describe Formatron do
       allow(@s3_cloud_formation_template).to receive(:destroy)
       allow(@s3_chef_server_cert).to receive(:destroy)
       allow(@cloud_formation).to receive(:destroy)
-      allow(@chef).to receive(:destroy)
       @formatron.destroy
-    end
-
-    it 'should create the chef client config' do
-      expect(@chef).to have_received :init
     end
 
     it 'should delete the configuration from S3' do
@@ -409,12 +507,21 @@ describe Formatron do
     end
 
     it 'should delete the Chef Server SSL certificate and key from S3' do
-      expect(@s3_chef_server_cert).to have_received(:destroy).once.with(
-        aws: @aws,
-        bucket: @bucket,
-        name: @name,
-        target: @target
-      )
+      (0..2).each do |vpc_index|
+        (0..2).each do |subnet_index|
+          subnet_index = "#{vpc_index}_#{subnet_index}"
+          (0..2).each do |chef_server_index|
+            chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(@s3_chef_server_cert).to have_received(:destroy).once.with(
+              aws: @aws,
+              bucket: @bucket,
+              name: @name,
+              target: @target,
+              guid: "chef_server_guid#{chef_server_index}"
+            )
+          end
+        end
+      end
     end
 
     context 'when an error occurs deleting the Chef Server ' \
@@ -426,12 +533,21 @@ describe Formatron do
     end
 
     it 'should delete the Chef Server user and organization keys from S3' do
-      expect(@s3_chef_server_keys).to have_received(:destroy).once.with(
-        aws: @aws,
-        bucket: @bucket,
-        name: @name,
-        target: @target
-      )
+      (0..2).each do |vpc_index|
+        (0..2).each do |subnet_index|
+          subnet_index = "#{vpc_index}_#{subnet_index}"
+          (0..2).each do |chef_server_index|
+            chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(@s3_chef_server_keys).to have_received(:destroy).once.with(
+              aws: @aws,
+              bucket: @bucket,
+              name: @name,
+              target: @target,
+              guid: "chef_server_guid#{chef_server_index}"
+            )
+          end
+        end
+      end
     end
 
     context 'when an error occurs deleting the Chef Server ' \
@@ -443,21 +559,44 @@ describe Formatron do
     end
 
     it 'should cleanup the Chef Server configuration for the instances' do
-      expect(@chef).to have_received(:destroy).once.with(
-        sub_domain: @bastion_sub_domain
-      )
-      expect(@chef).to have_received(:destroy).once.with(
-        sub_domain: @nat_sub_domain
-      )
-      expect(@chef).to have_received(:destroy).once.with(
-        sub_domain: @chef_sub_domain
-      )
+      (0..2).each do |vpc_index|
+        vpc_chef_clients = @chef_clients[vpc_index]
+        (0..2).each do |subnet_index|
+          subnet_chef_clients = vpc_chef_clients[subnet_index]
+          subnet_index = "#{vpc_index}_#{subnet_index}"
+          (0..2).each do |chef_server_index|
+            chef = subnet_chef_clients[chef_server_index]
+            chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(chef).to have_received(:destroy).once.with(
+              sub_domain: "chef_server_sub_domain#{chef_server_index}"
+            )
+            expect(chef).to have_received(:destroy).once.with(
+              sub_domain: "bastion_sub_domain#{chef_server_index}"
+            )
+            expect(chef).to have_received(:destroy).once.with(
+              sub_domain: "nat_sub_domain#{chef_server_index}"
+            )
+            expect(chef).to have_received(:destroy).once.with(
+              sub_domain: "instance_sub_domain#{chef_server_index}"
+            )
+          end
+        end
+      end
     end
 
     context 'when an error occurs cleaning up the Chef Server ' \
             'configuration for the instances' do
       it 'should continue' do
-        allow(@chef).to receive(:destroy) { fail 'error' }
+        (0..2).each do |vpc_index|
+          vpc_chef_clients = @chef_clients[vpc_index]
+          (0..2).each do |subnet_index|
+            subnet_chef_clients = vpc_chef_clients[subnet_index]
+            (0..2).each do |chef_server_index|
+              chef = subnet_chef_clients[chef_server_index]
+              allow(chef).to receive(:destroy) { fail 'error' }
+            end
+          end
+        end
         @formatron.destroy
       end
     end

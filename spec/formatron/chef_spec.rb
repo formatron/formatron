@@ -7,6 +7,7 @@ class Formatron
   describe Chef do
     before :each do
       @aws = instance_double 'Formatron::AWS'
+      @guid = 'guid'
       @name = 'name'
       @server_stack = 'server_stack'
       @hosted_zone_name = 'hosted_zone_name'
@@ -70,7 +71,8 @@ class Formatron
         private_key: @private_key,
         bastion_sub_domain: @bastion_sub_domain,
         hosted_zone_name: @hosted_zone_name,
-        server_stack: @server_stack
+        server_stack: @server_stack,
+        guid: @guid
       )
     end
 
@@ -79,7 +81,8 @@ class Formatron
         aws: @aws,
         bucket: @bucket,
         name: @server_stack,
-        target: @target
+        target: @target,
+        guid: @guid
       )
     end
 

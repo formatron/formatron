@@ -22,7 +22,8 @@ class Formatron
       chef_sub_domain:,
       bastion_sub_domain:,
       hosted_zone_name:,
-      server_stack:
+      server_stack:,
+      guid:
     )
       @aws = aws
       @name = name
@@ -40,7 +41,8 @@ class Formatron
         aws: @aws,
         bucket: bucket,
         name: server_stack,
-        target: @target
+        target: @target,
+        guid: guid
       )
       @knife = Knife.new(
         keys: @keys,

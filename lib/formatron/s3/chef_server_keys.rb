@@ -9,14 +9,16 @@ class Formatron
       ORGANIZATION_PEM_NAME = 'organization.pem'
 
       # rubocop:disable Metrics/MethodLength
+      # rubocop:disable Metrics/ParameterLists
       def self.get(
         aws:,
         bucket:,
         name:,
         target:,
+        guid:,
         directory:
       )
-        user_pem_key = self.user_pem_key name: name, target: target
+        user_pem_key = self.user_pem_key name: name, target: target, guid: guid
         Formatron::LOG.info do
           'Download Chef Server user key from ' \
           "#{bucket}/#{user_pem_key}"
@@ -27,7 +29,7 @@ class Formatron
           path: user_pem_path(directory: directory)
         )
         organization_pem_key = self.organization_pem_key(
-          name: name, target: target
+          name: name, target: target, guid: guid
         )
         Formatron::LOG.info do
           'Download Chef Server organization key ' \
@@ -39,6 +41,7 @@ class Formatron
           path: organization_pem_path(directory: directory)
         )
       end
+      # rubocop:enable Metrics/ParameterLists
       # rubocop:enable Metrics/MethodLength
 
       # rubocop:disable Metrics/MethodLength
@@ -46,9 +49,10 @@ class Formatron
         aws:,
         bucket:,
         name:,
-        target:
+        target:,
+        guid:
       )
-        user_pem_key = self.user_pem_key name: name, target: target
+        user_pem_key = self.user_pem_key name: name, target: target, guid: guid
         Formatron::LOG.info do
           'Delete Chef Server user key from ' \
           "#{bucket}/#{user_pem_key}"
@@ -58,7 +62,7 @@ class Formatron
           key: user_pem_key
         )
         organization_pem_key = self.organization_pem_key(
-          name: name, target: target
+          name: name, target: target, guid: guid
         )
         Formatron::LOG.info do
           'Delete Chef Server organization key ' \
@@ -71,11 +75,11 @@ class Formatron
       end
       # rubocop:enable Metrics/MethodLength
 
-      def self.user_pem_key(name:, target:)
+      def self.user_pem_key(name:, target:, guid:)
         Path.key(
           name: name,
           target: target,
-          sub_key: USER_PEM_NAME
+          sub_key: "#{guid}/#{USER_PEM_NAME}"
         )
       end
 
@@ -83,11 +87,11 @@ class Formatron
         File.join directory, USER_PEM_NAME
       end
 
-      def self.organization_pem_key(name:, target:)
+      def self.organization_pem_key(name:, target:, guid:)
         Path.key(
           name: name,
           target: target,
-          sub_key: ORGANIZATION_PEM_NAME
+          sub_key: "#{guid}/#{ORGANIZATION_PEM_NAME}"
         )
       end
 

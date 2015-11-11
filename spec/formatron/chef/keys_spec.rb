@@ -10,6 +10,7 @@ class Formatron
         @bucket = 'bucket'
         @name = 'name'
         @target = 'target'
+        @guid = 'guid'
         @directory = 'directory'
         @user_pem_path = 'user_pem_path'
         @organization_pem_path = 'organization_pem_path'
@@ -29,7 +30,8 @@ class Formatron
           aws: @aws,
           bucket: @bucket,
           name: @name,
-          target: @target
+          target: @target,
+          guid: @guid
         )
         @keys.init
       end
@@ -45,6 +47,7 @@ class Formatron
             bucket: @bucket,
             name: @name,
             target: @target,
+            guid: @guid,
             directory: @directory
           )
         end

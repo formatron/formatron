@@ -4,11 +4,12 @@ class Formatron
   class Chef
     # Download the Chef Server keys
     class Keys
-      def initialize(aws:, bucket:, name:, target:)
+      def initialize(aws:, bucket:, name:, target:, guid:)
         @aws = aws
         @bucket = bucket
         @name = name
         @target = target
+        @guid = guid
       end
 
       def init
@@ -18,6 +19,7 @@ class Formatron
           bucket: @bucket,
           name: @name,
           target: @target,
+          guid: @guid,
           directory: @directory
         )
       end

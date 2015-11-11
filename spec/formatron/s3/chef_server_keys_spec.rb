@@ -10,6 +10,7 @@ class Formatron
       target = 'target'
       bucket = 'bucket'
       name = 'name'
+      guid = 'guid'
       user_pem_key = 'user_pem_key'
       organization_pem_key = 'organization_pem_key'
       directory = 'directory'
@@ -26,12 +27,12 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'user.pem'
+            sub_key: "#{guid}/user.pem"
           ) { user_pem_key }
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'organization.pem'
+            sub_key: "#{guid}/organization.pem"
           ) { organization_pem_key }
           expect(@aws).to receive(:download_file).once.with(
             bucket: bucket,
@@ -48,6 +49,7 @@ class Formatron
             bucket: bucket,
             name: name,
             target: target,
+            guid: guid,
             directory: directory
           )
         end
@@ -58,12 +60,12 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'user.pem'
+            sub_key: "#{guid}/user.pem"
           ) { user_pem_key }
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'organization.pem'
+            sub_key: "#{guid}/organization.pem"
           ) { organization_pem_key }
           expect(@aws).to receive(:delete_file).once.with(
             bucket: bucket,
@@ -77,7 +79,8 @@ class Formatron
             aws: @aws,
             bucket: bucket,
             name: name,
-            target: target
+            target: target,
+            guid: guid
           )
         end
       end
@@ -87,12 +90,13 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'user.pem'
+            sub_key: "#{guid}/user.pem"
           ) { user_pem_key }
           expect(
             ChefServerKeys.user_pem_key(
               name: name,
-              target: target
+              target: target,
+              guid: guid
             )
           ).to eql user_pem_key
         end
@@ -113,12 +117,13 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'organization.pem'
+            sub_key: "#{guid}/organization.pem"
           ) { organization_pem_key }
           expect(
             ChefServerKeys.organization_pem_key(
               name: name,
-              target: target
+              target: target,
+              guid: guid
             )
           ).to eql organization_pem_key
         end

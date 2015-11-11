@@ -12,6 +12,7 @@ class Formatron
       kms_key = 'kms_key'
       bucket = 'bucket'
       name = 'name'
+      guid = 'guid'
       cert = 'cert'
       key = 'key'
       cert_key = 'cert_key'
@@ -29,12 +30,12 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'ssl.cert'
+            sub_key: "#{guid}/ssl.cert"
           ) { cert_key }
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'ssl.key'
+            sub_key: "#{guid}/ssl.key"
           ) { key_key }
           expect(@aws).to receive(:upload_file).once.with(
             kms_key: kms_key,
@@ -54,6 +55,7 @@ class Formatron
             bucket: bucket,
             name: name,
             target: target,
+            guid: guid,
             cert: cert,
             key: key
           )
@@ -65,12 +67,12 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'ssl.cert'
+            sub_key: "#{guid}/ssl.cert"
           ) { cert_key }
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'ssl.key'
+            sub_key: "#{guid}/ssl.key"
           ) { key_key }
           expect(@aws).to receive(:delete_file).once.with(
             bucket: bucket,
@@ -84,7 +86,8 @@ class Formatron
             aws: @aws,
             bucket: bucket,
             name: name,
-            target: target
+            target: target,
+            guid: guid
           )
         end
       end
@@ -94,12 +97,13 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'ssl.cert'
+            sub_key: "#{guid}/ssl.cert"
           ) { cert_key }
           expect(
             ChefServerCert.cert_key(
               name: name,
-              target: target
+              target: target,
+              guid: guid
             )
           ).to eql cert_key
         end
@@ -110,12 +114,13 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'ssl.key'
+            sub_key: "#{guid}/ssl.key"
           ) { key_key }
           expect(
             ChefServerCert.key_key(
               name: name,
-              target: target
+              target: target,
+              guid: guid
             )
           ).to eql key_key
         end

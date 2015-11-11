@@ -16,10 +16,11 @@ class Formatron
         bucket:,
         name:,
         target:,
+        guid:,
         cert:,
         key:
       )
-        cert_key = self.cert_key name: name, target: target
+        cert_key = self.cert_key name: name, target: target, guid: guid
         Formatron::LOG.info do
           "Upload Chef Server SSL certifcate to #{bucket}/#{cert_key}"
         end
@@ -29,7 +30,7 @@ class Formatron
           key: cert_key,
           content: cert
         )
-        key_key = self.key_key name: name, target: target
+        key_key = self.key_key name: name, target: target, guid: guid
         Formatron::LOG.info do
           "Upload Chef Server SSL key to #{bucket}/#{key_key}"
         end
@@ -44,8 +45,8 @@ class Formatron
       # rubocop:enable Metrics/ParameterLists
 
       # rubocop:disable Metrics/MethodLength
-      def self.destroy(aws:, bucket:, name:, target:)
-        cert_key = self.cert_key name: name, target: target
+      def self.destroy(aws:, bucket:, name:, target:, guid:)
+        cert_key = self.cert_key name: name, target: target, guid: guid
         Formatron::LOG.info do
           "Delete Chef Server SSL certificate from #{bucket}/#{cert_key}"
         end
@@ -53,7 +54,7 @@ class Formatron
           bucket: bucket,
           key: cert_key
         )
-        key_key = self.key_key name: name, target: target
+        key_key = self.key_key name: name, target: target, guid: guid
         Formatron::LOG.info do
           "Delete Chef Server SSL key from #{bucket}/#{key_key}"
         end
@@ -64,19 +65,19 @@ class Formatron
       end
       # rubocop:enable Metrics/MethodLength
 
-      def self.cert_key(name:, target:)
+      def self.cert_key(name:, target:, guid:)
         Path.key(
           name: name,
           target: target,
-          sub_key: CERT_NAME
+          sub_key: "#{guid}/#{CERT_NAME}"
         )
       end
 
-      def self.key_key(name:, target:)
+      def self.key_key(name:, target:, guid:)
         Path.key(
           name: name,
           target: target,
-          sub_key: KEY_NAME
+          sub_key: "#{guid}/#{KEY_NAME}"
         )
       end
     end

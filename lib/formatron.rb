@@ -104,7 +104,8 @@ class Formatron
         private_key: @private_key,
         bastion_sub_domain: @bastion_sub_domain,
         hosted_zone_name: @hosted_zone_name,
-        server_stack: @name
+        server_stack: @name,
+        guid: chef_server.guid
       )
     end
   end
@@ -112,36 +113,37 @@ class Formatron
 
   def deploy
     _deploy_configuration
-    _deploy_chef_server_cert unless @chef_ssl_cert.nil?
+    _deploy_chef_server_certs
     _deploy_template
     _deploy_stack
   end
 
-  # rubocop:disable Metrics/MethodLength
   def provision
-    @chef.init
-    @chef.provision(
-      sub_domain: @bastion_sub_domain,
-      cookbook: @bastion_cookbook
-    )
-    @chef.provision(
-      sub_domain: @nat_sub_domain,
-      cookbook: @nat_cookbook
-    )
-    @chef.provision(
-      sub_domain: @chef_server_sub_domain,
-      cookbook: @chef_server_cookbook
+    @all_instances.values.each do |instance|
+      dsl_chef = instance.chef
+      next if dsl_chef.nil?
+      chef = @chef_clients[dsl_chef.server]
+      cookbook = dsl_chef.cookbook
+      sub_domain = instance.sub_domain
+      _provision chef, cookbook, sub_domain
+    end
+  end
+
+  def _provision(chef, cookbook, sub_domain)
+    chef.init
+    chef.provision(
+      sub_domain: sub_domain,
+      cookbook: cookbook
     )
   ensure
-    @chef.unlink
+    chef.unlink
   end
-  # rubocop:enable Metrics/MethodLength
 
   def destroy
     _destroy_chef_instances
     _destroy_configuration
-    _destroy_chef_server_cert unless @chef_ssl_cert.nil?
-    _destroy_chef_server_keys unless @chef_ssl_cert.nil?
+    _destroy_chef_server_cert
+    _destroy_chef_server_keys
     _destroy_template
     _destroy_stack
   end
@@ -157,17 +159,22 @@ class Formatron
     )
   end
 
-  def _deploy_chef_server_cert
-    S3::ChefServerCert.deploy(
-      aws: @aws,
-      kms_key: @kms_key,
-      bucket: @bucket,
-      name: @name,
-      target: @target,
-      cert: @chef_ssl_cert,
-      key: @chef_ssl_key
-    )
+  # rubocop:disable Metrics/MethodLength
+  def _deploy_chef_server_certs
+    @chef_servers.values.each do |chef_server|
+      S3::ChefServerCert.deploy(
+        aws: @aws,
+        kms_key: @kms_key,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        guid: chef_server.guid,
+        cert: chef_server.ssl_cert,
+        key: chef_server.ssl_key
+      )
+    end
   end
+  # rubocop:enable Metrics/MethodLength
 
   def _deploy_template
     S3::CloudFormationTemplate.deploy(
@@ -201,27 +208,37 @@ class Formatron
     LOG.warn error
   end
 
+  # rubocop:disable Metrics/MethodLength
   def _destroy_chef_server_cert
-    S3::ChefServerCert.destroy(
-      aws: @aws,
-      bucket: @bucket,
-      name: @name,
-      target: @target
-    )
+    @chef_servers.values.each do |chef_server|
+      S3::ChefServerCert.destroy(
+        aws: @aws,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        guid: chef_server.guid
+      )
+    end
   rescue => error
     LOG.warn error
   end
+  # rubocop:enable Metrics/MethodLength
 
+  # rubocop:disable Metrics/MethodLength
   def _destroy_chef_server_keys
-    S3::ChefServerKeys.destroy(
-      aws: @aws,
-      bucket: @bucket,
-      name: @name,
-      target: @target
-    )
+    @chef_servers.values.each do |chef_server|
+      S3::ChefServerKeys.destroy(
+        aws: @aws,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        guid: chef_server.guid
+      )
+    end
   rescue => error
     LOG.warn error
   end
+  # rubocop:enable Metrics/MethodLength
 
   def _destroy_template
     S3::CloudFormationTemplate.destroy(
@@ -244,24 +261,26 @@ class Formatron
     LOG.warn error
   end
 
-  # rubocop:disable Metrics/MethodLength
   def _destroy_chef_instances
-    @chef.init
-    @chef.destroy(
-      sub_domain: @bastion_sub_domain
-    )
-    @chef.destroy(
-      sub_domain: @nat_sub_domain
-    )
-    @chef.destroy(
-      sub_domain: @chef_server_sub_domain
+    @all_instances.values.each do |instance|
+      dsl_chef = instance.chef
+      next if dsl_chef.nil?
+      chef = @chef_clients[dsl_chef.server]
+      sub_domain = instance.sub_domain
+      _destroy_chef_instance chef, sub_domain
+    end
+  end
+
+  def _destroy_chef_instance(chef, sub_domain)
+    chef.init
+    chef.destroy(
+      sub_domain: sub_domain
     )
   rescue => error
     LOG.warn error
   ensure
-    @chef.unlink
+    chef.unlink
   end
-  # rubocop:enable Metrics/MethodLength
 
   private(
     :_initialize,
@@ -273,7 +292,9 @@ class Formatron
     :_destroy_configuration,
     :_destroy_template,
     :_destroy_stack,
-    :_destroy_chef_instances
+    :_destroy_chef_instances,
+    :_destroy_chef_instance,
+    :_provision
   )
 end
 # rubocop:enable Metrics/ClassLength
