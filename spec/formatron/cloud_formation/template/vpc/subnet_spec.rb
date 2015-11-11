@@ -10,6 +10,9 @@ class Formatron
           include TemplateTest
 
           before :each do
+            @bucket = 'bucket'
+            @name = 'name'
+            @target = 'target'
             @subnet_guid = 'subnet_guid'
             @key_pair = 'key_pair'
             @availability_zone = 'availability_zone'
@@ -30,19 +33,26 @@ class Formatron
               chef_server: 'ChefServer',
               instance: 'Instance'
             }.each do |symbol, cls|
+              args = {
+                key_pair: @key_pair,
+                availability_zone: @availability_zone,
+                subnet_guid: @subnet_guid,
+                hosted_zone_name: @hosted_zone_name,
+                vpc_guid: @vpc_guid,
+                vpc_cidr: @vpc_cidr,
+                kms_key: @kms_key,
+                private_hosted_zone_id: @private_hosted_zone_id,
+                public_hosted_zone_id: nil,
+                bucket: @bucket,
+                name: @name,
+                target: @target
+              }
+              args[:bucket] = @bucket if symbol.eql? :chef_server
+              args[:name] = @name if symbol.eql? :chef_server
+              args[:target] = @target if symbol.eql? :chef_server
               test_instances(
                 tag: symbol,
-                args: {
-                  key_pair: @key_pair,
-                  availability_zone: @availability_zone,
-                  subnet_guid: @subnet_guid,
-                  hosted_zone_name: @hosted_zone_name,
-                  vpc_guid: @vpc_guid,
-                  vpc_cidr: @vpc_cidr,
-                  kms_key: @kms_key,
-                  private_hosted_zone_id: @private_hosted_zone_id,
-                  public_hosted_zone_id: nil
-                },
+                args: args,
                 template_cls: 'Formatron::CloudFormation::Template' \
                               "::VPC::Subnet::#{cls}",
                 dsl_cls: 'Formatron::DSL::Formatron' \
@@ -110,7 +120,10 @@ class Formatron
               kms_key: @kms_key,
               instances: [],
               public_hosted_zone_id: @public_hosted_zone_id,
-              private_hosted_zone_id: @private_hosted_zone_id
+              private_hosted_zone_id: @private_hosted_zone_id,
+              bucket: @bucket,
+              name: @name,
+              target: @target
             )
           end
 
@@ -163,19 +176,23 @@ class Formatron
                   chef_server: 'ChefServer',
                   instance: 'Instance'
                 }.each do |symbol, cls|
+                  args = {
+                    key_pair: @key_pair,
+                    availability_zone: @availability_zone,
+                    subnet_guid: @subnet_guid,
+                    hosted_zone_name: @hosted_zone_name,
+                    vpc_guid: @vpc_guid,
+                    vpc_cidr: @vpc_cidr,
+                    kms_key: @kms_key,
+                    private_hosted_zone_id: @private_hosted_zone_id,
+                    public_hosted_zone_id: @public_hosted_zone_id,
+                    bucket: @bucket,
+                    name: @name,
+                    target: @target
+                  }
                   test_instances(
                     tag: symbol,
-                    args: {
-                      key_pair: @key_pair,
-                      availability_zone: @availability_zone,
-                      subnet_guid: @subnet_guid,
-                      hosted_zone_name: @hosted_zone_name,
-                      vpc_guid: @vpc_guid,
-                      vpc_cidr: @vpc_cidr,
-                      kms_key: @kms_key,
-                      private_hosted_zone_id: @private_hosted_zone_id,
-                      public_hosted_zone_id: @public_hosted_zone_id
-                    },
+                    args: args,
                     template_cls: 'Formatron::CloudFormation::Template' \
                                   "::VPC::Subnet::#{cls}",
                     dsl_cls: 'Formatron::DSL::Formatron' \
@@ -225,7 +242,10 @@ class Formatron
                   kms_key: @kms_key,
                   instances: instances,
                   public_hosted_zone_id: @public_hosted_zone_id,
-                  private_hosted_zone_id: @private_hosted_zone_id
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  bucket: @bucket,
+                  name: @name,
+                  target: @target
                 )
                 @template_subnet.merge resources: @resources, outputs: @outputs
               end

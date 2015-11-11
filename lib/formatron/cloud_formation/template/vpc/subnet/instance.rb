@@ -35,7 +35,10 @@ class Formatron
               vpc_cidr:,
               kms_key:,
               private_hosted_zone_id:,
-              public_hosted_zone_id:
+              public_hosted_zone_id:,
+              bucket:,
+              name:,
+              target:
             )
               @instance = instance
               @guid = @instance.guid
@@ -68,6 +71,9 @@ class Formatron
                 "#{PRIVATE_RECORD_SET_PREFIX}#{@guid}"
               @public_record_set_id =
                 "#{PUBLIC_RECORD_SET_PREFIX}#{@guid}"
+              @bucket = bucket
+              @name = name
+              @target = target
             end
             # rubocop:enable Metrics/ParameterLists
             # rubocop:enable Metrics/AbcSize
@@ -84,7 +90,10 @@ class Formatron
               policy = Policy.new(
                 policy: @policy,
                 instance_guid: @guid,
-                kms_key: @kms_key
+                kms_key: @kms_key,
+                bucket: @bucket,
+                name: @name,
+                target: @target
               )
               policy.merge resources: resources
               security_group = SecurityGroup.new(
@@ -108,7 +117,11 @@ class Formatron
                 logical_id: @instance_id,
                 source_dest_check: @source_dest_check
               )
-              setup = Setup.new setup: @setup
+              setup = Setup.new(
+                setup: @setup,
+                sub_domain: @sub_domain,
+                hosted_zone_name: @hosted_zone_name
+              )
               setup.merge instance: instance
               resources[@instance_id] = instance
               outputs[@instance_id] = Template.output(

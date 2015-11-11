@@ -1,4 +1,5 @@
 require 'formatron/cloud_formation/resources/iam'
+require 'formatron/s3/configuration'
 
 class Formatron
   module CloudFormation
@@ -10,13 +11,29 @@ class Formatron
             class Policy
               POLICY_PREFIX = 'policy'
 
-              def initialize(policy:, instance_guid:, kms_key:)
+              # rubocop:disable Metrics/MethodLength
+              # rubocop:disable Metrics/ParameterLists
+              def initialize(
+                policy:,
+                instance_guid:,
+                kms_key:,
+                bucket:,
+                name:,
+                target:
+              )
                 @policy = policy
                 @kms_key = kms_key
                 @guid = instance_guid
+                @bucket = bucket
+                @config_key = S3::Configuration.key(
+                  name: name,
+                  target: target
+                )
                 @policy_id = "#{POLICY_PREFIX}#{@guid}"
                 @role_id = "#{Instance::ROLE_PREFIX}#{@guid}"
               end
+              # rubocop:enable Metrics/ParameterLists
+              # rubocop:enable Metrics/MethodLength
 
               # rubocop:disable Metrics/MethodLength
               def merge(resources:)
@@ -32,6 +49,9 @@ class Formatron
                       Template.ref('AWS::AccountId'),
                       ":key/#{@kms_key}"
                     )]
+                  }, {
+                    actions: %w(S3:GetObject),
+                    resources: ["arn:aws:s3:::#{@bucket}/#{@config_key}"]
                   }].concat(
                     @policy.statement.collect do |statement|
                       {

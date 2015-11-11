@@ -1,17 +1,17 @@
 require 'spec_helper'
-require 'formatron/cloud_formation/files'
+require 'formatron/cloud_formation/scripts'
 
 class Formatron
   # namespacing for tests
   # rubocop:disable Metrics/ModuleLength
   module CloudFormation
-    describe Files do
+    describe Scripts do
       describe '::hostname' do
         it 'should return a script that sets the hostname, etc' do
           sub_domain = 'sub_domain'
           hosted_zone_name = 'hosted_zone_name'
           expect(
-            Files.hostname(
+            Scripts.hostname(
               sub_domain: sub_domain,
               hosted_zone_name: hosted_zone_name
             )
@@ -34,7 +34,7 @@ class Formatron
         it 'should return a script that sets up a NAT' do
           cidr = 'cidr'
           # rubocop:disable Metrics/LineLength
-          expect(Files.nat(cidr: cidr)).to eql <<-EOH.gsub(/^ {12}/, '')
+          expect(Scripts.nat(cidr: cidr)).to eql <<-EOH.gsub(/^ {12}/, '')
             #/bin/bash -v
             set -e
             if ! grep --quiet '^net.ipv4.ip_forward=1$' /etc/sysctl.conf; then
@@ -72,7 +72,7 @@ class Formatron
           cookbooks_bucket = 'cookbooks_bucket'
           # rubocop:disable Metrics/LineLength
           expect(
-            Files.chef_server(
+            Scripts.chef_server(
               username: username,
               first_name: first_name,
               last_name: last_name,

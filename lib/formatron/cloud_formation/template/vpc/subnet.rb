@@ -11,6 +11,7 @@ class Formatron
     class Template
       class VPC
         # generates CloudFormation subnet resources
+        # rubocop:disable Metrics/ClassLength
         class Subnet
           SUBNET_PREFIX = 'subnet'
           SUBNET_ROUTE_TABLE_ASSOCIATION_PREFIX = 'subnetRouteTableAssociation'
@@ -27,7 +28,10 @@ class Formatron
             kms_key:,
             instances:,
             private_hosted_zone_id:,
-            public_hosted_zone_id:
+            public_hosted_zone_id:,
+            bucket:,
+            name:,
+            target:
           )
             @subnet = subnet
             @guid = @subnet.guid
@@ -49,6 +53,9 @@ class Formatron
             @instances = instances
             @private_hosted_zone_id = private_hosted_zone_id
             @public_hosted_zone_id = public_hosted_zone_id
+            @bucket = bucket
+            @name = name
+            @target = target
           end
           # rubocop:enable Metrics/AbcSize
           # rubocop:enable Metrics/ParameterLists
@@ -63,7 +70,7 @@ class Formatron
               instance: Instance
             }.each do |symbol, cls|
               @subnet.send(symbol).each do |_, instance|
-                instance = cls.new(
+                args = {
                   symbol => instance,
                   key_pair: @key_pair,
                   availability_zone: @availability_zone,
@@ -74,8 +81,12 @@ class Formatron
                   kms_key: @kms_key,
                   private_hosted_zone_id: @private_hosted_zone_id,
                   public_hosted_zone_id:
-                    @gateway.nil? ? nil : @public_hosted_zone_id
-                )
+                    @gateway.nil? ? nil : @public_hosted_zone_id,
+                  bucket: @bucket,
+                  name: @name,
+                  target: @target
+                }
+                instance = cls.new(**args)
                 instance.merge resources: resources, outputs: outputs
               end
             end
@@ -124,6 +135,7 @@ class Formatron
             :_add_acl
           )
         end
+        # rubocop:enable Metrics/ClassLength
       end
     end
   end

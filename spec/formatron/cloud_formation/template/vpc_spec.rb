@@ -19,6 +19,9 @@ class Formatron
           kms_key = 'kms_key'
           instances = 'instances'
           hosted_zone_id = 'hosted_zone_id'
+          bucket = 'bucket'
+          name = 'name'
+          target = 'target'
           test_instances(
             tag: :subnet,
             args: {
@@ -29,7 +32,10 @@ class Formatron
               kms_key: kms_key,
               instances: instances,
               private_hosted_zone_id: @private_hosted_zone_id,
-              public_hosted_zone_id: hosted_zone_id
+              public_hosted_zone_id: hosted_zone_id,
+              bucket: bucket,
+              name: name,
+              target: target
             },
             template_cls: 'Formatron::CloudFormation::Template::VPC::Subnet',
             dsl_cls: 'Formatron::DSL::Formatron::VPC::Subnet'
@@ -83,7 +89,10 @@ class Formatron
             key_pair: key_pair,
             kms_key: kms_key,
             instances: instances,
-            hosted_zone_id: hosted_zone_id
+            hosted_zone_id: hosted_zone_id,
+            bucket: bucket,
+            name: name,
+            target: target
           )
         end
 

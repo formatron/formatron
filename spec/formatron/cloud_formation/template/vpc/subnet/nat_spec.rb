@@ -18,6 +18,9 @@ class Formatron
               kms_key = 'kms_key'
               private_hosted_zone_id = 'private_hosted_zone_id'
               public_hosted_zone_id = 'public_hosted_zone_id'
+              bucket = 'bucket'
+              name = 'name'
+              target = 'target'
               dsl_nat = instance_double(
                 'Formatron::DSL::Formatron::VPC::Subnet::NAT'
               )
@@ -31,7 +34,10 @@ class Formatron
                 vpc_cidr: vpc_cidr,
                 kms_key: kms_key,
                 private_hosted_zone_id: private_hosted_zone_id,
-                public_hosted_zone_id: public_hosted_zone_id
+                public_hosted_zone_id: public_hosted_zone_id,
+                bucket: bucket,
+                name: name,
+                target: target
               )
             end
 

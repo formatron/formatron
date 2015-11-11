@@ -246,7 +246,8 @@ describe Formatron do
       key_pair: @key_pair,
       kms_key: @kms_key,
       instances: @all_instances,
-      hosted_zone_id: @hosted_zone_id
+      hosted_zone_id: @hosted_zone_id,
+      target: @target
     ) { @template }
     @template_hash = {
       template: 'template'
@@ -340,7 +341,8 @@ describe Formatron do
       key_pair: @key_pair,
       kms_key: @kms_key,
       instances: @all_instances,
-      hosted_zone_id: @hosted_zone_id
+      hosted_zone_id: @hosted_zone_id,
+      target: @target
     )
   end
 

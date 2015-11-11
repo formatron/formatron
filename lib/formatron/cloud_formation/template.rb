@@ -15,7 +15,8 @@ class Formatron
         key_pair:,
         kms_key:,
         instances:,
-        hosted_zone_id:
+        hosted_zone_id:,
+        target:
       )
         @formatron = formatron
         @hosted_zone_name = hosted_zone_name
@@ -23,6 +24,9 @@ class Formatron
         @kms_key = kms_key
         @instances = instances
         @hosted_zone_id = hosted_zone_id
+        @bucket = formatron.bucket
+        @name = formatron.name
+        @target = target
       end
       # rubocop:enable Metrics/ParameterLists
       # rubocop:enable Metrics/MethodLength
@@ -38,7 +42,10 @@ class Formatron
             key_pair: @key_pair,
             kms_key: @kms_key,
             instances: @instances,
-            hosted_zone_id: @hosted_zone_id
+            hosted_zone_id: @hosted_zone_id,
+            bucket: @bucket,
+            name: @name,
+            target: @target
           )
           template_vpc.merge resources: resources, outputs: outputs
         end

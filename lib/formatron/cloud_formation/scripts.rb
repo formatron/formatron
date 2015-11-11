@@ -1,7 +1,7 @@
 class Formatron
   module CloudFormation
-    # Generates files for setting up instances with CloudFormation init
-    module Files
+    # Generates scripts for setting up instances with CloudFormation init
+    module Scripts
       def self.hostname(sub_domain:, hosted_zone_name:)
         # rubocop:disable Metrics/LineLength
         <<-EOH.gsub(/^ {10}/, '')

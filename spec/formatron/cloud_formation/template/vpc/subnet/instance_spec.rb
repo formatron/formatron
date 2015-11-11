@@ -17,6 +17,9 @@ class Formatron
                 kms_key = 'kms_key'
                 private_hosted_zone_id = 'private_hosted_zone_id'
                 public_hosted_zone_id = 'public_hosted_zone_id'
+                bucket = 'bucket'
+                name = 'name'
+                target = 'target'
                 dsl_instance = instance_double(
                   'Formatron::DSL::Formatron::VPC::Subnet::Instance'
                 )
@@ -66,7 +69,10 @@ class Formatron
                 allow(template_policy_class).to receive(:new).with(
                   policy: dsl_policy,
                   instance_guid: guid,
-                  kms_key: kms_key
+                  kms_key: kms_key,
+                  bucket: bucket,
+                  name: name,
+                  target: target
                 ) { template_policy }
                 allow(template_policy).to receive(:merge) do |resources:|
                   resources[@policy_id] = @policy
@@ -127,13 +133,16 @@ class Formatron
                   '::VPC::Subnet::Instance::Setup'
                 ).as_stubbed_const
                 dsl_setup = 'dsl_setup'
+                sub_domain = 'sub_domain'
+                hosted_zone_name = 'hosted_zone_name'
                 allow(template_setup_class).to receive(:new).with(
-                  setup: dsl_setup
+                  setup: dsl_setup,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: hosted_zone_name
                 ) { template_setup }
                 allow(dsl_instance).to receive(
                   :setup
                 ) { dsl_setup }
-                sub_domain = 'sub_domain'
                 allow(dsl_instance).to receive(
                   :sub_domain
                 ) { sub_domain }
@@ -148,7 +157,6 @@ class Formatron
                 availability_zone = 'availability_zone'
                 subnet_guid = 'subnet_guid'
                 subnet_id = "subnet#{subnet_guid}"
-                hosted_zone_name = 'hosted_zone_name'
                 @instance_id = "instance#{guid}"
                 @instance = 'instance'
                 allow(ec2).to receive(:instance).with(
@@ -205,7 +213,10 @@ class Formatron
                   vpc_cidr: vpc_cidr,
                   kms_key: kms_key,
                   private_hosted_zone_id: private_hosted_zone_id,
-                  public_hosted_zone_id: public_hosted_zone_id
+                  public_hosted_zone_id: public_hosted_zone_id,
+                  bucket: bucket,
+                  name: name,
+                  target: target
                 )
                 @resources = {}
                 @outputs = {}

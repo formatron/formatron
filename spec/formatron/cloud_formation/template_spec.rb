@@ -15,6 +15,9 @@ class Formatron
         kms_key = 'kms_key'
         instances = 'instances'
         hosted_zone_id = 'hosted_zone_id'
+        bucket = 'bucket'
+        @name = 'name'
+        target = 'target'
         test_instances(
           tag: :vpc,
           args: {
@@ -22,14 +25,18 @@ class Formatron
             key_pair: key_pair,
             kms_key: kms_key,
             instances: instances,
-            hosted_zone_id: hosted_zone_id
+            hosted_zone_id: hosted_zone_id,
+            bucket: bucket,
+            name: @name,
+            target: target
           },
           template_cls: 'Formatron::CloudFormation::Template::VPC',
           dsl_cls: 'Formatron::DSL::Formatron::VPC'
         )
         formatron = instance_double 'Formatron::DSL::Formatron'
         allow(formatron).to receive(:vpc) { @dsl_instances[:vpc] }
-        allow(formatron).to receive(:name) { 'name' }
+        allow(formatron).to receive(:name) { @name }
+        allow(formatron).to receive(:bucket) { bucket }
         stub_const('Formatron::AWS::REGIONS', 'regions')
         @template = Template.new(
           formatron: formatron,
@@ -37,14 +44,15 @@ class Formatron
           key_pair: key_pair,
           kms_key: kms_key,
           instances: instances,
-          hosted_zone_id: hosted_zone_id
+          hosted_zone_id: hosted_zone_id,
+          target: target
         )
       end
 
       it 'should add the VPCs' do
         expect(@template.hash).to eql(
           AWSTemplateFormatVersion: '2010-09-09',
-          Description: 'Formatron stack: name',
+          Description: "Formatron stack: #{@name}",
           Mappings: {
             'regionMap' => 'regions'
           },

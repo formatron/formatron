@@ -5,6 +5,7 @@ require 'formatron/s3/configuration'
 require 'formatron/s3/chef_server_cert'
 require 'formatron/s3/chef_server_keys'
 require 'formatron/s3/cloud_formation_template'
+require 'formatron/cloud_formation/template'
 require 'formatron/cloud_formation'
 require 'formatron/chef'
 require 'formatron/logger'
@@ -57,7 +58,8 @@ class Formatron
       key_pair: key_pair,
       kms_key: @kms_key,
       instances: @all_instances,
-      hosted_zone_id: hosted_zone_id
+      hosted_zone_id: hosted_zone_id,
+      target: @target
     ).hash
     _initialize_chef_clients
   end

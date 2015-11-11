@@ -17,13 +17,17 @@ class Formatron
 
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/ParameterLists
+        # rubocop:disable Metrics/AbcSize
         def initialize(
           vpc:,
           hosted_zone_name:,
           key_pair:,
           kms_key:,
           instances:,
-          hosted_zone_id:
+          hosted_zone_id:,
+          bucket:,
+          name:,
+          target:
         )
           @vpc = vpc
           @cidr = vpc.cidr
@@ -43,7 +47,11 @@ class Formatron
           @kms_key = kms_key
           @instances = instances
           @hosted_zone_id = hosted_zone_id
+          @bucket = bucket
+          @name = name
+          @target = target
         end
+        # rubocop:enable Metrics/AbcSize
         # rubocop:enable Metrics/ParameterLists
         # rubocop:enable Metrics/MethodLength
 
@@ -59,7 +67,10 @@ class Formatron
               kms_key: @kms_key,
               instances: @instances,
               private_hosted_zone_id: @private_hosted_zone_id,
-              public_hosted_zone_id: @hosted_zone_id
+              public_hosted_zone_id: @hosted_zone_id,
+              bucket: @bucket,
+              name: @name,
+              target: @target
             )
             template_subnet.merge resources: resources, outputs: outputs
           end

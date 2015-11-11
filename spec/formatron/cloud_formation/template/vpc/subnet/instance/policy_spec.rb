@@ -13,10 +13,20 @@ class Formatron
                 before :each do
                   kms_key = 'kms_key'
                   guid = 'guid'
+                  bucket = 'bucket'
+                  name = 'name'
+                  target = 'target'
+                  config_key = 'config_key'
+                  s3_configuration_class = class_double(
+                    'Formatron::S3::Configuration'
+                  ).as_stubbed_const
+                  allow(s3_configuration_class).to receive(:key).with(
+                    name: name,
+                    target: target
+                  ) { config_key }
                   dsl_policy = instance_double(
                     'Formatron::DSL::Formatron::VPC::Subnet::Instance::Policy'
                   )
-
                   statements = [{
                     actions: %w(kms:Decrypt kms:Encrypt kms:GenerateDataKey*),
                     resources: [{
@@ -30,6 +40,9 @@ class Formatron
                         ]
                       ]
                     }]
+                  }, {
+                    actions: %w(S3:GetObject),
+                    resources: ["arn:aws:s3:::#{bucket}/#{config_key}"]
                   }]
                   dsl_statements = []
                   (0..9).each do |index|
@@ -74,7 +87,10 @@ class Formatron
                   template_policy = Policy.new(
                     policy: dsl_policy,
                     instance_guid: guid,
-                    kms_key: kms_key
+                    kms_key: kms_key,
+                    bucket: bucket,
+                    name: name,
+                    target: target
                   )
                   @resources = {}
                   template_policy.merge resources: @resources

@@ -11,7 +11,24 @@ class Formatron
             describe Setup do
               describe '#merge' do
                 before :each do
-                  @files = {}
+                  hostname_script = 'hostname_script'
+                  sub_domain = 'sub_domain'
+                  hosted_zone_name = 'hosted_zone_name'
+                  scripts_class = class_double(
+                    'Formatron::CloudFormation::Scripts'
+                  ).as_stubbed_const
+                  allow(scripts_class).to receive(:hostname).with(
+                    sub_domain: sub_domain,
+                    hosted_zone_name: hosted_zone_name
+                  ) { hostname_script }
+                  @files = {
+                    '/tmp/formatron/script-0.sh' => {
+                      content: hostname_script,
+                      mode: '000755',
+                      owner: 'root',
+                      group: 'root'
+                    }
+                  }
                   dsl_setup = instance_double(
                     'Formatron::DSL::Formatron::VPC::Subnet' \
                     '::Instance::Setup'
@@ -21,7 +38,7 @@ class Formatron
                   dsl_scripts = []
                   (0..9).each do |index|
                     script = "script#{index}"
-                    @files["/tmp/formatron/script-#{index}.sh"] = {
+                    @files["/tmp/formatron/script-#{index + 1}.sh"] = {
                       content: script,
                       mode: '000755',
                       owner: 'root',
@@ -53,7 +70,11 @@ class Formatron
                     :variable
                   ) { dsl_variables }
 
-                  template_setup = Setup.new setup: dsl_setup
+                  template_setup = Setup.new(
+                    setup: dsl_setup,
+                    sub_domain: sub_domain,
+                    hosted_zone_name: hosted_zone_name
+                  )
                   @instance = {}
                   template_setup.merge instance: @instance
                 end
