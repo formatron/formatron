@@ -81,7 +81,7 @@ class Formatron
                   kms_key: @kms_key,
                   private_hosted_zone_id: @private_hosted_zone_id,
                   public_hosted_zone_id:
-                    @gateway.nil? ? nil : @public_hosted_zone_id,
+                    @gateway.nil? ? @public_hosted_zone_id : nil,
                   bucket: @bucket,
                   name: @name,
                   target: @target

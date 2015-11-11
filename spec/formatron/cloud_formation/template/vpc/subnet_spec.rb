@@ -42,7 +42,7 @@ class Formatron
                 vpc_cidr: @vpc_cidr,
                 kms_key: @kms_key,
                 private_hosted_zone_id: @private_hosted_zone_id,
-                public_hosted_zone_id: nil,
+                public_hosted_zone_id: @public_hosted_zone_id,
                 bucket: @bucket,
                 name: @name,
                 target: @target
@@ -185,7 +185,7 @@ class Formatron
                     vpc_cidr: @vpc_cidr,
                     kms_key: @kms_key,
                     private_hosted_zone_id: @private_hosted_zone_id,
-                    public_hosted_zone_id: @public_hosted_zone_id,
+                    public_hosted_zone_id: nil,
                     bucket: @bucket,
                     name: @name,
                     target: @target
