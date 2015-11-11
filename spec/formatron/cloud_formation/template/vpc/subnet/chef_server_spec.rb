@@ -34,7 +34,7 @@ class Formatron
               organization_short_name = 'organization_short_name'
               organization_full_name = 'organization_full_name'
               version = 'version'
-              cookbooks_bucket = 'cookbooks_bucket'
+              @cookbooks_bucket = 'cookbooks_bucket'
               chef_server_cert_class = class_double(
                 'Formatron::S3::ChefServerCert'
               ).as_stubbed_const
@@ -145,7 +145,7 @@ class Formatron
                 chef_server_version: version,
                 ssl_cert_key: @ssl_cert_key,
                 ssl_key_key: @ssl_key_key,
-                cookbooks_bucket: cookbooks_bucket
+                cookbooks_bucket: @cookbooks_bucket
               ) { @chef_server_script }
               @scripts = [@existing_script]
               allow(dsl_setup).to receive(:script).with(
@@ -177,7 +177,7 @@ class Formatron
               ) { version }
               allow(dsl_chef_server).to receive(
                 :cookbooks_bucket
-              ) { cookbooks_bucket }
+              ) { @cookbooks_bucket }
               organization = instance_double(
                 'Formatron::DSL::VPC::Subnet::ChefServer::Organization'
               )
@@ -287,16 +287,47 @@ class Formatron
             end
 
             describe '#merge' do
-              it 'should pass through to the Instance merge method' do
-                resources = 'resources'
-                outputs = 'outputs'
-                expect(@template_instance).to receive(:merge).with(
-                  resources: resources,
-                  outputs: outputs
-                )
+              before :each do
+                @resources = {}
+                @outputs = {}
+                allow(@template_instance).to receive :merge
+                iam = class_double(
+                  'Formatron::CloudFormation::IAM'
+                ).as_stubbed_const
+                @user = 'user'
+                @user_id = "user#{@guid}"
+                allow(iam).to receive(:user).with(
+                  policy_name: @user_id,
+                  statements: [{
+                    actions: %w(s3:PutObject s3:GetObject s3:DeleteObject),
+                    resources: "arn:aws:s3:::#{@cookbooks_bucket}/*"
+                  }, {
+                    actions: %w(s3:ListBucket),
+                    resources: "arn:aws:s3:::#{@cookbooks_bucket}"
+                  }]
+                ) { @user }
+                @access_key = 'access_key'
+                @access_key_id = "accessKey#{@guid}"
+                allow(iam).to receive(:access_key).with(
+                  user_name: @user_id
+                ) { @access_key }
                 @template_chef_server.merge(
-                  resources: resources,
-                  outputs: outputs
+                  resources: @resources,
+                  outputs: @outputs
+                )
+              end
+
+              it 'should pass through to the Instance merge method' do
+                expect(@template_instance).to have_received(:merge).with(
+                  resources: @resources,
+                  outputs: @outputs
+                )
+              end
+
+              it 'should add the cookbooks bucket user' do
+                expect(@resources).to include(
+                  @user_id => @user,
+                  @access_key_id => @access_key
                 )
               end
             end

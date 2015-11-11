@@ -1,6 +1,7 @@
 require_relative 'instance'
 require 'formatron/s3/chef_server_cert'
 require 'formatron/s3/chef_server_keys'
+require 'formatron/cloud_formation/resources/iam'
 
 class Formatron
   module CloudFormation
@@ -10,6 +11,7 @@ class Formatron
           # generates CloudFormation Chef Server resources
           # rubocop:disable Metrics/ClassLength
           class ChefServer
+            USER_PREFIX = 'user'
             ACCESS_KEY_PREFIX = 'accessKey'
 
             # rubocop:disable Metrics/MethodLength
@@ -54,6 +56,7 @@ class Formatron
                   target: target,
                   guid: guid
                 )
+              @user_id = "#{USER_PREFIX}#{guid}"
               @access_key_id = "#{ACCESS_KEY_PREFIX}#{guid}"
               @kms_key = kms_key
               @username = @chef_server.username
@@ -156,15 +159,34 @@ class Formatron
             # rubocop:enable Metrics/MethodLength
 
             def merge(resources:, outputs:)
-              # TODO: add user and cookbooks bucket policy
+              _add_cookbooks_bucket_user resources
               @instance.merge resources: resources, outputs: outputs
             end
+
+            # rubocop:disable Metrics/MethodLength
+            def _add_cookbooks_bucket_user(resources)
+              resources[@user_id] = IAM.user(
+                policy_name: @user_id,
+                statements: [{
+                  actions: %w(s3:PutObject s3:GetObject s3:DeleteObject),
+                  resources: "arn:aws:s3:::#{@cookbooks_bucket}/*"
+                }, {
+                  actions: %w(s3:ListBucket),
+                  resources: "arn:aws:s3:::#{@cookbooks_bucket}"
+                }]
+              )
+              resources[@access_key_id] = IAM.access_key(
+                user_name: @user_id
+              )
+            end
+            # rubocop:enable Metrics/MethodLength
 
             private(
               :_add_ssl_cert_policy,
               :_add_keys_policy,
               :_add_open_ports,
-              :_add_setup_script
+              :_add_setup_script,
+              :_add_cookbooks_bucket_user
             )
           end
           # rubocop:enable Metrics/ClassLength
