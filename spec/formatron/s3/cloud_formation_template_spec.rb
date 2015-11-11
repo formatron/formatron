@@ -15,6 +15,7 @@ class Formatron
       region = 'region'
 
       before(:each) do
+        stub_const 'Formatron::LOG', Logger.new('/dev/null')
         @aws = instance_double 'Formatron::AWS'
         @s3_path = class_double(
           'Formatron::S3::Path'

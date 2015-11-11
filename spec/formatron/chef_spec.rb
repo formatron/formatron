@@ -6,6 +6,7 @@ require 'formatron/chef'
 class Formatron
   describe Chef do
     before :each do
+      stub_const 'Formatron::LOG', Logger.new('/dev/null')
       @aws = instance_double 'Formatron::AWS'
       @guid = 'guid'
       @name = 'name'
@@ -41,7 +42,6 @@ class Formatron
       ).as_stubbed_const
       @berkshelf = instance_double 'Formatron::Chef::Berkshelf'
       allow(@berkshelf_class).to receive(:new) do
-        puts 'hello'
         @berkshelf
       end
       allow(@berkshelf).to receive(:upload)

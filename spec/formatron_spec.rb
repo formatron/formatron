@@ -3,6 +3,7 @@ require 'formatron'
 
 describe Formatron do
   before(:each) do
+    stub_const 'Formatron::LOG', Logger.new('/dev/null')
     @directory = 'test/directory'
     @credentials = 'test/credentials'
     @target = 'target'

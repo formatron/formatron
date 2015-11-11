@@ -5,6 +5,7 @@ require 'formatron/cloud_formation'
 class Formatron
   describe CloudFormation do
     before(:each) do
+      stub_const 'Formatron::LOG', Logger.new('/dev/null')
       @region = 'region'
       @bucket = 'bucket'
       @name = 'name'
