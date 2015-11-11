@@ -9,7 +9,7 @@ class Formatron
       @formatron = Formatron.new
       @config = config
       @target = target
-      instance_eval File.read(file)
+      instance_eval File.read(file), file
     end
   end
 end

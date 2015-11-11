@@ -95,13 +95,7 @@ class Formatron
                 template_security_group_class = class_double(
                   'Formatron::CloudFormation::Template' \
                   '::VPC::Subnet::Instance::SecurityGroup'
-                ).as_stubbed_const
-                stub_const(
-                  'Formatron::CloudFormation::Template' \
-                  '::VPC::Subnet::Instance::SecurityGroup' \
-                  '::SECURITY_GROUP_PREFIX',
-                  'securityGroup'
-                )
+                ).as_stubbed_const transfer_nested_constants: true
                 allow(template_security_group_class).to receive(:new).with(
                   security_group: dsl_security_group,
                   instance_guid: guid,

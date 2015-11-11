@@ -165,7 +165,7 @@ class Formatron
 
             # rubocop:disable Metrics/MethodLength
             def _add_cookbooks_bucket_user(resources)
-              resources[@user_id] = IAM.user(
+              resources[@user_id] = Resources::IAM.user(
                 policy_name: @user_id,
                 statements: [{
                   actions: %w(s3:PutObject s3:GetObject s3:DeleteObject),
@@ -175,7 +175,7 @@ class Formatron
                   resources: "arn:aws:s3:::#{@cookbooks_bucket}"
                 }]
               )
-              resources[@access_key_id] = IAM.access_key(
+              resources[@access_key_id] = Resources::IAM.access_key(
                 user_name: @user_id
               )
             end

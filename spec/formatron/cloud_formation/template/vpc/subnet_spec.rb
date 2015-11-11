@@ -221,11 +221,6 @@ class Formatron
                   availability_zone: @availability_zone,
                   map_public_ip_on_launch: false
                 ) { @private_subnet }
-                stub_const(
-                  'Formatron::CloudFormation::Template::VPC' \
-                  '::Subnet::NAT::ROUTE_TABLE_PREFIX',
-                  'routeTable'
-                )
                 private_route_table_id = "routeTable#{gateway_guid}"
                 @private_subnet_route_table_association =
                   'private_subnet_route_table_association'

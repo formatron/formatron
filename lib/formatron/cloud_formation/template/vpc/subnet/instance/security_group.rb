@@ -23,36 +23,41 @@ class Formatron
                 @guid = instance_guid
                 @security_group_id = "#{SECURITY_GROUP_PREFIX}#{@guid}"
                 @vpc_id = "#{VPC::VPC_PREFIX}#{@vpc_guid}"
-                @open_tcp_ports = @security_group.open_tcp_port
-                @open_udp_ports = @security_group.open_udp_port
+                @open_tcp_ports =
+                  @security_group.open_tcp_port unless @security_group.nil?
+                @open_udp_ports =
+                  @security_group.open_udp_port unless @security_group.nil?
               end
               # rubocop:enable Metrics/MethodLength
 
               # rubocop:disable Metrics/MethodLength
               def merge(resources:)
+                ingress_rules = _base_ingress_rules
+                ingress_rules.concat(
+                  @open_tcp_ports.collect do |port|
+                    {
+                      cidr: '0.0.0.0/0',
+                      protocol: 'tcp',
+                      from_port: port,
+                      to_port: port
+                    }
+                  end
+                ) unless @open_tcp_ports.nil?
+                ingress_rules.concat(
+                  @open_udp_ports.collect do |port|
+                    {
+                      cidr: '0.0.0.0/0',
+                      protocol: 'udp',
+                      from_port: port,
+                      to_port: port
+                    }
+                  end
+                ) unless @open_udp_ports.nil?
                 resources[@security_group_id] = Resources::EC2.security_group(
                   group_description: 'Formatron instance security group',
                   vpc: @vpc_id,
                   egress: _base_egress_rules,
-                  ingress: _base_ingress_rules.concat(
-                    @open_tcp_ports.collect do |port|
-                      {
-                        cidr: '0.0.0.0/0',
-                        protocol: 'tcp',
-                        from_port: port,
-                        to_port: port
-                      }
-                    end
-                  ).concat(
-                    @open_udp_ports.collect do |port|
-                      {
-                        cidr: '0.0.0.0/0',
-                        protocol: 'udp',
-                        from_port: port,
-                        to_port: port
-                      }
-                    end
-                  )
+                  ingress: ingress_rules
                 )
               end
               # rubocop:enable Metrics/MethodLength

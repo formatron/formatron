@@ -1,5 +1,7 @@
-require_relative 'subnet/acl'
 require 'formatron/util/dsl'
+require_relative 'subnet/acl'
+require_relative 'subnet/instance'
+require_relative 'subnet/chef_server'
 
 class Formatron
   class DSL

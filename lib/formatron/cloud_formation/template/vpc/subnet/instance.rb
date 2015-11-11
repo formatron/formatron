@@ -55,13 +55,13 @@ class Formatron
               @security_group_id =
                 "#{SecurityGroup::SECURITY_GROUP_PREFIX}#{@guid}"
               @availability_zone = availability_zone
-              @instance_type = @instance.instance_type
+              @instance_type = @instance.instance_type || 't2.micro'
               @key_pair = key_pair
               @subnet_guid = subnet_guid
               @subnet_id = "#{Subnet::SUBNET_PREFIX}#{@subnet_guid}"
               @sub_domain = @instance.sub_domain
               @hosted_zone_name = hosted_zone_name
-              @source_dest_check = @instance.source_dest_check
+              @source_dest_check = @instance.source_dest_check || true
               @vpc_guid = vpc_guid
               @vpc_cidr = vpc_cidr
               @kms_key = kms_key

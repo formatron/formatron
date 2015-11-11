@@ -7,7 +7,7 @@ class Formatron
       class VPC
         # namespacing for tests
         class Subnet
-          describe ChefServer do
+          describe Bastion do
             before :each do
               bucket = 'bucket'
               name = 'name'

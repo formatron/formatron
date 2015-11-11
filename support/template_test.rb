@@ -12,7 +12,9 @@ class Formatron
       )
         @results[tag] = []
         @dsl_instances[tag] = {}
-        template_class = class_double(template_cls).as_stubbed_const
+        template_class = class_double(template_cls).as_stubbed_const(
+          transfer_nested_constants: true
+        )
         (0..9).each do |index|
           value = "#{tag}#{index}"
           @results[tag][index] = value

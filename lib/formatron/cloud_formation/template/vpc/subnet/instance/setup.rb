@@ -12,11 +12,12 @@ class Formatron
                 @setup = setup
                 @sub_domain = sub_domain
                 @hosted_zone_name = hosted_zone_name
-                @scripts = @setup.script
-                @variables = @setup.variable
+                @scripts = @setup.script unless @setup.nil?
+                @variables = @setup.variable unless @setup.nil?
               end
 
               # rubocop:disable Metrics/MethodLength
+              # rubocop:disable Metrics/AbcSize
               def merge(instance:)
                 files = {
                   '/tmp/formatron/script-0.sh' => {
@@ -36,17 +37,17 @@ class Formatron
                     owner: 'root',
                     group: 'root'
                   }
-                end
+                end unless @scripts.nil?
                 variables = []
                 @variables.each do |key, value|
                   variables.concat(["#{key}=", value.value, "\n"])
-                end
+                end unless @variables.nil?
                 files['/tmp/formatron/script-variables'] = {
                   content: Template.join(*variables),
                   mode: '000644',
                   owner: 'root',
                   group: 'root'
-                }
+                } unless variables.length == 0
                 instance[:Metadata] = {
                   Comment1: 'Create setup scripts',
                   'AWS::CloudFormation::Init' => {
@@ -56,6 +57,7 @@ class Formatron
                   }
                 }
               end
+              # rubocop:enable Metrics/AbcSize
               # rubocop:enable Metrics/MethodLength
             end
           end

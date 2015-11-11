@@ -290,9 +290,8 @@ class Formatron
               before :each do
                 @resources = {}
                 @outputs = {}
-                allow(@template_instance).to receive :merge
                 iam = class_double(
-                  'Formatron::CloudFormation::IAM'
+                  'Formatron::CloudFormation::Resources::IAM'
                 ).as_stubbed_const
                 @user = 'user'
                 @user_id = "user#{@guid}"
@@ -311,6 +310,7 @@ class Formatron
                 allow(iam).to receive(:access_key).with(
                   user_name: @user_id
                 ) { @access_key }
+                allow(@template_instance).to receive :merge
                 @template_chef_server.merge(
                   resources: @resources,
                   outputs: @outputs

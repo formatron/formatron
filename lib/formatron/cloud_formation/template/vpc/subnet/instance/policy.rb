@@ -37,29 +37,31 @@ class Formatron
 
               # rubocop:disable Metrics/MethodLength
               def merge(resources:)
+                statements = [{
+                  actions: %w(kms:Decrypt kms:Encrypt kms:GenerateDataKey*),
+                  resources: [Template.join(
+                    'arn:aws:kms:',
+                    Template.ref('AWS::Region'),
+                    ':',
+                    Template.ref('AWS::AccountId'),
+                    ":key/#{@kms_key}"
+                  )]
+                }, {
+                  actions: %w(S3:GetObject),
+                  resources: ["arn:aws:s3:::#{@bucket}/#{@config_key}"]
+                }]
+                statements.concat(
+                  @policy.statement.collect do |statement|
+                    {
+                      actions: statement.action,
+                      resources: statement.resource
+                    }
+                  end
+                ) unless @policy.nil?
                 resources[@policy_id] = Resources::IAM.policy(
                   role: @role_id,
                   name: @policy_id,
-                  statements: [{
-                    actions: %w(kms:Decrypt kms:Encrypt kms:GenerateDataKey*),
-                    resources: [Template.join(
-                      'arn:aws:kms:',
-                      Template.ref('AWS::Region'),
-                      ':',
-                      Template.ref('AWS::AccountId'),
-                      ":key/#{@kms_key}"
-                    )]
-                  }, {
-                    actions: %w(S3:GetObject),
-                    resources: ["arn:aws:s3:::#{@bucket}/#{@config_key}"]
-                  }].concat(
-                    @policy.statement.collect do |statement|
-                      {
-                        actions: statement.action,
-                        resources: statement.resource
-                      }
-                    end
-                  )
+                  statements: statements
                 )
               end
               # rubocop:enable Metrics/MethodLength
