@@ -69,12 +69,13 @@ class Formatron
               organization = @chef_server.organization
               @organization_short_name = organization.short_name
               @organization_full_name = organization.full_name
+              _set_default_instance_type
               _add_ssl_cert_policy
               _add_keys_policy
               _add_open_ports
               _add_setup_script
               @instance = Instance.new(
-                instance: chef_server,
+                instance: @chef_server,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -92,6 +93,12 @@ class Formatron
             # rubocop:enable Metrics/AbcSize
             # rubocop:enable Metrics/ParameterLists
             # rubocop:enable Metrics/MethodLength
+
+            def _set_default_instance_type
+              @chef_server.instance_type(
+                't2.medium'
+              ) if @chef_server.instance_type.nil?
+            end
 
             def _add_ssl_cert_policy
               @chef_server.policy do |policy|
@@ -182,6 +189,7 @@ class Formatron
             # rubocop:enable Metrics/MethodLength
 
             private(
+              :_set_default_instance_type,
               :_add_ssl_cert_policy,
               :_add_keys_policy,
               :_add_open_ports,

@@ -69,7 +69,7 @@ class Formatron
                 target: target,
                 guid: @guid
               ) { @organization_pem_key }
-              dsl_chef_server = instance_double(
+              @dsl_chef_server = instance_double(
                 'Formatron::DSL::Formatron::VPC::Subnet::ChefServer'
               )
               dsl_policy = instance_double(
@@ -95,7 +95,7 @@ class Formatron
               allow(dsl_policy).to receive(:statement) do |&block|
                 block.call dsl_statements.shift
               end
-              allow(dsl_chef_server).to receive(:policy) do |&block|
+              allow(@dsl_chef_server).to receive(:policy) do |&block|
                 block.call dsl_policy
               end
               dsl_setup = instance_double(
@@ -151,7 +151,7 @@ class Formatron
               allow(dsl_setup).to receive(:script).with(
                 no_args
               ) { @scripts }
-              allow(dsl_chef_server).to receive(:setup) do |&block|
+              allow(@dsl_chef_server).to receive(:setup) do |&block|
                 block.call dsl_setup
               end
               @dsl_security_group = instance_double(
@@ -159,29 +159,30 @@ class Formatron
                 '::Instance::SecurityGroup'
               )
               allow(@dsl_security_group).to receive(:open_tcp_port)
-              allow(dsl_chef_server).to receive(
+              allow(@dsl_chef_server).to receive(
                 :security_group
               ) do |&block|
                 block.call @dsl_security_group
               end
-              allow(dsl_chef_server).to receive(:guid).with(
+              allow(@dsl_chef_server).to receive(:guid).with(
                 no_args
               ) { @guid }
-              allow(dsl_chef_server).to receive(:username) { username }
-              allow(dsl_chef_server).to receive(:password) { password }
-              allow(dsl_chef_server).to receive(:first_name) { first_name }
-              allow(dsl_chef_server).to receive(:last_name) { last_name }
-              allow(dsl_chef_server).to receive(:email) { email }
-              allow(dsl_chef_server).to receive(
+              allow(@dsl_chef_server).to receive(:username) { username }
+              allow(@dsl_chef_server).to receive(:password) { password }
+              allow(@dsl_chef_server).to receive(:first_name) { first_name }
+              allow(@dsl_chef_server).to receive(:last_name) { last_name }
+              allow(@dsl_chef_server).to receive(:email) { email }
+              allow(@dsl_chef_server).to receive(:instance_type)
+              allow(@dsl_chef_server).to receive(
                 :version
               ) { version }
-              allow(dsl_chef_server).to receive(
+              allow(@dsl_chef_server).to receive(
                 :cookbooks_bucket
               ) { @cookbooks_bucket }
               organization = instance_double(
                 'Formatron::DSL::VPC::Subnet::ChefServer::Organization'
               )
-              allow(dsl_chef_server).to receive(:organization) { organization }
+              allow(@dsl_chef_server).to receive(:organization) { organization }
               allow(organization).to receive(
                 :short_name
               ) { organization_short_name }
@@ -197,7 +198,7 @@ class Formatron
                 '::Subnet::Instance'
               ).as_stubbed_const
               allow(template_instance_class).to receive(:new).with(
-                instance: dsl_chef_server,
+                instance: @dsl_chef_server,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -212,7 +213,7 @@ class Formatron
                 target: target
               ) { @template_instance }
               @template_chef_server = ChefServer.new(
-                chef_server: dsl_chef_server,
+                chef_server: @dsl_chef_server,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -226,6 +227,12 @@ class Formatron
                 name: name,
                 target: target
               )
+            end
+
+            it 'should set the instance type to t2.medium' do
+              expect(@dsl_chef_server).to have_received(
+                :instance_type
+              ).with 't2.medium'
             end
 
             it 'should add ssl cert policy' do
