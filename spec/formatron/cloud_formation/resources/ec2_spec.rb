@@ -450,7 +450,7 @@ class Formatron
                 SourceDestCheck: source_dest_check,
                 InstanceType: instance_type,
                 KeyName: key_name,
-                SubnetId: subnet,
+                SubnetId: { Ref: subnet },
                 SecurityGroupIds: [{ Ref: security_group }],
                 Tags: [{
                   Key: 'Name',

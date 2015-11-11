@@ -26,7 +26,7 @@ class Formatron
             key_pair:,
             hosted_zone_name:,
             kms_key:,
-            instances:,
+            gateways:,
             private_hosted_zone_id:,
             public_hosted_zone_id:,
             bucket:,
@@ -50,7 +50,7 @@ class Formatron
             @key_pair = key_pair
             @hosted_zone_name = hosted_zone_name
             @kms_key = kms_key
-            @instances = instances
+            @gateways = gateways
             @private_hosted_zone_id = private_hosted_zone_id
             @public_hosted_zone_id = public_hosted_zone_id
             @bucket = bucket
@@ -109,7 +109,7 @@ class Formatron
           def _add_subnet_route_table_association(resources)
             route_table = @public_route_table_id
             unless @gateway.nil?
-              gateway_guid = @instances[@gateway].guid
+              gateway_guid = @gateways[@gateway].guid
               route_table = "#{NAT::ROUTE_TABLE_PREFIX}#{gateway_guid}"
             end
             resources[@subnet_route_table_association_id] =

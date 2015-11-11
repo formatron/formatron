@@ -58,7 +58,7 @@ describe Formatron do
     ).with(@hosted_zone_id) { @hosted_zone_name }
 
     vpcs = {}
-    @all_instances = {}
+    @gateways = {}
     @chef_class = class_double(
       'Formatron::Chef'
     ).as_stubbed_const
@@ -150,7 +150,6 @@ describe Formatron do
             no_args
           ) { organization_name }
         end
-        @all_instances.merge! chef_servers
         allow(subnet).to receive(:chef_server).with(no_args) { chef_servers }
         bastions = {}
         (0..2).each do |bastion_index|
@@ -175,7 +174,6 @@ describe Formatron do
             no_args
           ) { "bastion_sub_domain#{bastion_index}" }
         end
-        @all_instances.merge! bastions
         allow(subnet).to receive(:bastion).with(no_args) { bastions }
         nats = {}
         (0..2).each do |nat_index|
@@ -200,7 +198,7 @@ describe Formatron do
             no_args
           ) { "nat_sub_domain#{nat_index}" }
         end
-        @all_instances.merge! nats
+        @gateways.merge! nats
         allow(subnet).to receive(:nat).with(no_args) { nats }
         instances = {}
         (0..2).each do |instance_index|
@@ -225,7 +223,6 @@ describe Formatron do
             no_args
           ) { "instance_sub_domain#{instance_index}" }
         end
-        @all_instances.merge! instances
         allow(subnet).to receive(:instance).with(no_args) { instances }
       end
       allow(vpc).to receive(:subnet).with(no_args) { subnets }
@@ -245,7 +242,7 @@ describe Formatron do
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
       kms_key: @kms_key,
-      instances: @all_instances,
+      gateways: @gateways,
       hosted_zone_id: @hosted_zone_id,
       target: @target
     ) { @template }
@@ -340,7 +337,7 @@ describe Formatron do
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
       kms_key: @kms_key,
-      instances: @all_instances,
+      gateways: @gateways,
       hosted_zone_id: @hosted_zone_id,
       target: @target
     )

@@ -17,7 +17,7 @@ class Formatron
           key_pair = 'key_pair'
           hosted_zone_name = 'hosted_zone_name'
           kms_key = 'kms_key'
-          instances = 'instances'
+          gateways = 'gateways'
           hosted_zone_id = 'hosted_zone_id'
           bucket = 'bucket'
           name = 'name'
@@ -30,7 +30,7 @@ class Formatron
               key_pair: key_pair,
               hosted_zone_name: hosted_zone_name,
               kms_key: kms_key,
-              instances: instances,
+              gateways: gateways,
               private_hosted_zone_id: @private_hosted_zone_id,
               public_hosted_zone_id: hosted_zone_id,
               bucket: bucket,
@@ -88,7 +88,7 @@ class Formatron
             hosted_zone_name: hosted_zone_name,
             key_pair: key_pair,
             kms_key: kms_key,
-            instances: instances,
+            gateways: gateways,
             hosted_zone_id: hosted_zone_id,
             bucket: bucket,
             name: name,

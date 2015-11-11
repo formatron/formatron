@@ -176,7 +176,7 @@ class Formatron
                 }]
               )
               resources[@access_key_id] = Resources::IAM.access_key(
-                user_name: @user_id
+                user_name: Template.ref(@user_id)
               )
             end
             # rubocop:enable Metrics/MethodLength

@@ -308,7 +308,7 @@ class Formatron
                 @access_key = 'access_key'
                 @access_key_id = "accessKey#{@guid}"
                 allow(iam).to receive(:access_key).with(
-                  user_name: @user_id
+                  user_name: { Ref: @user_id }
                 ) { @access_key }
                 allow(@template_instance).to receive :merge
                 @template_chef_server.merge(

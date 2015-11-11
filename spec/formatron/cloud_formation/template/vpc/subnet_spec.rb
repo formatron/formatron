@@ -118,7 +118,7 @@ class Formatron
               key_pair: @key_pair,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
-              instances: [],
+              gateways: [],
               public_hosted_zone_id: @public_hosted_zone_id,
               private_hosted_zone_id: @private_hosted_zone_id,
               bucket: @bucket,
@@ -206,7 +206,7 @@ class Formatron
                 gateway_instance = instance_double(
                   'Formatron::DSL::Formatron::VPC::Subnet::NAT'
                 )
-                instances = {
+                gateways = {
                   gateway => gateway_instance
                 }
                 gateway_guid = 'gateway_guid'
@@ -235,7 +235,7 @@ class Formatron
                   key_pair: @key_pair,
                   hosted_zone_name: @hosted_zone_name,
                   kms_key: @kms_key,
-                  instances: instances,
+                  gateways: gateways,
                   public_hosted_zone_id: @public_hosted_zone_id,
                   private_hosted_zone_id: @private_hosted_zone_id,
                   bucket: @bucket,

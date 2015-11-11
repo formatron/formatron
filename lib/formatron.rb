@@ -57,7 +57,7 @@ class Formatron
       hosted_zone_name: @hosted_zone_name,
       key_pair: key_pair,
       kms_key: @kms_key,
-      instances: @all_instances,
+      gateways: @nats,
       hosted_zone_id: hosted_zone_id,
       target: @target
     ).hash

@@ -180,7 +180,7 @@ class Formatron
                 @private_record_set_id = "privateRecordSet#{guid}"
                 @private_record_set = 'private_record_set'
                 allow(route53).to receive(:record_set).with(
-                  hosted_zone_id: private_hosted_zone_id,
+                  hosted_zone_id: { Ref: private_hosted_zone_id },
                   sub_domain: sub_domain,
                   hosted_zone_name: hosted_zone_name,
                   instance: @instance_id,
