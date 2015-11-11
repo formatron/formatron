@@ -8,9 +8,13 @@ class Formatron
       class VPC
         class Subnet
           # generates CloudFormation Chef Server resources
+          # rubocop:disable Metrics/ClassLength
           class ChefServer
+            ACCESS_KEY_PREFIX = 'accessKey'
+
             # rubocop:disable Metrics/MethodLength
             # rubocop:disable Metrics/ParameterLists
+            # rubocop:disable Metrics/AbcSize
             def initialize(
               chef_server:,
               key_pair:,
@@ -50,11 +54,22 @@ class Formatron
                   target: target,
                   guid: guid
                 )
+              @access_key_id = "#{ACCESS_KEY_PREFIX}#{guid}"
+              @kms_key = kms_key
+              @username = @chef_server.username
+              @password = @chef_server.password
+              @first_name = @chef_server.first_name
+              @last_name = @chef_server.last_name
+              @email = @chef_server.email
+              @version = @chef_server.version
+              @cookbooks_bucket = @chef_server.cookbooks_bucket
+              organization = @chef_server.organization
+              @organization_short_name = organization.short_name
+              @organization_full_name = organization.full_name
               _add_ssl_cert_policy
               _add_keys_policy
-              # TODO: add extra security group rules
-              # TODO: add extra setup variables
-              # TODO: add extra setup script
+              _add_open_ports
+              _add_setup_script
               @instance = Instance.new(
                 instance: chef_server,
                 key_pair: key_pair,
@@ -63,7 +78,7 @@ class Formatron
                 hosted_zone_name: hosted_zone_name,
                 vpc_guid: vpc_guid,
                 vpc_cidr: vpc_cidr,
-                kms_key: kms_key,
+                kms_key: @kms_key,
                 private_hosted_zone_id: private_hosted_zone_id,
                 public_hosted_zone_id: public_hosted_zone_id,
                 bucket: @bucket,
@@ -71,6 +86,7 @@ class Formatron
                 target: target
               )
             end
+            # rubocop:enable Metrics/AbcSize
             # rubocop:enable Metrics/ParameterLists
             # rubocop:enable Metrics/MethodLength
 
@@ -96,6 +112,49 @@ class Formatron
               end
             end
 
+            def _add_open_ports
+              @chef_server.security_group do |security_group|
+                security_group.open_tcp_port 80
+                security_group.open_tcp_port 443
+              end
+            end
+
+            # rubocop:disable Metrics/MethodLength
+            def _add_setup_script
+              @chef_server.setup do |setup|
+                scripts = setup.script
+                scripts.unshift Scripts.chef_server(
+                  username: @username,
+                  first_name: @first_name,
+                  last_name: @last_name,
+                  email: @email,
+                  password: @password,
+                  organization_short_name: @organization_short_name,
+                  organization_full_name: @organization_full_name,
+                  bucket: @bucket,
+                  user_pem_key: @user_pem_key,
+                  organization_pem_key: @organization_pem_key,
+                  kms_key: @kms_key,
+                  chef_server_version: @version,
+                  ssl_cert_key: @ssl_cert_key,
+                  ssl_key_key: @ssl_key_key,
+                  cookbooks_bucket: @cookbooks_bucket
+                )
+                setup.variable 'REGION' do |variable|
+                  variable.value Template.ref('AWS::Region')
+                end
+                setup.variable 'ACCESS_KEY_ID' do |variable|
+                  variable.value Template.ref(@access_key_id)
+                end
+                setup.variable 'SECRET_ACCESS_KEY' do |variable|
+                  variable.value Template.get_attribute(
+                    @access_key_id, 'SecretAccessKey'
+                  )
+                end
+              end
+            end
+            # rubocop:enable Metrics/MethodLength
+
             def merge(resources:, outputs:)
               # TODO: add user and cookbooks bucket policy
               @instance.merge resources: resources, outputs: outputs
@@ -103,9 +162,12 @@ class Formatron
 
             private(
               :_add_ssl_cert_policy,
-              :_add_keys_policy
+              :_add_keys_policy,
+              :_add_open_ports,
+              :_add_setup_script
             )
           end
+          # rubocop:enable Metrics/ClassLength
         end
       end
     end
