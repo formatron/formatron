@@ -1,5 +1,6 @@
 require 'erb'
 require 'curb'
+require 'formatron/util'
 
 class Formatron
   module Generators
@@ -13,6 +14,10 @@ class Formatron
           def initialize(params)
             @params = params
             @ip = Curl.get('http://whatismyip.akamai.com').body_str
+          end
+
+          def guid
+            Util.guid
           end
         end
 

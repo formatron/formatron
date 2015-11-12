@@ -35,6 +35,13 @@ describe Formatron::Generators::Bootstrap do
       }
     }
   }
+  vpc_guid = 'vpc_guid'
+  management_subnet_guid = 'management_subnet_guid'
+  bastion_guid = 'bastion_guid'
+  nat_guid = 'nat_guid'
+  chef_guid = 'chef_guid'
+  public_subnet_guid = 'public_subnet_guid'
+  private_subnet_guid = 'private_subnet_guid'
 
   describe '::generate' do
     before(:each) do
@@ -45,6 +52,21 @@ describe Formatron::Generators::Bootstrap do
         )
       )
       FakeFS::FileSystem.clone lib
+      util_class = class_double(
+        'Formatron::Util'
+      ).as_stubbed_const
+      guids = [
+        vpc_guid,
+        management_subnet_guid,
+        bastion_guid,
+        nat_guid,
+        chef_guid,
+        public_subnet_guid,
+        private_subnet_guid
+      ]
+      allow(util_class).to receive(:guid) do
+        guids.shift
+      end
       Formatron::Generators::Bootstrap.generate directory, params
     end
 
@@ -76,72 +98,82 @@ describe Formatron::Generators::Bootstrap do
       ip = Curl.get('http://whatismyip.akamai.com').body_str
       # rubocop:disable Metrics/LineLength
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
-        name '#{params[:name]}',
-        bucket '#{params[:s3_bucket]}'
+        formatron.name '#{params[:name]}'
+        formatron.bucket '#{params[:s3_bucket]}'
 
-        bootstrap do |configuration|
-          configuration.protect config['protected']
-          configuration.kms_key '#{params[:kms_key]}'
-          configuration.hosted_zone_id '#{params[:hosted_zone_id]}'
+        formatron.global do |global|
+          global.protect config['protected']
+          global.kms_key '#{params[:kms_key]}'
+          global.hosted_zone_id '#{params[:hosted_zone_id]}'
 
-          configuration.ec2 do |ec2|
+          global.ec2 do |ec2|
             ec2.key_pair '#{params[:ec2_key_pair]}'
             ec2.private_key 'ec2/private-key.pem'
           end
+        end
 
-          configuration.vpc do |vpc|
-            vpc.cidr '10.0.0.0/16'
+        formatron.vpc 'vpc' do |vpc|
+          vpc.guid 'VPC#{vpc_guid}'
+          vpc.cidr '10.0.0.0/16'
 
-            vpc.subnet 'management1' do |subnet|
-              subnet.availability_zone '#{params[:availability_zone]}'
-              subnet.cidr '10.0.0.0/24'
-              subnet.public true do |acl|
-                acl.source_cidr '#{ip}/32'
+          vpc.subnet 'management' do |subnet|
+            subnet.guid 'SUBNET#{management_subnet_guid}'
+            subnet.availability_zone '#{params[:availability_zone]}'
+            subnet.cidr '10.0.0.0/24'
+            subnet.acl do |acl|
+              acl.source_cidr '#{ip}/32'
+            end
+
+            subnet.bastion 'bastion' do |bastion|
+              bastion.guid 'BASTION#{bastion_guid}'
+              bastion.sub_domain config['bastion']['sub_domain']
+              bastion.chef do |chef|
+                chef.cookbook 'cookbooks/bastion_instance'
               end
             end
 
-            vpc.subnet 'public1' do |subnet|
-              subnet.availability_zone '#{params[:availability_zone]}'
-              subnet.cidr '10.0.1.0/24'
-              subnet.public true
+            subnet.nat 'nat' do |nat|
+              nat.guid 'NAT#{nat_guid}'
+              nat.sub_domain config['nat']['sub_domain']
+              nat.chef do |chef|
+                chef.cookbook 'cookbooks/nat_instance'
+              end
             end
 
-            vpc.subnet 'private1' do |subnet|
-              subnet.availability_zone '#{params[:availability_zone]}'
-              subnet.cidr '10.0.2.0/24'
+            subnet.chef_server 'chef_server' do |chef_server|
+              chef_server.guid 'CHEF#{chef_guid}'
+              chef_server.version '12.2.0-1'
+              chef_server.sub_domain config['chef_server']['sub_domain']
+              chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
+              chef_server.organization do |organization|
+                organization.short_name '#{params[:chef_server][:organization][:short_name]}'
+                organization.full_name '#{params[:chef_server][:organization][:full_name]}'
+              end
+              chef_server.username '#{params[:chef_server][:username]}'
+              chef_server.email '#{params[:chef_server][:email]}'
+              chef_server.first_name '#{params[:chef_server][:first_name]}'
+              chef_server.last_name '#{params[:chef_server][:last_name]}'
+              chef_server.password '#{params[:chef_server][:password]}'
+              chef_server.ssl_key config['chef_server']['ssl']['key']
+              chef_server.ssl_cert config['chef_server']['ssl']['cert']
+              chef_server.ssl_verify config['chef_server']['ssl']['verify']
+              chef_server.chef do |chef|
+                chef.cookbook 'cookbooks/chef_server_instance'
+              end
             end
           end
 
-          configuration.bastion do |bastion|
-            bastion.subnet 'management1'
-            bastion.sub_domain config['bastion']['sub_domain']
-            bastion.cookbook 'cookbooks/bastion_instance'
+          vpc.subnet 'public' do |subnet|
+            subnet.guid 'SUBNET#{public_subnet_guid}'
+            subnet.availability_zone '#{params[:availability_zone]}'
+            subnet.cidr '10.0.1.0/24'
           end
 
-          configuration.nat do |nat|
-            nat.subnet 'public1'
-            nat.sub_domain config['nat']['sub_domain']
-            nat.cookbook 'cookbooks/nat_instance'
-          end
-
-          configuration.chef_server do |chef_server|
-            chef_server.version '12.2.0-1'
-            chef_server.subnet 'management1'
-            chef_server.sub_domain config['chef_server']['sub_domain']
-            chef_server.cookbook 'cookbooks/chef_server_instance'
-            chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
-            chef_server.organization do |organization|
-              organization.short_name '#{params[:chef_server][:organization][:short_name]}'
-              organization.full_name '#{params[:chef_server][:organization][:full_name]}'
-            end
-            chef_server.username '#{params[:chef_server][:username]}'
-            chef_server.email '#{params[:chef_server][:email]}'
-            chef_server.first_name '#{params[:chef_server][:first_name]}'
-            chef_server.last_name '#{params[:chef_server][:last_name]}'
-            chef_server.password '#{params[:chef_server][:password]}'
-            chef_server.ssl_key config['chef_server']['ssl']['key']
-            chef_server.ssl_cert config['chef_server']['ssl']['cert']
-            chef_server.ssl_verify config['chef_server']['ssl']['verify']
+          vpc.subnet 'private' do |subnet|
+            subnet.guid 'SUBNET#{private_subnet_guid}'
+            subnet.availability_zone '#{params[:availability_zone]}'
+            subnet.cidr '10.0.2.0/24'
+            subnet.gateway 'nat'
           end
         end
       EOH

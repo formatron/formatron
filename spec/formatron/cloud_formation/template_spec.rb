@@ -21,7 +21,6 @@ class Formatron
         test_instances(
           tag: :vpc,
           args: lambda do |dsl_key|
-            puts nats
             {
               hosted_zone_name: hosted_zone_name,
               key_pair: key_pair,
