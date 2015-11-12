@@ -13,26 +13,32 @@ class Formatron
         hosted_zone_name = 'hosted_zone_name'
         key_pair = 'key_pair'
         kms_key = 'kms_key'
-        gateways = 'gateways'
         hosted_zone_id = 'hosted_zone_id'
         bucket = 'bucket'
         @name = 'name'
         target = 'target'
+        nats = {}
         test_instances(
           tag: :vpc,
-          args: {
-            hosted_zone_name: hosted_zone_name,
-            key_pair: key_pair,
-            kms_key: kms_key,
-            gateways: gateways,
-            hosted_zone_id: hosted_zone_id,
-            bucket: bucket,
-            name: @name,
-            target: target
-          },
+          args: lambda do |dsl_key|
+            puts nats
+            {
+              hosted_zone_name: hosted_zone_name,
+              key_pair: key_pair,
+              kms_key: kms_key,
+              nats: "nats#{dsl_key}",
+              hosted_zone_id: hosted_zone_id,
+              bucket: bucket,
+              name: @name,
+              target: target
+            }
+          end,
           template_cls: 'Formatron::CloudFormation::Template::VPC',
           dsl_cls: 'Formatron::DSL::Formatron::VPC'
         )
+        @dsl_instances[:vpc].keys.each do |dsl_key|
+          nats[dsl_key] = "nats#{dsl_key}"
+        end
         formatron = instance_double 'Formatron::DSL::Formatron'
         allow(formatron).to receive(:vpc) { @dsl_instances[:vpc] }
         allow(formatron).to receive(:name) { @name }
@@ -43,7 +49,7 @@ class Formatron
           hosted_zone_name: hosted_zone_name,
           key_pair: key_pair,
           kms_key: kms_key,
-          gateways: gateways,
+          nats: nats,
           hosted_zone_id: hosted_zone_id,
           target: target
         )

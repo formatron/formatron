@@ -14,7 +14,7 @@ class Formatron
         hosted_zone_name:,
         key_pair:,
         kms_key:,
-        gateways:,
+        nats:,
         hosted_zone_id:,
         target:
       )
@@ -22,7 +22,7 @@ class Formatron
         @hosted_zone_name = hosted_zone_name
         @key_pair = key_pair
         @kms_key = kms_key
-        @gateways = gateways
+        @nats = nats
         @hosted_zone_id = hosted_zone_id
         @bucket = formatron.bucket
         @name = formatron.name
@@ -35,13 +35,13 @@ class Formatron
       def hash
         resources = {}
         outputs = {}
-        @formatron.vpc.each do |_, vpc|
+        @formatron.vpc.each do |key, vpc|
           template_vpc = VPC.new(
             vpc: vpc,
             hosted_zone_name: @hosted_zone_name,
             key_pair: @key_pair,
             kms_key: @kms_key,
-            gateways: @gateways,
+            nats: @nats[key],
             hosted_zone_id: @hosted_zone_id,
             bucket: @bucket,
             name: @name,

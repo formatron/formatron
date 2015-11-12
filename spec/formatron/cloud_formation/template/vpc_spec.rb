@@ -17,26 +17,28 @@ class Formatron
           key_pair = 'key_pair'
           hosted_zone_name = 'hosted_zone_name'
           kms_key = 'kms_key'
-          gateways = 'gateways'
+          nats = 'nats'
           hosted_zone_id = 'hosted_zone_id'
           bucket = 'bucket'
           name = 'name'
           target = 'target'
           test_instances(
             tag: :subnet,
-            args: {
-              vpc_guid: guid,
-              vpc_cidr: cidr,
-              key_pair: key_pair,
-              hosted_zone_name: hosted_zone_name,
-              kms_key: kms_key,
-              gateways: gateways,
-              private_hosted_zone_id: @private_hosted_zone_id,
-              public_hosted_zone_id: hosted_zone_id,
-              bucket: bucket,
-              name: name,
-              target: target
-            },
+            args: lambda do |_|
+              {
+                vpc_guid: guid,
+                vpc_cidr: cidr,
+                key_pair: key_pair,
+                hosted_zone_name: hosted_zone_name,
+                kms_key: kms_key,
+                nats: nats,
+                private_hosted_zone_id: @private_hosted_zone_id,
+                public_hosted_zone_id: hosted_zone_id,
+                bucket: bucket,
+                name: name,
+                target: target
+              }
+            end,
             template_cls: 'Formatron::CloudFormation::Template::VPC::Subnet',
             dsl_cls: 'Formatron::DSL::Formatron::VPC::Subnet'
           )
@@ -88,7 +90,7 @@ class Formatron
             hosted_zone_name: hosted_zone_name,
             key_pair: key_pair,
             kms_key: kms_key,
-            gateways: gateways,
+            nats: nats,
             hosted_zone_id: hosted_zone_id,
             bucket: bucket,
             name: name,

@@ -20,7 +20,7 @@ class Formatron
       organization:,
       ssl_verify:,
       chef_sub_domain:,
-      bastion_sub_domain:,
+      bastions:,
       hosted_zone_name:,
       server_stack:,
       guid:
@@ -33,10 +33,8 @@ class Formatron
       @hosted_zone_name = hosted_zone_name
       @organization = organization
       @server_stack = server_stack
+      @bastions = bastions
       chef_server_url = _chef_server_url
-      @bastion_hostname = _hostname(
-        sub_domain: bastion_sub_domain
-      )
       @keys = Keys.new(
         aws: @aws,
         bucket: bucket,
@@ -75,11 +73,16 @@ class Formatron
     # rubocop:disable Metrics/MethodLength
     def provision(
       sub_domain:,
-      cookbook:
+      cookbook:,
+      bastion:
     )
       Formatron::LOG.info do
         "Provision #{sub_domain} with Chef cookbook: #{cookbook}"
       end
+      bastion ||= @bastions.keys[0]
+      bastion_hostname = _hostname(
+        sub_domain: @bastions[bastion]
+      )
       CloudFormation.stack_ready!(
         aws: @aws,
         name: @name,
@@ -92,7 +95,7 @@ class Formatron
       @knife.create_environment environment: sub_domain
       @berkshelf.upload environment: sub_domain, cookbook: cookbook
       @knife.bootstrap(
-        bastion_hostname: @bastion_hostname,
+        bastion_hostname: bastion_hostname,
         environment: sub_domain,
         cookbook: cookbook_name,
         hostname: hostname,

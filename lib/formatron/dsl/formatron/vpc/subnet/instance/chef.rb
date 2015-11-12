@@ -12,6 +12,7 @@ class Formatron
               dsl_initialize_block
               dsl_property :server
               dsl_property :cookbook
+              dsl_property :bastion
             end
           end
         end

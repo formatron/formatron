@@ -40,8 +40,6 @@ class Formatron
   def _initialize
     @formatron = @dsl.formatron
     _initialize_instances
-    bastion = @bastions.values[0]
-    @bastion_sub_domain = bastion.sub_domain
     @name = @formatron.name
     @bucket = @formatron.bucket
     global = @formatron.global
@@ -57,7 +55,7 @@ class Formatron
       hosted_zone_name: @hosted_zone_name,
       key_pair: key_pair,
       kms_key: @kms_key,
-      gateways: @nats,
+      nats: @nats,
       hosted_zone_id: hosted_zone_id,
       target: @target
     ).hash
@@ -73,44 +71,56 @@ class Formatron
     @chef_servers = {}
     @bastions = {}
     @nats = {}
-    @formatron.vpc.each do |_key, vpc|
-      vpc.subnet.each do |_key, subnet|
-        @chef_servers.merge! subnet.chef_server
-        @bastions.merge! subnet.bastion
-        @nats.merge! subnet.nat
-        @instances.merge! subnet.instance
-      end
-    end
     @all_instances = {}
-    @all_instances.merge! @chef_servers
-    @all_instances.merge! @bastions
-    @all_instances.merge! @nats
-    @all_instances.merge! @instances
+    @formatron.vpc.each do |key, vpc|
+      nats = @nats[key] = {}
+      bastions = @bastions[key] = {}
+      chef_servers = @chef_servers[key] = {}
+      instances = @instances[key] = {}
+      all_instances = @all_instances[key] = {}
+      vpc.subnet.values.each do |subnet|
+        nats.merge! subnet.nat
+        bastions.merge! subnet.bastion
+        chef_servers.merge! subnet.chef_server
+        instances.merge! subnet.instance
+      end
+      all_instances.merge! nats
+      all_instances.merge! bastions
+      all_instances.merge! chef_servers
+      all_instances.merge! instances
+    end
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
   # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def _initialize_chef_clients
     @chef_clients = {}
-    @chef_servers.each do |key, chef_server|
-      @chef_clients[key] = Chef.new(
-        aws: @aws,
-        bucket: @bucket,
-        name: @name,
-        target: @target,
-        username: chef_server.username,
-        organization: chef_server.organization.short_name,
-        ssl_verify: chef_server.ssl_verify,
-        chef_sub_domain: chef_server.sub_domain,
-        private_key: @private_key,
-        bastion_sub_domain: @bastion_sub_domain,
-        hosted_zone_name: @hosted_zone_name,
-        server_stack: @name,
-        guid: chef_server.guid
-      )
+    @chef_servers.each do |vpc_key, chef_servers|
+      chef_clients = @chef_clients[vpc_key] = {}
+      bastions = @bastions[vpc_key]
+      bastions = Hash[bastions.map { |k, v| [k, v.sub_domain] }]
+      chef_servers.each do |key, chef_server|
+        chef_clients[key] = Chef.new(
+          aws: @aws,
+          bucket: @bucket,
+          name: @name,
+          target: @target,
+          username: chef_server.username,
+          organization: chef_server.organization.short_name,
+          ssl_verify: chef_server.ssl_verify,
+          chef_sub_domain: chef_server.sub_domain,
+          private_key: @private_key,
+          bastions: bastions,
+          hosted_zone_name: @hosted_zone_name,
+          server_stack: @name,
+          guid: chef_server.guid
+        )
+      end
     end
   end
+  # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
   def deploy
@@ -120,22 +130,32 @@ class Formatron
     _deploy_stack
   end
 
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def provision
-    @all_instances.values.each do |instance|
-      dsl_chef = instance.chef
-      next if dsl_chef.nil?
-      chef = @chef_clients[dsl_chef.server]
-      cookbook = dsl_chef.cookbook
-      sub_domain = instance.sub_domain
-      _provision chef, cookbook, sub_domain
+    @all_instances.each do |key, all_instances|
+      chef_clients = @chef_clients[key]
+      all_instances.values.each do |instance|
+        dsl_chef = instance.chef
+        next if dsl_chef.nil?
+        server = dsl_chef.server || chef_clients.keys[0]
+        chef = chef_clients[server]
+        cookbook = dsl_chef.cookbook
+        bastion = dsl_chef.bastion
+        sub_domain = instance.sub_domain
+        _provision chef, cookbook, sub_domain, bastion
+      end
     end
   end
+  # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength
 
-  def _provision(chef, cookbook, sub_domain)
+  def _provision(chef, cookbook, sub_domain, bastion)
     chef.init
     chef.provision(
       sub_domain: sub_domain,
-      cookbook: cookbook
+      cookbook: cookbook,
+      bastion: bastion
     )
   ensure
     chef.unlink
@@ -163,17 +183,19 @@ class Formatron
 
   # rubocop:disable Metrics/MethodLength
   def _deploy_chef_server_certs
-    @chef_servers.values.each do |chef_server|
-      S3::ChefServerCert.deploy(
-        aws: @aws,
-        kms_key: @kms_key,
-        bucket: @bucket,
-        name: @name,
-        target: @target,
-        guid: chef_server.guid,
-        cert: chef_server.ssl_cert,
-        key: chef_server.ssl_key
-      )
+    @chef_servers.values.each do |chef_servers|
+      chef_servers.values.each do |chef_server|
+        S3::ChefServerCert.deploy(
+          aws: @aws,
+          kms_key: @kms_key,
+          bucket: @bucket,
+          name: @name,
+          target: @target,
+          guid: chef_server.guid,
+          cert: chef_server.ssl_cert,
+          key: chef_server.ssl_key
+        )
+      end
     end
   end
   # rubocop:enable Metrics/MethodLength
@@ -212,14 +234,16 @@ class Formatron
 
   # rubocop:disable Metrics/MethodLength
   def _destroy_chef_server_cert
-    @chef_servers.values.each do |chef_server|
-      S3::ChefServerCert.destroy(
-        aws: @aws,
-        bucket: @bucket,
-        name: @name,
-        target: @target,
-        guid: chef_server.guid
-      )
+    @chef_servers.values.each do |chef_servers|
+      chef_servers.values.each do |chef_server|
+        S3::ChefServerCert.destroy(
+          aws: @aws,
+          bucket: @bucket,
+          name: @name,
+          target: @target,
+          guid: chef_server.guid
+        )
+      end
     end
   rescue => error
     LOG.warn error
@@ -228,14 +252,16 @@ class Formatron
 
   # rubocop:disable Metrics/MethodLength
   def _destroy_chef_server_keys
-    @chef_servers.values.each do |chef_server|
-      S3::ChefServerKeys.destroy(
-        aws: @aws,
-        bucket: @bucket,
-        name: @name,
-        target: @target,
-        guid: chef_server.guid
-      )
+    @chef_servers.values.each do |chef_servers|
+      chef_servers.values.each do |chef_server|
+        S3::ChefServerKeys.destroy(
+          aws: @aws,
+          bucket: @bucket,
+          name: @name,
+          target: @target,
+          guid: chef_server.guid
+        )
+      end
     end
   rescue => error
     LOG.warn error
@@ -264,12 +290,15 @@ class Formatron
   end
 
   def _destroy_chef_instances
-    @all_instances.values.each do |instance|
-      dsl_chef = instance.chef
-      next if dsl_chef.nil?
-      chef = @chef_clients[dsl_chef.server]
-      sub_domain = instance.sub_domain
-      _destroy_chef_instance chef, sub_domain
+    @all_instances.each do |key, all_instances|
+      chef_clients = @chef_clients[key]
+      all_instances.values.each do |instance|
+        dsl_chef = instance.chef
+        next if dsl_chef.nil?
+        chef = chef_clients[dsl_chef.server]
+        sub_domain = instance.sub_domain
+        _destroy_chef_instance chef, sub_domain
+      end
     end
   end
 

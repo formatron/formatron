@@ -33,23 +33,22 @@ class Formatron
               chef_server: 'ChefServer',
               instance: 'Instance'
             }.each do |symbol, cls|
-              args = {
-                key_pair: @key_pair,
-                availability_zone: @availability_zone,
-                subnet_guid: @subnet_guid,
-                hosted_zone_name: @hosted_zone_name,
-                vpc_guid: @vpc_guid,
-                vpc_cidr: @vpc_cidr,
-                kms_key: @kms_key,
-                private_hosted_zone_id: @private_hosted_zone_id,
-                public_hosted_zone_id: @public_hosted_zone_id,
-                bucket: @bucket,
-                name: @name,
-                target: @target
-              }
-              args[:bucket] = @bucket if symbol.eql? :chef_server
-              args[:name] = @name if symbol.eql? :chef_server
-              args[:target] = @target if symbol.eql? :chef_server
+              args = lambda do |_|
+                {
+                  key_pair: @key_pair,
+                  availability_zone: @availability_zone,
+                  subnet_guid: @subnet_guid,
+                  hosted_zone_name: @hosted_zone_name,
+                  vpc_guid: @vpc_guid,
+                  vpc_cidr: @vpc_cidr,
+                  kms_key: @kms_key,
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  public_hosted_zone_id: @public_hosted_zone_id,
+                  bucket: @bucket,
+                  name: @name,
+                  target: @target
+                }
+              end
               test_instances(
                 tag: symbol,
                 args: args,
@@ -118,7 +117,7 @@ class Formatron
               key_pair: @key_pair,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
-              gateways: [],
+              nats: [],
               public_hosted_zone_id: @public_hosted_zone_id,
               private_hosted_zone_id: @private_hosted_zone_id,
               bucket: @bucket,
@@ -176,20 +175,22 @@ class Formatron
                   chef_server: 'ChefServer',
                   instance: 'Instance'
                 }.each do |symbol, cls|
-                  args = {
-                    key_pair: @key_pair,
-                    availability_zone: @availability_zone,
-                    subnet_guid: @subnet_guid,
-                    hosted_zone_name: @hosted_zone_name,
-                    vpc_guid: @vpc_guid,
-                    vpc_cidr: @vpc_cidr,
-                    kms_key: @kms_key,
-                    private_hosted_zone_id: @private_hosted_zone_id,
-                    public_hosted_zone_id: nil,
-                    bucket: @bucket,
-                    name: @name,
-                    target: @target
-                  }
+                  args = lambda do |_|
+                    {
+                      key_pair: @key_pair,
+                      availability_zone: @availability_zone,
+                      subnet_guid: @subnet_guid,
+                      hosted_zone_name: @hosted_zone_name,
+                      vpc_guid: @vpc_guid,
+                      vpc_cidr: @vpc_cidr,
+                      kms_key: @kms_key,
+                      private_hosted_zone_id: @private_hosted_zone_id,
+                      public_hosted_zone_id: nil,
+                      bucket: @bucket,
+                      name: @name,
+                      target: @target
+                    }
+                  end
                   test_instances(
                     tag: symbol,
                     args: args,
@@ -206,7 +207,7 @@ class Formatron
                 gateway_instance = instance_double(
                   'Formatron::DSL::Formatron::VPC::Subnet::NAT'
                 )
-                gateways = {
+                nats = {
                   gateway => gateway_instance
                 }
                 gateway_guid = 'gateway_guid'
@@ -235,7 +236,7 @@ class Formatron
                   key_pair: @key_pair,
                   hosted_zone_name: @hosted_zone_name,
                   kms_key: @kms_key,
-                  gateways: gateways,
+                  nats: nats,
                   public_hosted_zone_id: @public_hosted_zone_id,
                   private_hosted_zone_id: @private_hosted_zone_id,
                   bucket: @bucket,

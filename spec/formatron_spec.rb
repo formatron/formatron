@@ -58,18 +58,20 @@ describe Formatron do
     ).with(@hosted_zone_id) { @hosted_zone_name }
 
     vpcs = {}
-    @gateways = {}
+    @nats = {}
     @chef_class = class_double(
       'Formatron::Chef'
     ).as_stubbed_const
     @chef_clients = []
-    @bastion_sub_domain = 'bastion_sub_domain0_0_0'
+    @bastion_sub_domains = {}
     (0..2).each do |vpc_index|
       vpc_chef_clients = @chef_clients[vpc_index] = []
       vpc_key = "vpc#{vpc_index}"
       vpc = instance_double 'Formatron::DSL::Formatron::VPC'
       vpcs[vpc_key] = vpc
       subnets = {}
+      bastion_sub_domains = @bastion_sub_domains[vpc_key] = {}
+      vpc_nats = @nats[vpc_key] = {}
       (0..2).each do |subnet_index|
         subnet_chef_clients = vpc_chef_clients[subnet_index] = []
         subnet_index = "#{vpc_index}_#{subnet_index}"
@@ -97,7 +99,7 @@ describe Formatron do
             ssl_verify: ssl_verify,
             chef_sub_domain: sub_domain,
             private_key: @private_key,
-            bastion_sub_domain: @bastion_sub_domain,
+            bastions: bastion_sub_domains,
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
             guid: guid
@@ -119,6 +121,9 @@ describe Formatron do
           allow(dsl_chef).to receive(:cookbook).with(
             no_args
           ) { "chef_server_cookbook#{chef_server_index}" }
+          allow(dsl_chef).to receive(:bastion).with(
+            no_args
+          ) { "bastion#{chef_server_index}" }
           allow(chef_server).to receive(:chef).with(
             no_args
           ) { dsl_chef }
@@ -158,6 +163,7 @@ describe Formatron do
           bastion = instance_double 'Formatron::DSL::Formatron::VPC' \
                                     '::Subnet::Bastion'
           bastions[bastion_key] = bastion
+          bastion_sub_domain = "bastion_sub_domain#{bastion_index}"
           dsl_chef = instance_double(
             'Formatron::DSL::VPC::Subnet::Instance::Chef'
           )
@@ -167,12 +173,16 @@ describe Formatron do
           allow(dsl_chef).to receive(:cookbook).with(
             no_args
           ) { "bastion_cookbook#{bastion_index}" }
+          allow(dsl_chef).to receive(:bastion).with(
+            no_args
+          ) { "bastion#{bastion_index}" }
           allow(bastion).to receive(:chef).with(
             no_args
           ) { dsl_chef }
           allow(bastion).to receive(:sub_domain).with(
             no_args
-          ) { "bastion_sub_domain#{bastion_index}" }
+          ) { bastion_sub_domain }
+          bastion_sub_domains[bastion_key] = bastion_sub_domain
         end
         allow(subnet).to receive(:bastion).with(no_args) { bastions }
         nats = {}
@@ -191,6 +201,9 @@ describe Formatron do
           allow(dsl_chef).to receive(:cookbook).with(
             no_args
           ) { "nat_cookbook#{nat_index}" }
+          allow(dsl_chef).to receive(:bastion).with(
+            no_args
+          ) { "bastion#{nat_index}" }
           allow(nat).to receive(:chef).with(
             no_args
           ) { dsl_chef }
@@ -198,7 +211,7 @@ describe Formatron do
             no_args
           ) { "nat_sub_domain#{nat_index}" }
         end
-        @gateways.merge! nats
+        vpc_nats.merge! nats
         allow(subnet).to receive(:nat).with(no_args) { nats }
         instances = {}
         (0..2).each do |instance_index|
@@ -216,6 +229,9 @@ describe Formatron do
           allow(dsl_chef).to receive(:cookbook).with(
             no_args
           ) { "instance_cookbook#{instance_index}" }
+          allow(dsl_chef).to receive(:bastion).with(
+            no_args
+          ) { "bastion#{instance_index}" }
           allow(instance).to receive(:chef).with(
             no_args
           ) { dsl_chef }
@@ -242,7 +258,7 @@ describe Formatron do
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
       kms_key: @kms_key,
-      gateways: @gateways,
+      nats: @nats,
       hosted_zone_id: @hosted_zone_id,
       target: @target
     ) { @template }
@@ -299,6 +315,7 @@ describe Formatron do
 
   it 'should create Chef instances' do
     (0..2).each do |vpc_index|
+      vpc_key = "vpc#{vpc_index}"
       (0..2).each do |subnet_index|
         subnet_index = "#{vpc_index}_#{subnet_index}"
         (0..2).each do |chef_server_index|
@@ -313,7 +330,7 @@ describe Formatron do
             ssl_verify: "chef_server_ssl_verify#{chef_server_index}",
             chef_sub_domain: "chef_server_sub_domain#{chef_server_index}",
             private_key: @private_key,
-            bastion_sub_domain: @bastion_sub_domain,
+            bastions: @bastion_sub_domains[vpc_key],
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
             guid: "chef_server_guid#{chef_server_index}"
@@ -337,7 +354,7 @@ describe Formatron do
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
       kms_key: @kms_key,
-      gateways: @gateways,
+      nats: @nats,
       hosted_zone_id: @hosted_zone_id,
       target: @target
     )
@@ -427,19 +444,23 @@ describe Formatron do
             chef_server_index = "#{subnet_index}_#{chef_server_index}"
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "chef_server_sub_domain#{chef_server_index}",
-              cookbook: "chef_server_cookbook#{chef_server_index}"
+              cookbook: "chef_server_cookbook#{chef_server_index}",
+              bastion: "bastion#{chef_server_index}"
             )
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "bastion_sub_domain#{chef_server_index}",
-              cookbook: "bastion_cookbook#{chef_server_index}"
+              cookbook: "bastion_cookbook#{chef_server_index}",
+              bastion: "bastion#{chef_server_index}"
             )
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "nat_sub_domain#{chef_server_index}",
-              cookbook: "nat_cookbook#{chef_server_index}"
+              cookbook: "nat_cookbook#{chef_server_index}",
+              bastion: "bastion#{chef_server_index}"
             )
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "instance_sub_domain#{chef_server_index}",
-              cookbook: "instance_cookbook#{chef_server_index}"
+              cookbook: "instance_cookbook#{chef_server_index}",
+              bastion: "bastion#{chef_server_index}"
             )
           end
         end

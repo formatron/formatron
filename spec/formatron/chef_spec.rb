@@ -16,8 +16,13 @@ class Formatron
       @cookbook = "directory/cookbooks/#{@cookbook_name}"
       @sub_domain = 'sub_domain'
       @hostname = "#{@sub_domain}.#{@hosted_zone_name}"
-      @bastion_sub_domain = 'bastion_sub_domain'
-      @bastion_hostname = "#{@bastion_sub_domain}.#{@hosted_zone_name}"
+      @bastions = {
+        'bastion0' => 'bastion_sub_domain_0',
+        'bastion1' => 'bastion_sub_domain_1',
+        'bastion2' => 'bastion_sub_domain_2'
+      }
+      @bastion = @bastions.keys[1]
+      @bastion_hostname = "#{@bastions.values[1]}.#{@hosted_zone_name}"
       @target = 'target'
       @bucket = 'bucket'
       @chef_sub_domain = 'chef_sub_domain'
@@ -69,7 +74,7 @@ class Formatron
         ssl_verify: @ssl_verify,
         chef_sub_domain: @chef_sub_domain,
         private_key: @private_key,
-        bastion_sub_domain: @bastion_sub_domain,
+        bastions: @bastions,
         hosted_zone_name: @hosted_zone_name,
         server_stack: @server_stack,
         guid: @guid
@@ -161,7 +166,8 @@ class Formatron
             expect do
               @chef.provision(
                 sub_domain: @sub_domain,
-                cookbook: @cookbook
+                cookbook: @cookbook,
+                bastion: @bastion
               )
             end.to raise_error 'not ready'
           end
@@ -176,7 +182,8 @@ class Formatron
             )
             @chef.provision(
               sub_domain: @sub_domain,
-              cookbook: @cookbook
+              cookbook: @cookbook,
+              bastion: @bastion
             )
           end
 
