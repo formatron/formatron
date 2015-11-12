@@ -5,14 +5,37 @@ class Formatron
     module Generators
       # CLI command for instance generator
       module Instance
+        # rubocop:disable Metrics/MethodLength
         def instance_options(c)
           c.option '-n', '--name STRING', 'The name for the configuration'
+          c.option(
+            '-s',
+            '--s3-bucket STRING',
+            'The S3 bucket to store encrypted configuration'
+          )
           c.option(
             '-b',
             '--bootstrap-configuration STRING',
             'The name of the bootstrap configuration to depend on'
           )
+          c.option(
+            '-p',
+            '--vpc STRING',
+            'The name of the VPC to add the instance to'
+          )
+          c.option(
+            '-u',
+            '--subnet STRING',
+            'The name of the subnet to add the instance to'
+          )
+          c.option(
+            '-x',
+            '--targets LIST',
+            Array,
+            'The targets (eg. production test)'
+          )
         end
+        # rubocop:enable Metrics/MethodLength
 
         def instance_directory(options)
           options.directory || ask('Directory? ') do |q|
@@ -26,21 +49,50 @@ class Formatron
           end
         end
 
+        def instance_s3_bucket(options)
+          options.s3_bucket || ask('S3 Bucket? ')
+        end
+
         def instance_bootstrap_configuration(options)
           options.bootstrap_configuration ||
             ask('Bootstrap configuration? ')
         end
 
+        def instance_vpc(options)
+          options.vpc || ask('VPC? ') do |q|
+            q.default = 'vpc'
+          end
+        end
+
+        def instance_subnet(options)
+          options.subnet || ask('Subnet? ') do |q|
+            q.default = 'private'
+          end
+        end
+
+        def instance_targets(options)
+          options.targets || ask('Targets? ', Array) do |q|
+            q.default = 'production test'
+          end
+        end
+
+        # rubocop:disable Metrics/MethodLength
         def instance_action(c)
           c.action do |_args, options|
             directory = instance_directory options
             Formatron::Generators::Instance.generate(
               directory,
               name: instance_name(options, directory),
-              bootstrap_configuration: instance_bootstrap_configuration(options)
+              s3_bucket: instance_s3_bucket(options),
+              bootstrap_configuration:
+                instance_bootstrap_configuration(options),
+              vpc: instance_vpc(options),
+              subnet: instance_subnet(options),
+              targets: instance_targets(options)
             )
           end
         end
+        # rubocop:enable Metrics/MethodLength
 
         def instance_formatron_command
           command :'generate instance' do |c|

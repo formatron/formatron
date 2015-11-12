@@ -13,11 +13,19 @@ describe Formatron::CLI::Generators::Instance do
 
   directory = 'directory'
   name = 'test'
+  s3_bucket = 's3_bucket'
   bootstrap_configuration = 'bootstrap_configuration'
+  vpc = 'vpc'
+  subnet = 'subnet'
+  targets = %w(target1 target2)
 
   expected_params = {
     name: name,
-    bootstrap_configuration: bootstrap_configuration
+    s3_bucket: s3_bucket,
+    bootstrap_configuration: bootstrap_configuration,
+    vpc: vpc,
+    subnet: subnet,
+    targets: targets
   }
 
   before(:each) do
@@ -46,7 +54,11 @@ describe Formatron::CLI::Generators::Instance do
       responses = <<-EOH.gsub(/^ {8}/, '')
         #{directory}
         #{name}
+        #{s3_bucket}
         #{bootstrap_configuration}
+        #{vpc}
+        #{subnet}
+        #{targets.join(' ')}
       EOH
       @input = StringIO.new responses
       @output = StringIO.new
@@ -71,7 +83,11 @@ describe Formatron::CLI::Generators::Instance do
             '-t',
             '-d', directory,
             '-n', name,
-            '-b', bootstrap_configuration
+            '-s', s3_bucket,
+            '-b', bootstrap_configuration,
+            '-p', vpc,
+            '-u', subnet,
+            '-x', targets.join(',')
           ]
       end
     end
@@ -100,7 +116,11 @@ describe Formatron::CLI::Generators::Instance do
             '-t',
             '--directory', directory,
             '--name', name,
-            '--bootstrap-configuration', bootstrap_configuration
+            '--s3-bucket', s3_bucket,
+            '--bootstrap-configuration', bootstrap_configuration,
+            '--vpc', vpc,
+            '--subnet', subnet,
+            '--targets', targets.join(',')
           ]
       end
     end

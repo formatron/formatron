@@ -4,16 +4,15 @@ require 'formatron/generators/util'
 
 class Formatron
   module Generators
-    module Bootstrap
+    module Instance
       # generates a bootstrap Formatronfile
       module Formatronfile
         # exports params to bootstrap ERB template
         class Template
-          attr_reader :params, :ip
+          attr_reader :params
 
           def initialize(params)
             @params = params
-            @ip = Curl.get('http://whatismyip.akamai.com').body_str
           end
 
           def guid

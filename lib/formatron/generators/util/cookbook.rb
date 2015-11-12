@@ -1,6 +1,6 @@
 class Formatron
   module Generators
-    module Bootstrap
+    module Util
       # generates placeholder cookbooks
       module Cookbook
         def self.write(directory, name, description)

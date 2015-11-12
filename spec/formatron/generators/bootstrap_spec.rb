@@ -53,8 +53,8 @@ describe Formatron::Generators::Bootstrap do
       )
       FakeFS::FileSystem.clone lib
       util_class = class_double(
-        'Formatron::Util'
-      ).as_stubbed_const
+        'Formatron::Generators::Util'
+      ).as_stubbed_const transfer_nested_constants: true
       guids = [
         vpc_guid,
         management_subnet_guid,
@@ -75,7 +75,7 @@ describe Formatron::Generators::Bootstrap do
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         # #{params[:name]}
 
-        Bootstrap Formatron configuration
+        Formatron configuration
       EOH
     end
 

@@ -1,13 +1,15 @@
 class Formatron
   module Generators
-    module Bootstrap
+    module Util
       # generates placeholder README.md
-      module Gitignore
-        def self.write(directory)
+      module Readme
+        def self.write(directory, name)
           FileUtils.mkdir_p directory
-          readme = File.join directory, '.gitignore'
+          readme = File.join directory, 'README.md'
           File.write readme, <<-EOH.gsub(/^ {12}/, '')
-            /.formatron/
+            # #{name}
+
+            Formatron configuration
           EOH
         end
       end

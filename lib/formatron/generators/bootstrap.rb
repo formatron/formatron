@@ -1,9 +1,9 @@
 require_relative 'bootstrap/formatronfile'
 require_relative 'bootstrap/config'
 require_relative 'bootstrap/ssl'
-require_relative 'bootstrap/cookbook'
-require_relative 'bootstrap/readme'
-require_relative 'bootstrap/gitignore'
+require_relative 'util/cookbook'
+require_relative 'util/readme'
+require_relative 'util/gitignore'
 require_relative 'bootstrap/ec2'
 
 class Formatron
@@ -60,20 +60,20 @@ class Formatron
       end
 
       def self.generate_cookbooks(directory)
-        Cookbook.write(
+        Util::Cookbook.write(
           directory,
           'chef_server_instance',
           'Chef Server instance'
         )
-        Cookbook.write directory, 'nat_instance', 'NAT instance'
-        Cookbook.write directory, 'bastion_instance', 'Bastion instance'
+        Util::Cookbook.write directory, 'nat_instance', 'NAT instance'
+        Util::Cookbook.write directory, 'bastion_instance', 'Bastion instance'
       end
 
       # rubocop:disable Metrics/MethodLength
       def self.generate(directory, params)
         validate_params params
-        Readme.write directory, params[:name]
-        Gitignore.write directory
+        Util::Readme.write directory, params[:name]
+        Util::Gitignore.write directory
         Formatronfile.write directory, params
         Config.write directory
         EC2.write directory
