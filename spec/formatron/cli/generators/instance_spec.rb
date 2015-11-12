@@ -17,6 +17,7 @@ describe Formatron::CLI::Generators::Instance do
   bootstrap_configuration = 'bootstrap_configuration'
   vpc = 'vpc'
   subnet = 'subnet'
+  instance_name = 'instance'
   targets = %w(target1 target2)
 
   expected_params = {
@@ -25,6 +26,7 @@ describe Formatron::CLI::Generators::Instance do
     bootstrap_configuration: bootstrap_configuration,
     vpc: vpc,
     subnet: subnet,
+    instance_name: instance_name,
     targets: targets
   }
 
@@ -54,6 +56,7 @@ describe Formatron::CLI::Generators::Instance do
       responses = <<-EOH.gsub(/^ {8}/, '')
         #{directory}
         #{name}
+        #{instance_name}
         #{s3_bucket}
         #{bootstrap_configuration}
         #{vpc}
@@ -83,6 +86,7 @@ describe Formatron::CLI::Generators::Instance do
             '-t',
             '-d', directory,
             '-n', name,
+            '-i', instance_name,
             '-s', s3_bucket,
             '-b', bootstrap_configuration,
             '-p', vpc,
@@ -116,6 +120,7 @@ describe Formatron::CLI::Generators::Instance do
             '-t',
             '--directory', directory,
             '--name', name,
+            '--instance-name', instance_name,
             '--s3-bucket', s3_bucket,
             '--bootstrap-configuration', bootstrap_configuration,
             '--vpc', vpc,

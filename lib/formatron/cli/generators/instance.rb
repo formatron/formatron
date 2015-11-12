@@ -8,6 +8,7 @@ class Formatron
         # rubocop:disable Metrics/MethodLength
         def instance_options(c)
           c.option '-n', '--name STRING', 'The name for the configuration'
+          c.option '-i', '--instance-name STRING', 'The name for the instance'
           c.option(
             '-s',
             '--s3-bucket STRING',
@@ -49,6 +50,12 @@ class Formatron
           end
         end
 
+        def instance_instance_name(options, name)
+          options.instance_name || ask('Instance Name? ') do |q|
+            q.default = name
+          end
+        end
+
         def instance_s3_bucket(options)
           options.s3_bucket || ask('S3 Bucket? ')
         end
@@ -80,9 +87,11 @@ class Formatron
         def instance_action(c)
           c.action do |_args, options|
             directory = instance_directory options
+            name = instance_name options, directory
             Formatron::Generators::Instance.generate(
               directory,
-              name: instance_name(options, directory),
+              name: name,
+              instance_name: instance_instance_name(options, name),
               s3_bucket: instance_s3_bucket(options),
               bootstrap_configuration:
                 instance_bootstrap_configuration(options),

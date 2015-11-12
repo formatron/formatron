@@ -11,7 +11,8 @@ class Formatron
 
       directory = 'test/directory'
       params = {
-        name: 'instance',
+        name: 'name',
+        instance_name: 'instance_name',
         s3_bucket: 's3_bucket',
         bootstrap_configuration: 'bootstrap',
         vpc: 'vpc',
@@ -56,6 +57,7 @@ class Formatron
 
         it 'should generate a Formatronfile' do
           actual = File.read File.join(directory, 'Formatronfile')
+          # rubocop:disable Metrics/LineLength
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
             formatron.name '#{params[:name]}'
             formatron.bucket '#{params[:s3_bucket]}'
@@ -64,16 +66,17 @@ class Formatron
 
             formatron.vpc '#{params[:vpc]}' do |vpc|
               vpc.subnet '#{params[:subnet]}' do |subnet|
-                subnet.instance '#{params[:name]}' do |instance|
+                subnet.instance '#{params[:instance_name]}' do |instance|
                   instance.guid 'INSTANCE#{instance_guid}'
-                  instance.sub_domain config['#{params[:name]}']['sub_domain']
+                  instance.sub_domain config['#{params[:instance_name]}']['sub_domain']
                   instance.chef do |chef|
-                    chef.cookbook 'cookbooks/#{params[:name]}_instance'
+                    chef.cookbook 'cookbooks/#{params[:instance_name]}_instance'
                   end
                 end
               end
             end
           EOH
+          # rubocop:enable Metrics/LineLength
         end
 
         it 'should generate a config stub for each target' do
@@ -91,8 +94,8 @@ class Formatron
           )
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
             {
-              "#{params[:name]}": {
-                "sub_domain": "#{params[:name]}-target1"
+              "#{params[:instance_name]}": {
+                "sub_domain": "#{params[:instance_name]}-target1"
               }
             }
           EOH
@@ -102,8 +105,8 @@ class Formatron
           )
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
             {
-              "#{params[:name]}": {
-                "sub_domain": "#{params[:name]}-target2"
+              "#{params[:instance_name]}": {
+                "sub_domain": "#{params[:instance_name]}-target2"
               }
             }
           EOH
@@ -112,16 +115,16 @@ class Formatron
         it 'should add an instance cookbook stub' do
           actual = File.read File.join(
             directory,
-            "cookbooks/#{params[:name]}_instance/metadata.rb"
+            "cookbooks/#{params[:instance_name]}_instance/metadata.rb"
           )
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
-            name '#{params[:name]}_instance'
+            name '#{params[:instance_name]}_instance'
             version '0.1.0'
             supports 'ubuntu'
           EOH
           actual = File.read File.join(
             directory,
-            "cookbooks/#{params[:name]}_instance/Berksfile"
+            "cookbooks/#{params[:instance_name]}_instance/Berksfile"
           )
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
             source 'https://supermarket.chef.io'
@@ -130,18 +133,18 @@ class Formatron
           EOH
           actual = File.read File.join(
             directory,
-            "cookbooks/#{params[:name]}_instance/README.md"
+            "cookbooks/#{params[:instance_name]}_instance/README.md"
           )
           # rubocop:disable Metrics/LineLength
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
-            # #{params[:name]}_instance
+            # #{params[:instance_name]}_instance
 
-            Cookbook to perform additional configuration on the #{params[:name]} instance
+            Cookbook to perform additional configuration on the #{params[:instance_name]} instance
           EOH
           # rubocop:enable Metrics/LineLength
           actual = File.read File.join(
             directory,
-            "cookbooks/#{params[:name]}_instance/recipes/default.rb"
+            "cookbooks/#{params[:instance_name]}_instance/recipes/default.rb"
           )
           expect(actual).to eql <<-EOH.gsub(/^ {12}/, '')
           EOH

@@ -17,6 +17,7 @@ class Formatron
       def self.validate_params(params)
         validate_hash_params params, [
           :name,
+          :instance_name,
           :s3_bucket,
           :bootstrap_configuration,
           :vpc,
@@ -53,9 +54,9 @@ class Formatron
         generate_targets(
           directory,
           params[:targets],
-          params[:name]
+          params[:instance_name]
         )
-        generate_cookbooks directory, params[:name]
+        generate_cookbooks directory, params[:instance_name]
       end
       # rubocop:enable Metrics/MethodLength
     end

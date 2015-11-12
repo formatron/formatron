@@ -5,11 +5,11 @@ formatron.dependency '<%= params[:bootstrap_configuration] %>'
 
 formatron.vpc '<%= params[:vpc] %>' do |vpc|
   vpc.subnet '<%= params[:subnet] %>' do |subnet|
-    subnet.instance '<%= params[:name] %>' do |instance|
+    subnet.instance '<%= params[:instance_name] %>' do |instance|
       instance.guid 'INSTANCE<%= guid %>'
-      instance.sub_domain config['<%= params[:name] %>']['sub_domain']
+      instance.sub_domain config['<%= params[:instance_name] %>']['sub_domain']
       instance.chef do |chef|
-        chef.cookbook 'cookbooks/<%= params[:name] %>_instance'
+        chef.cookbook 'cookbooks/<%= params[:instance_name] %>_instance'
       end
     end
   end
