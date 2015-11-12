@@ -7,7 +7,10 @@ class Formatron
     class Formatron
       describe Dependency do
         extend DSLTest
-        dsl_before_hash
+        dsl_before_hash [:aws]
+
+        it 'should do something' do
+        end
       end
     end
   end

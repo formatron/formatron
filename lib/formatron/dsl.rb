@@ -5,8 +5,8 @@ class Formatron
   class DSL
     attr_reader :formatron, :config, :target
 
-    def initialize(file:, config:, target:)
-      @formatron = Formatron.new
+    def initialize(file:, config:, target:, aws:)
+      @formatron = Formatron.new params: { aws: aws }
       @config = config
       @target = target
       instance_eval File.read(file), file

@@ -8,11 +8,13 @@ class Formatron
     # formatron top level DSL object
     class Formatron
       extend Util::DSL
-      dsl_initialize_block
+      dsl_initialize_block do |params:|
+        @aws = params[:aws]
+      end
       dsl_property :name
       dsl_property :bucket
       dsl_block :global, 'Global'
-      dsl_hash :dependency, 'Dependency'
+      dsl_hash :dependency, 'Dependency', [:aws]
       dsl_hash :vpc, 'VPC'
     end
   end

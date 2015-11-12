@@ -29,7 +29,8 @@ class Formatron
     @dsl = DSL.new(
       file: File.join(directory, FORMATRONFILE),
       config: @config,
-      target: @target
+      target: @target,
+      aws: @aws
     )
     _initialize
   end

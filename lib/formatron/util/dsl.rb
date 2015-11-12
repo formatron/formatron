@@ -2,15 +2,21 @@ class Formatron
   module Util
     # utilities for generating DSL classes
     module DSL
-      def dsl_initialize_block
-        define_method :initialize do
+      def dsl_initialize_block(&block)
+        define_method :initialize do |params:|
+          instance_exec params: params, &block unless block.nil?
         end
       end
 
-      def dsl_initialize_hash
+      def dsl_initialize_hash(&block)
         attr_reader :dsl_key
-        define_method :initialize do |key:|
-          @dsl_key = key
+        define_method :initialize do |dsl_key:, params:|
+          @dsl_key = dsl_key
+          instance_exec(
+            dsl_key: dsl_key,
+            params: params,
+            &block
+          ) unless block.nil?
         end
       end
 
@@ -29,7 +35,7 @@ class Formatron
           unless block.nil?
             value = instance_variable_get(iv)
             if value.nil?
-              value = self.class.const_get(cls).new
+              value = self.class.const_get(cls).new params: {}
               instance_variable_set iv, value
             end
             block.call value
@@ -40,35 +46,41 @@ class Formatron
       # rubocop:enable Metrics/MethodLength
 
       # rubocop:disable Metrics/MethodLength
-      def dsl_hash(symbol, cls)
+      # rubocop:disable Metrics/AbcSize
+      def dsl_hash(symbol, cls, param_symbols = [])
         iv = "@#{symbol}"
-        define_method symbol do |key = nil, &block|
+        define_method symbol do |dsl_key = nil, &block|
           hash = instance_variable_get(iv)
           if hash.nil?
             hash = {}
             instance_variable_set iv, hash
           end
-          unless key.nil?
+          unless dsl_key.nil?
+            params = param_symbols.each_with_object({}) do |s, p|
+              p[s] = instance_variable_get "@#{s}"
+            end
             value = self.class.const_get(cls).new(
-              key: key
+              dsl_key: dsl_key,
+              params: params
             )
-            hash[key] = value
+            hash[dsl_key] = value
             block.call value unless block.nil?
           end
           hash
         end
       end
+      # rubocop:enable Metrics/AbcSize
       # rubocop:enable Metrics/MethodLength
 
       def dsl_array(symbol)
         iv = "@#{symbol}"
-        define_method symbol do |key = nil|
+        define_method symbol do |value = nil|
           array = instance_variable_get(iv)
           if array.nil?
             array = []
             instance_variable_set iv, array
           end
-          array.push key unless key.nil?
+          array.push value unless value.nil?
           array
         end
       end
@@ -83,7 +95,7 @@ class Formatron
             instance_variable_set iv, array
           end
           unless block.nil?
-            value = self.class.const_get(cls).new
+            value = self.class.const_get(cls).new params: {}
             array.push value
             block.call value
           end

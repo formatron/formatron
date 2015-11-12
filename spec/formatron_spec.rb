@@ -14,6 +14,16 @@ describe Formatron do
     @config_key = 'config_key'
     @user_pem_key = 'user_pem_key'
     @organization_pem_key = 'organization_pem_key'
+    @hosted_zone_id = 'hosted_zone_id'
+
+    @aws_class = class_double(
+      'Formatron::AWS'
+    ).as_stubbed_const
+    @aws = instance_double('Formatron::AWS')
+    allow(@aws_class).to receive(:new) { @aws }
+    allow(@aws).to receive(
+      :hosted_zone_name
+    ).with(@hosted_zone_id) { @hosted_zone_name }
 
     dsl = instance_double 'Formatron::DSL'
     @dsl_class = class_double(
@@ -22,7 +32,8 @@ describe Formatron do
     allow(@dsl_class).to receive(:new).with(
       file: @file,
       target: @target,
-      config: @config
+      config: @config,
+      aws: @aws
     ) { dsl }
 
     @dsl_formatron = instance_double 'Formatron::DSL::Formatron'
@@ -38,7 +49,6 @@ describe Formatron do
     allow(global).to receive(:protect).with(no_args) { @protect }
     @kms_key = 'kms_key'
     allow(global).to receive(:kms_key).with(no_args) { @kms_key }
-    @hosted_zone_id = 'hosted_zone_id'
     allow(global).to receive(:hosted_zone_id).with(no_args) { @hosted_zone_id }
 
     ec2 = instance_double 'Formatron::DSL::Formatron::Global::EC2'
@@ -47,15 +57,6 @@ describe Formatron do
     allow(ec2).to receive(:key_pair).with(no_args) { @key_pair }
     @private_key = 'private_key'
     allow(ec2).to receive(:private_key).with(no_args) { @private_key }
-
-    @aws_class = class_double(
-      'Formatron::AWS'
-    ).as_stubbed_const
-    @aws = instance_double('Formatron::AWS')
-    allow(@aws_class).to receive(:new) { @aws }
-    allow(@aws).to receive(
-      :hosted_zone_name
-    ).with(@hosted_zone_id) { @hosted_zone_name }
 
     vpcs = {}
     @nats = {}
@@ -344,7 +345,8 @@ describe Formatron do
     expect(@dsl_class).to have_received(:new).once.with(
       config: @config,
       target: @target,
-      file: @file
+      file: @file,
+      aws: @aws
     )
   end
 
