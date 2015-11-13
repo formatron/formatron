@@ -9,11 +9,9 @@ class Formatron
       end
 
       def dsl_initialize_hash(&block)
-        attr_reader :dsl_key
-        define_method :initialize do |dsl_key:, **params|
-          @dsl_key = dsl_key
+        define_method :initialize do |dsl_key, **params|
           instance_exec(
-            dsl_key: dsl_key,
+            dsl_key,
             **params,
             &block
           ) unless block.nil?
@@ -46,8 +44,7 @@ class Formatron
       # rubocop:enable Metrics/MethodLength
 
       # rubocop:disable Metrics/MethodLength
-      # rubocop:disable Metrics/AbcSize
-      def dsl_hash(symbol, cls, param_symbols = [])
+      def dsl_hash(symbol, cls, &params_block)
         iv = "@#{symbol}"
         define_method symbol do |dsl_key = nil, &block|
           hash = instance_variable_get(iv)
@@ -56,11 +53,12 @@ class Formatron
             instance_variable_set iv, hash
           end
           unless dsl_key.nil?
-            params = param_symbols.each_with_object({}) do |s, p|
-              p[s] = instance_variable_get "@#{s}"
-            end
+            params = {}
+            params = instance_exec(
+              dsl_key, &params_block
+            ) unless params_block.nil?
             value = self.class.const_get(cls).new(
-              dsl_key: dsl_key,
+              dsl_key,
               **params
             )
             hash[dsl_key] = value
@@ -69,7 +67,6 @@ class Formatron
           hash
         end
       end
-      # rubocop:enable Metrics/AbcSize
       # rubocop:enable Metrics/MethodLength
 
       def dsl_array(symbol)

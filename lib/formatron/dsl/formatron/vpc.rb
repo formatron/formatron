@@ -7,10 +7,18 @@ class Formatron
       # VPC configuration
       class VPC
         extend Util::DSL
-        dsl_initialize_hash
+
+        attr_reader :external
+
+        dsl_initialize_hash do |_key, external:|
+          @external = external
+          @external_subnets = @external.subnets
+        end
         dsl_property :guid
         dsl_property :cidr
-        dsl_hash :subnet, 'Subnet'
+        dsl_hash :subnet, 'Subnet' do |key|
+          { external: @external_subnets[key] }
+        end
       end
     end
   end

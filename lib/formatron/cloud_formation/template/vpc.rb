@@ -17,7 +17,6 @@ class Formatron
 
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/ParameterLists
-        # rubocop:disable Metrics/AbcSize
         def initialize(
           vpc:,
           hosted_zone_name:,
@@ -30,9 +29,32 @@ class Formatron
           target:
         )
           @vpc = vpc
-          @cidr = vpc.cidr
-          @guid = vpc.guid
           @hosted_zone_name = hosted_zone_name
+          @key_pair = key_pair
+          @kms_key = kms_key
+          @nats = nats
+          @hosted_zone_id = hosted_zone_id
+          @bucket = bucket
+          @name = name
+          @target = target
+        end
+        # rubocop:enable Metrics/ParameterLists
+        # rubocop:enable Metrics/MethodLength
+
+        def merge(resources:, outputs:)
+          @guid = @vpc.guid
+          if @guid.nil?
+            @external = @vpc.external
+            @guid = @external.guid
+            _merge_external resources: resources, outputs: outputs
+          else
+            _merge_local resources: resources, outputs: outputs
+          end
+        end
+
+        # rubocop:disable Metrics/MethodLength
+        def _merge_local(resources:, outputs:)
+          @cidr = @vpc.cidr
           @logical_id = "#{VPC_PREFIX}#{@guid}"
           @internet_gateway_id = "#{INTERNET_GATEWAY_PREFIX}#{@guid}"
           @vpc_gateway_attachment_id =
@@ -43,20 +65,6 @@ class Formatron
             "#{ROUTE_PREFIX}#{@guid}"
           @private_hosted_zone_id =
             "#{HOSTED_ZONE_PREFIX}#{@guid}"
-          @key_pair = key_pair
-          @kms_key = kms_key
-          @nats = nats
-          @hosted_zone_id = hosted_zone_id
-          @bucket = bucket
-          @name = name
-          @target = target
-        end
-        # rubocop:enable Metrics/AbcSize
-        # rubocop:enable Metrics/ParameterLists
-        # rubocop:enable Metrics/MethodLength
-
-        # rubocop:disable Metrics/MethodLength
-        def merge(resources:, outputs:)
           @vpc.subnet.each do |_, subnet|
             template_subnet = Subnet.new(
               subnet: subnet,
@@ -80,6 +88,31 @@ class Formatron
           _add_route_table resources
           _add_route resources
           _add_private_hosted_zone resources, outputs
+        end
+        # rubocop:enable Metrics/MethodLength
+
+        # rubocop:disable Metrics/MethodLength
+        def _merge_external(resources:, outputs:)
+          @cidr = @external.cidr
+          @private_hosted_zone_id =
+            "#{HOSTED_ZONE_PREFIX}#{@guid}"
+          @vpc.subnet.each do |_, subnet|
+            template_subnet = Subnet.new(
+              subnet: subnet,
+              vpc_guid: @guid,
+              vpc_cidr: @cidr,
+              key_pair: @key_pair,
+              hosted_zone_name: @hosted_zone_name,
+              kms_key: @kms_key,
+              nats: @nats,
+              private_hosted_zone_id: @private_hosted_zone_id,
+              public_hosted_zone_id: @hosted_zone_id,
+              bucket: @bucket,
+              name: @name,
+              target: @target
+            )
+            template_subnet.merge resources: resources, outputs: outputs
+          end
         end
         # rubocop:enable Metrics/MethodLength
 
@@ -130,6 +163,8 @@ class Formatron
         end
 
         private(
+          :_merge_local,
+          :_merge_external,
           :_add_vpc,
           :_add_internet_gateway,
           :_add_vpc_gateway_attachment,

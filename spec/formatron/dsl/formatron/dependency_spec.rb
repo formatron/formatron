@@ -7,7 +7,10 @@ class Formatron
     class Formatron
       describe Dependency do
         extend DSLTest
-        dsl_before_hash [:aws]
+        dsl_before_hash do |_key|
+          @aws = instance_double 'Formatron::AWS'
+          { aws: @aws }
+        end
 
         it 'should do something' do
         end

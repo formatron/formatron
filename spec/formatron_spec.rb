@@ -248,7 +248,7 @@ describe Formatron do
 
     @cloud_formation = class_double(
       'Formatron::CloudFormation'
-    ).as_stubbed_const
+    ).as_stubbed_const transfer_nested_constants: true
 
     @template_class = class_double(
       'Formatron::CloudFormation::Template'

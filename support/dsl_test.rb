@@ -1,24 +1,21 @@
 class Formatron
   module Support
     # utilities for testing generated DSL classes
-    # rubocop:disable Metrics/ModuleLength
     module DSLTest
-      def dsl_before_block(param_symbols = [])
+      def dsl_before_block(&block)
         before :each do
-          @dsl_params = param_symbols.each_with_object({}) do |s, p|
-            p[s] = s.to_s
-          end
-          @dsl_instance = described_class.new(**@dsl_params)
+          params = {}
+          params = instance_eval(&block) if block_given?
+          @dsl_instance = described_class.new(**params)
         end
       end
 
-      def dsl_before_hash(param_symbols = [])
+      def dsl_before_hash(&block)
         before :each do
-          @dsl_params = param_symbols.each_with_object({}) do |s, p|
-            p[s] = s.to_s
-          end
+          params = {}
+          params = instance_exec(&block) if block_given?
           @dsl_instance = described_class.new(
-            dsl_key: 'dsl_key', **@dsl_params
+            'dsl_key', **params
           )
         end
       end
@@ -57,25 +54,21 @@ class Formatron
 
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/AbcSize
-      def dsl_hash(symbol, cls, param_symbols = [])
+      def dsl_hash(symbol, cls, keys = %w(sub1 sub2), &block)
         describe "##{symbol}" do
           it "should add an entry to the #{symbol} hash " \
              'and yield to the given block' do
-            subs = {
-              'sub1' => double,
-              'sub2' => double
-            }
+            subs = keys.each_with_object({}) { |k, o| o[k] = double }
             cls = class_double(
               described_class.const_get(cls).name
             ).as_stubbed_const
             expect(@dsl_instance.send(symbol)).to eql({})
-            params = param_symbols.each_with_object({}) do |s, p|
-              p[s] = @dsl_params[s]
-            end
             subs.each do |dsl_key, sub|
               expect(sub).to receive(:test).with no_args
+              params = {}
+              params = instance_exec(dsl_key, &block) if block_given?
               expect(cls).to receive(:new).with(
-                dsl_key: dsl_key,
+                dsl_key,
                 **params
               ) { sub }
               @dsl_instance.send symbol, dsl_key, &:test
@@ -125,6 +118,5 @@ class Formatron
       # rubocop:enable Metrics/AbcSize
       # rubocop:enable Metrics/MethodLength
     end
-    # rubocop:enable Metrics/ModuleLength
   end
 end
