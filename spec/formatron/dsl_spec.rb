@@ -16,7 +16,7 @@ class Formatron
         'Formatron::DSL::Formatron'
       ).as_stubbed_const
       expect(formatron_class).to receive(:new).with(
-        params: { aws: aws }
+        aws: aws
       ) { formatron }
       file = 'file'
       File.write file, <<-EOH

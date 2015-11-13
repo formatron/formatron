@@ -3,18 +3,18 @@ class Formatron
     # utilities for generating DSL classes
     module DSL
       def dsl_initialize_block(&block)
-        define_method :initialize do |params:|
-          instance_exec params: params, &block unless block.nil?
+        define_method :initialize do |**params|
+          instance_exec(**params, &block) unless block.nil?
         end
       end
 
       def dsl_initialize_hash(&block)
         attr_reader :dsl_key
-        define_method :initialize do |dsl_key:, params:|
+        define_method :initialize do |dsl_key:, **params|
           @dsl_key = dsl_key
           instance_exec(
             dsl_key: dsl_key,
-            params: params,
+            **params,
             &block
           ) unless block.nil?
         end
@@ -35,7 +35,7 @@ class Formatron
           unless block.nil?
             value = instance_variable_get(iv)
             if value.nil?
-              value = self.class.const_get(cls).new params: {}
+              value = self.class.const_get(cls).new
               instance_variable_set iv, value
             end
             block.call value
@@ -61,7 +61,7 @@ class Formatron
             end
             value = self.class.const_get(cls).new(
               dsl_key: dsl_key,
-              params: params
+              **params
             )
             hash[dsl_key] = value
             block.call value unless block.nil?
@@ -95,7 +95,7 @@ class Formatron
             instance_variable_set iv, array
           end
           unless block.nil?
-            value = self.class.const_get(cls).new params: {}
+            value = self.class.const_get(cls).new
             array.push value
             block.call value
           end

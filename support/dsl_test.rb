@@ -8,7 +8,7 @@ class Formatron
           @dsl_params = param_symbols.each_with_object({}) do |s, p|
             p[s] = s.to_s
           end
-          @dsl_instance = described_class.new params: @dsl_params
+          @dsl_instance = described_class.new(**@dsl_params)
         end
       end
 
@@ -18,7 +18,7 @@ class Formatron
             p[s] = s.to_s
           end
           @dsl_instance = described_class.new(
-            dsl_key: 'dsl_key', params: @dsl_params
+            dsl_key: 'dsl_key', **@dsl_params
           )
         end
       end
@@ -35,7 +35,7 @@ class Formatron
 
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/AbcSize
-      def dsl_block(symbol, cls, param_symbols = [])
+      def dsl_block(symbol, cls)
         describe "##{symbol}" do
           it "should set the #{symbol} and yield to the given block" do
             sub = double
@@ -43,11 +43,8 @@ class Formatron
               described_class.const_get(cls).name
             ).as_stubbed_const
             expect(sub).to receive(:test).with no_args
-            params = param_symbols.each_with_object({}) do |s, p|
-              p[s] = @dsl_params[s]
-            end
             expect(cls).to receive(:new).with(
-              params: params
+              no_args
             ) { sub }
             expect(@dsl_instance.send(symbol)).to be_nil
             @dsl_instance.send symbol, &:test
@@ -79,7 +76,7 @@ class Formatron
               expect(sub).to receive(:test).with no_args
               expect(cls).to receive(:new).with(
                 dsl_key: dsl_key,
-                params: params
+                **params
               ) { sub }
               @dsl_instance.send symbol, dsl_key, &:test
             end
@@ -105,7 +102,7 @@ class Formatron
 
       # rubocop:disable Metrics/AbcSize
       # rubocop:disable Metrics/MethodLength
-      def dsl_block_array(symbol, cls, param_symbols = [])
+      def dsl_block_array(symbol, cls)
         describe "##{symbol}" do
           it "should add an entry to the #{symbol} array " \
              'and yield to the given block' do
@@ -114,13 +111,10 @@ class Formatron
               described_class.const_get(cls).name
             ).as_stubbed_const
             expect(@dsl_instance.send(symbol)).to eql([])
-            params = param_symbols.each_with_object({}) do |s, p|
-              p[s] = @dsl_params[s]
-            end
             subs.each do |sub|
               expect(sub).to receive(:test).with no_args
               expect(cls).to receive(:new).with(
-                params: params
+                no_args
               ) { sub }
               @dsl_instance.send symbol, &:test
             end
