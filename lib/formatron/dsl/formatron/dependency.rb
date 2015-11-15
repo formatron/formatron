@@ -7,9 +7,10 @@ class Formatron
       class Dependency
         extend Util::DSL
 
-        dsl_initialize_hash do |key, aws:|
+        dsl_initialize_hash do |key, aws:, external:|
           puts key
           puts aws
+          puts external
         end
       end
     end

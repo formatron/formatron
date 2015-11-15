@@ -17,11 +17,11 @@ class Formatron
         dsl_before_hash do
           @external_subnets = subnet_keys.each_with_object({}) do |k, o|
             o[k] = instance_double(
-              'Formatron::DSL::Formatron::Dependency::VPC::Subnet'
+              'Formatron::External::VPC::Subnet'
             )
           end
           @external = instance_double(
-            'Formatron::DSL::Formatron::Dependency::VPC'
+            'Formatron::External::VPC'
           )
           allow(@external).to receive(:subnets) { @external_subnets }
           { external: @external }

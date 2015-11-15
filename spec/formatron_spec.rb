@@ -25,6 +25,12 @@ describe Formatron do
       :hosted_zone_name
     ).with(@hosted_zone_id) { @hosted_zone_name }
 
+    @external_class = class_double(
+      'Formatron::External'
+    ).as_stubbed_const
+    @external = instance_double('Formatron::External')
+    allow(@external_class).to receive(:new) { @external }
+
     dsl = instance_double 'Formatron::DSL'
     @dsl_class = class_double(
       'Formatron::DSL'
@@ -33,7 +39,8 @@ describe Formatron do
       file: @file,
       target: @target,
       config: @config,
-      aws: @aws
+      aws: @aws,
+      external: @external
     ) { dsl }
 
     @dsl_formatron = instance_double 'Formatron::DSL::Formatron'
@@ -346,7 +353,8 @@ describe Formatron do
       config: @config,
       target: @target,
       file: @file,
-      aws: @aws
+      aws: @aws,
+      external: @external
     )
   end
 

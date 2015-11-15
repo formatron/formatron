@@ -15,21 +15,25 @@ class Formatron
 
       dsl_before_block do
         @aws = instance_double 'Formatron::AWS'
-        external = instance_double 'Formatron::External'
+        @external = instance_double 'Formatron::External'
         @external_vpcs = vpc_keys.each_with_object({}) do |k, o|
           o[k] = instance_double(
-            'Formatron::DSL::Formatron::Dependency::VPC'
+            'Formatron::External::VPC'
           )
         end
-        allow(external).to receive(:vpcs) { @external_vpcs }
-        { aws: @aws, external: external }
+        allow(@external).to receive(:vpcs) { @external_vpcs }
+        @external_global = instance_double 'Formatron::External::Global'
+        allow(@external).to receive(:global) { @external_global }
+        { aws: @aws, external: @external }
       end
 
       dsl_property :name
       dsl_property :bucket
-      dsl_block :global, 'Global'
+      dsl_block :global, 'Global' do
+        { external: @external_global }
+      end
       dsl_hash :dependency, 'Dependency' do |_key|
-        { aws: @aws }
+        { aws: @aws, external: @external }
       end
       dsl_hash :vpc, 'VPC', vpc_keys do |key|
         { external: @external_vpcs[key] }

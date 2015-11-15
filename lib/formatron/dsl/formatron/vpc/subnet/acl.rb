@@ -8,7 +8,13 @@ class Formatron
           # Subnet ACL configuration
           class ACL
             extend Util::DSL
-            dsl_initialize_block
+
+            attr_reader :external
+
+            dsl_initialize_block do |external:|
+              @external = external
+            end
+
             dsl_array :source_cidr
           end
         end

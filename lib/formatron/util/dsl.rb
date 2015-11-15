@@ -27,17 +27,19 @@ class Formatron
       end
 
       # rubocop:disable Metrics/MethodLength
-      def dsl_block(symbol, cls)
+      def dsl_block(symbol, cls, &params_block)
         iv = "@#{symbol}"
         define_method symbol do |&block|
-          unless block.nil?
-            value = instance_variable_get(iv)
-            if value.nil?
-              value = self.class.const_get(cls).new
-              instance_variable_set iv, value
-            end
-            block.call value
+          value = instance_variable_get(iv)
+          if value.nil?
+            params = {}
+            params = instance_eval(
+              &params_block
+            ) unless params_block.nil?
+            value = self.class.const_get(cls).new(**params)
+            instance_variable_set iv, value
           end
+          block.call value unless block.nil?
           instance_variable_get iv
         end
       end

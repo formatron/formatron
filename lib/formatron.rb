@@ -30,7 +30,8 @@ class Formatron
       file: File.join(directory, FORMATRONFILE),
       config: @config,
       target: @target,
-      aws: @aws
+      aws: @aws,
+      external: External.new
     )
     _initialize
   end

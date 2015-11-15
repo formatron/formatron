@@ -11,7 +11,7 @@ class Formatron
 
           dsl_before_hash do
             @external = instance_double(
-              'Formatron::DSL::Formatron::Dependency::VPC::Subnet'
+              'Formatron::External::VPC::Subnet'
             )
             { external: @external }
           end

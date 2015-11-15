@@ -9,7 +9,8 @@ class Formatron
         extend DSLTest
         dsl_before_hash do |_key|
           @aws = instance_double 'Formatron::AWS'
-          { aws: @aws }
+          @external = instance_double 'Formatron::External'
+          { aws: @aws, external: @external }
         end
 
         it 'should do something' do

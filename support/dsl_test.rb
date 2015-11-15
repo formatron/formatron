@@ -32,7 +32,7 @@ class Formatron
 
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/AbcSize
-      def dsl_block(symbol, cls)
+      def dsl_block(symbol, cls, &block)
         describe "##{symbol}" do
           it "should set the #{symbol} and yield to the given block" do
             sub = double
@@ -40,10 +40,11 @@ class Formatron
               described_class.const_get(cls).name
             ).as_stubbed_const
             expect(sub).to receive(:test).with no_args
+            params = {}
+            params = instance_exec(&block) if block_given?
             expect(cls).to receive(:new).with(
-              no_args
+              **params
             ) { sub }
-            expect(@dsl_instance.send(symbol)).to be_nil
             @dsl_instance.send symbol, &:test
             expect(@dsl_instance.send(symbol)).to eql(sub)
           end
