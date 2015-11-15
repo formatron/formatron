@@ -11,10 +11,10 @@ ENVIRONMENT_CREATE_COMMAND = 'knife environment create ' \
                              "knife_file -d '#{ENVIRONMENT} environment " \
                              "created by formatron'"
 BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
-                    '--sudo -x ubuntu -i private_key -E ' \
+                    '--sudo -x ubuntu -i ec2_key -E ' \
                     "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} -c knife_file"
 BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
-                                 '--sudo -x ubuntu -i private_key -E ' \
+                                 '--sudo -x ubuntu -i ec2_key -E ' \
                                  "#{ENVIRONMENT} -r cookbook " \
                                  "-N #{ENVIRONMENT} " \
                                  '-c knife_file -G ubuntu@bastion'
@@ -32,10 +32,12 @@ class Formatron
         @chef_server_url = 'chef_server_url'
         @username = 'username'
         @user_key = 'user_key'
+        @ec2_key = 'ec2_key'
         allow(@keys).to receive(:user_key) { @user_key }
         @organization = 'organization'
         @organization_key = 'organization_key'
         allow(@keys).to receive(:organization_key) { @organization_key }
+        allow(@keys).to receive(:ec2_key) { @ec2_key }
         @knife_tempfile = instance_double('Tempfile')
         allow(@knife_tempfile).to receive(:write)
         allow(@knife_tempfile).to receive(:close)
@@ -238,8 +240,7 @@ class Formatron
               environment: ENVIRONMENT,
               bastion_hostname: 'hostname',
               cookbook: 'cookbook',
-              hostname: 'hostname',
-              private_key: 'private_key'
+              hostname: 'hostname'
             )
             expect(@shell).to have_received(:exec).once
           end
@@ -260,8 +261,7 @@ class Formatron
               environment: ENVIRONMENT,
               bastion_hostname: 'bastion',
               cookbook: 'cookbook',
-              hostname: 'hostname',
-              private_key: 'private_key'
+              hostname: 'hostname'
             )
             expect(@shell).to have_received(:exec).once
           end
@@ -283,8 +283,7 @@ class Formatron
                 environment: ENVIRONMENT,
                 bastion_hostname: 'bastion',
                 cookbook: 'cookbook',
-                hostname: 'hostname',
-                private_key: 'private_key'
+                hostname: 'hostname'
               )
             end.to raise_error(
               'failed to bootstrap instance: hostname'

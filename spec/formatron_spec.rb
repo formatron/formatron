@@ -29,7 +29,11 @@ describe Formatron do
       'Formatron::External'
     ).as_stubbed_const
     @external = instance_double('Formatron::External')
-    allow(@external_class).to receive(:new) { @external }
+    allow(@external_class).to receive(:new).with(
+      target: @target,
+      aws: @aws,
+      config: @config
+    ) { @external }
 
     dsl = instance_double 'Formatron::DSL'
     @dsl_class = class_double(
@@ -39,7 +43,6 @@ describe Formatron do
       file: @file,
       target: @target,
       config: @config,
-      aws: @aws,
       external: @external
     ) { dsl }
 
@@ -62,8 +65,8 @@ describe Formatron do
     allow(global).to receive(:ec2).with(no_args) { ec2 }
     @key_pair = 'key_pair'
     allow(ec2).to receive(:key_pair).with(no_args) { @key_pair }
-    @private_key = 'private_key'
-    allow(ec2).to receive(:private_key).with(no_args) { @private_key }
+    @ec2_key = 'ec2_key'
+    allow(ec2).to receive(:private_key).with(no_args) { @ec2_key }
 
     vpcs = {}
     @nats = {}
@@ -106,7 +109,7 @@ describe Formatron do
             organization: organization_name,
             ssl_verify: ssl_verify,
             chef_sub_domain: sub_domain,
-            private_key: @private_key,
+            ec2_key: @ec2_key,
             bastions: bastion_sub_domains,
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
@@ -337,7 +340,7 @@ describe Formatron do
             organization: "organization#{chef_server_index}",
             ssl_verify: "chef_server_ssl_verify#{chef_server_index}",
             chef_sub_domain: "chef_server_sub_domain#{chef_server_index}",
-            private_key: @private_key,
+            ec2_key: @ec2_key,
             bastions: @bastion_sub_domains[vpc_key],
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
@@ -353,7 +356,6 @@ describe Formatron do
       config: @config,
       target: @target,
       file: @file,
-      aws: @aws,
       external: @external
     )
   end

@@ -29,7 +29,7 @@ class Formatron
       @organization = 'organization'
       @username = 'username'
       @ssl_verify = 'ssl_verify'
-      @private_key = 'private_key'
+      @ec2_key = 'ec2_key'
       @chef_server_url = "https://#{@chef_sub_domain}.#{@hosted_zone_name}" \
                          "/organizations/#{@organization}"
       @cloud_formation = class_double(
@@ -73,7 +73,7 @@ class Formatron
         organization: @organization,
         ssl_verify: @ssl_verify,
         chef_sub_domain: @chef_sub_domain,
-        private_key: @private_key,
+        ec2_key: @ec2_key,
         bastions: @bastions,
         hosted_zone_name: @hosted_zone_name,
         server_stack: @server_stack,
@@ -87,7 +87,8 @@ class Formatron
         bucket: @bucket,
         name: @server_stack,
         target: @target,
-        guid: @guid
+        guid: @guid,
+        ec2_key: @ec2_key
       )
     end
 
@@ -205,8 +206,7 @@ class Formatron
               bastion_hostname: @bastion_hostname,
               environment: @sub_domain,
               cookbook: @cookbook_name,
-              hostname: @hostname,
-              private_key: @private_key
+              hostname: @hostname
             )
           end
         end

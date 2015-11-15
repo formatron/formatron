@@ -11,6 +11,7 @@ class Formatron
         @name = 'name'
         @target = 'target'
         @guid = 'guid'
+        @ec2_key = 'ec2_key'
         @directory = 'directory'
         @user_pem_path = 'user_pem_path'
         @organization_pem_path = 'organization_pem_path'
@@ -25,23 +26,28 @@ class Formatron
           :organization_pem_path
         ) { @organization_pem_path }
         allow(Dir).to receive(:mktmpdir) { @directory }
+        allow(File).to receive :write
         allow(FileUtils).to receive :rm_rf
         @keys = Keys.new(
           aws: @aws,
           bucket: @bucket,
           name: @name,
           target: @target,
-          guid: @guid
+          guid: @guid,
+          ec2_key: @ec2_key
         )
         @keys.init
       end
 
       describe '#init' do
-        it 'should download the Chef Server ' \
-           'keys to a temporary directory' do
+        it 'should create a temporary directory' do
           expect(Dir).to have_received(:mktmpdir).once.with(
             'formatron-chef-server-keys-'
           )
+        end
+
+        it 'should download the Chef Server ' \
+           'keys to a temporary directory' do
           expect(@s3_chef_server_keys).to have_received(:get).once.with(
             aws: @aws,
             bucket: @bucket,
@@ -49,6 +55,13 @@ class Formatron
             target: @target,
             guid: @guid,
             directory: @directory
+          )
+        end
+
+        it 'should write the EC2 private key file' do
+          expect(File).to have_received(:write).with(
+            File.join(@directory, 'ec2_key'),
+            @ec2_key
           )
         end
       end
@@ -68,6 +81,12 @@ class Formatron
           expect(@s3_chef_server_keys).to have_received(
             :organization_pem_path
           ).once.with(directory: @directory)
+        end
+      end
+
+      describe '#ec2_key' do
+        it 'should return the path to the EC2 key' do
+          expect(@keys.ec2_key).to eql File.join @directory, 'ec2_key'
         end
       end
 

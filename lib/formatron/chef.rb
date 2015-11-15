@@ -15,7 +15,7 @@ class Formatron
       bucket:,
       name:,
       target:,
-      private_key:,
+      ec2_key:,
       username:,
       organization:,
       ssl_verify:,
@@ -28,7 +28,6 @@ class Formatron
       @aws = aws
       @name = name
       @target = target
-      @private_key = private_key
       @chef_sub_domain = chef_sub_domain
       @hosted_zone_name = hosted_zone_name
       @organization = organization
@@ -40,7 +39,8 @@ class Formatron
         bucket: bucket,
         name: server_stack,
         target: @target,
-        guid: guid
+        guid: guid,
+        ec2_key: ec2_key
       )
       @knife = Knife.new(
         keys: @keys,
@@ -98,8 +98,7 @@ class Formatron
         bastion_hostname: bastion_hostname,
         environment: sub_domain,
         cookbook: cookbook_name,
-        hostname: hostname,
-        private_key: @private_key
+        hostname: hostname
       )
     end
     # rubocop:enable Metrics/ParameterLists

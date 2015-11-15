@@ -86,8 +86,10 @@ describe Formatron::Generators::Bootstrap do
       EOH
     end
 
-    it 'should generate an ec2/private-key.pem placeholder' do
-      actual = File.read File.join(directory, 'ec2', 'private-key.pem')
+    it 'should generate an EC2 private key placeholder' do
+      actual = File.read File.join(
+        directory, 'config/_default/ec2/private_key'
+      )
       expect(actual).to eql <<-EOH.gsub(/^ {8}/, '')
         Remember to replace this file with the EC2 private key
       EOH
@@ -108,7 +110,7 @@ describe Formatron::Generators::Bootstrap do
 
           global.ec2 do |ec2|
             ec2.key_pair '#{params[:ec2_key_pair]}'
-            ec2.private_key 'ec2/private-key.pem'
+            ec2.private_key config['ec2']['private_key']
           end
         end
 

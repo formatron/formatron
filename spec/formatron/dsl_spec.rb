@@ -8,7 +8,6 @@ class Formatron
     it 'should load and evaluate the given file' do
       target = 'target'
       config = 'config'
-      aws = 'aws'
       external = 'external'
       formatron = double
       expect(formatron).to receive(:target).with target
@@ -17,7 +16,6 @@ class Formatron
         'Formatron::DSL::Formatron'
       ).as_stubbed_const
       expect(formatron_class).to receive(:new).with(
-        aws: aws,
         external: external
       ) { formatron }
       file = 'file'
@@ -29,7 +27,6 @@ class Formatron
         file: file,
         target: target,
         config: config,
-        aws: aws,
         external: external
       )
     end

@@ -59,11 +59,10 @@ class Formatron
         environment:,
         bastion_hostname:,
         cookbook:,
-        hostname:,
-        private_key:
+        hostname:
       )
         # rubocop:disable Metrics/LineLength
-        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{private_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
+        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
         command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
         fail "failed to bootstrap instance: #{hostname}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength

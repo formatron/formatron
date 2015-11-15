@@ -8,7 +8,7 @@ formatron.global do |global|
 
   global.ec2 do |ec2|
     ec2.key_pair '<%= params[:ec2_key_pair] %>'
-    ec2.private_key 'ec2/private-key.pem'
+    ec2.private_key config['ec2']['private_key']
   end
 end
 

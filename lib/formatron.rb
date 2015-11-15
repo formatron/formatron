@@ -26,12 +26,16 @@ class Formatron
       directory: directory,
       target: target
     )
+    @external = External.new(
+      target: @target,
+      config: @config,
+      aws: @aws
+    )
     @dsl = DSL.new(
       file: File.join(directory, FORMATRONFILE),
       config: @config,
       target: @target,
-      aws: @aws,
-      external: External.new
+      external: @external
     )
     _initialize
   end
@@ -47,7 +51,7 @@ class Formatron
     global = @formatron.global
     ec2 = global.ec2
     key_pair = ec2.key_pair
-    @private_key = ec2.private_key
+    @ec2_key = ec2.private_key
     @protected = global.protect
     @kms_key = global.kms_key
     hosted_zone_id = global.hosted_zone_id
@@ -113,7 +117,7 @@ class Formatron
           organization: chef_server.organization.short_name,
           ssl_verify: chef_server.ssl_verify,
           chef_sub_domain: chef_server.sub_domain,
-          private_key: @private_key,
+          ec2_key: @ec2_key,
           bastions: bastions,
           hosted_zone_name: @hosted_zone_name,
           server_stack: @name,
