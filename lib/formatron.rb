@@ -10,6 +10,7 @@ require 'formatron/cloud_formation'
 require 'formatron/chef'
 require 'formatron/logger'
 require 'formatron/util/vpc'
+require 'formatron/chef_clients'
 
 # manages a Formatron stack
 # rubocop:disable Metrics/ClassLength
@@ -81,40 +82,21 @@ class Formatron
   # rubocop:enable Metrics/MethodLength
 
   # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
   def _initialize_chef_clients
     @chef_clients = {}
-    @vpcs.each do |vpc_key, vpc|
-      chef_clients = @chef_clients[vpc_key] = {}
-      external_vpc = @external_vpcs[vpc_key]
-      if external_vpc.nil?
-        bastions = Util::VPC.instances :bastion, vpc
-        chef_servers = Util::VPC.instances :chef_server, vpc
-      else
-        bastions = Util::VPC.instances :bastion, external_vpc, vpc
-        chef_servers = Util::VPC.instances :chef_server, external_vpc, vpc
-      end
-      bastions = Hash[bastions.map { |k, v| [k, v.sub_domain] }]
-      chef_servers.each do |key, chef_server|
-        chef_clients[key] = Chef.new(
-          aws: @aws,
-          bucket: @bucket,
-          name: @name,
-          target: @target,
-          username: chef_server.username,
-          organization: chef_server.organization.short_name,
-          ssl_verify: chef_server.ssl_verify,
-          chef_sub_domain: chef_server.sub_domain,
-          ec2_key: @ec2_key,
-          bastions: bastions,
-          hosted_zone_name: @hosted_zone_name,
-          server_stack: chef_server.stack || @name,
-          guid: chef_server.guid
-        )
-      end
+    @vpcs.each do |key, vpc|
+      @chef_clients[key] = ChefClients.new(
+        aws: @aws,
+        bucket: @bucket,
+        name: @name,
+        target: @target,
+        ec2_key: @ec2_key,
+        hosted_zone_name: @hosted_zone_name,
+        vpc: vpc,
+        external: @external_vpcs[key]
+      )
     end
   end
-  # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
   # rubocop:disable Metrics/MethodLength
@@ -154,15 +136,13 @@ class Formatron
   end
 
   # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
   def provision
     @all_instances.each do |key, all_instances|
       chef_clients = @chef_clients[key]
       all_instances.values.each do |instance|
         dsl_chef = instance.chef
         next if dsl_chef.nil?
-        server = dsl_chef.server || chef_clients.keys[0]
-        chef = chef_clients[server]
+        chef = chef_clients.get dsl_chef.server
         cookbook = dsl_chef.cookbook
         bastion = dsl_chef.bastion
         sub_domain = instance.sub_domain
@@ -170,7 +150,6 @@ class Formatron
       end
     end
   end
-  # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
   def _provision(chef, cookbook, sub_domain, bastion)
@@ -318,7 +297,7 @@ class Formatron
       all_instances.values.each do |instance|
         dsl_chef = instance.chef
         next if dsl_chef.nil?
-        chef = chef_clients[dsl_chef.server]
+        chef = chef_clients.get dsl_chef.server
         sub_domain = instance.sub_domain
         _destroy_chef_instance chef, sub_domain
       end
