@@ -9,6 +9,7 @@ require 'formatron/cloud_formation/template'
 require 'formatron/cloud_formation'
 require 'formatron/chef'
 require 'formatron/logger'
+require 'formatron/util/vpc'
 
 # manages a Formatron stack
 # rubocop:disable Metrics/ClassLength
@@ -43,59 +44,39 @@ class Formatron
 
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/AbcSize
+  # rubocop:disable Metrics/CyclomaticComplexity
+  # rubocop:disable Metrics/PerceivedComplexity
   def _initialize
     @formatron = @dsl.formatron
-    _initialize_instances
+    @vpcs = @formatron.vpc
     @name = @formatron.name
     @bucket = @formatron.bucket
-    global = @formatron.global
-    ec2 = global.ec2
-    key_pair = ec2.key_pair
-    @ec2_key = ec2.private_key
-    @protected = global.protect
-    @kms_key = global.kms_key
-    hosted_zone_id = global.hosted_zone_id
+    external_formatron = @external.formatron
+    @external_vpcs = external_formatron.vpc
+    external_global = external_formatron.global
+    global = @formatron.global || external_global
+    external_ec2 = external_global.ec2
+    ec2 = global.ec2 || external_ec2
+    key_pair = ec2.key_pair || external_ec2.key_pair
+    @ec2_key = ec2.private_key || external_ec2.private_key
+    @protected = global.protect || external_global.protect
+    @kms_key = global.kms_key || external_global.kms_key
+    hosted_zone_id = global.hosted_zone_id || external_global.hosted_zone_id
     @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
     @cloud_formation_template = CloudFormation::Template.new(
       formatron: @formatron,
       hosted_zone_name: @hosted_zone_name,
       key_pair: key_pair,
       kms_key: @kms_key,
-      nats: @nats,
       hosted_zone_id: hosted_zone_id,
-      target: @target
+      target: @target,
+      external: external_formatron
     ).hash
     _initialize_chef_clients
+    _initialize_instances
   end
-  # rubocop:enable Metrics/AbcSize
-  # rubocop:enable Metrics/MethodLength
-
-  # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
-  def _initialize_instances
-    @instances = {}
-    @chef_servers = {}
-    @bastions = {}
-    @nats = {}
-    @all_instances = {}
-    @formatron.vpc.each do |key, vpc|
-      nats = @nats[key] = {}
-      bastions = @bastions[key] = {}
-      chef_servers = @chef_servers[key] = {}
-      instances = @instances[key] = {}
-      all_instances = @all_instances[key] = {}
-      vpc.subnet.values.each do |subnet|
-        nats.merge! subnet.nat
-        bastions.merge! subnet.bastion
-        chef_servers.merge! subnet.chef_server
-        instances.merge! subnet.instance
-      end
-      all_instances.merge! nats
-      all_instances.merge! bastions
-      all_instances.merge! chef_servers
-      all_instances.merge! instances
-    end
-  end
+  # rubocop:enable Metrics/PerceivedComplexity
+  # rubocop:enable Metrics/CyclomaticComplexity
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
@@ -103,9 +84,16 @@ class Formatron
   # rubocop:disable Metrics/AbcSize
   def _initialize_chef_clients
     @chef_clients = {}
-    @chef_servers.each do |vpc_key, chef_servers|
+    @vpcs.each do |vpc_key, vpc|
       chef_clients = @chef_clients[vpc_key] = {}
-      bastions = @bastions[vpc_key]
+      external_vpc = @external_vpcs[vpc_key]
+      if external_vpc.nil?
+        bastions = Util::VPC.instances :bastion, vpc
+        chef_servers = Util::VPC.instances :chef_server, vpc
+      else
+        bastions = Util::VPC.instances :bastion, external_vpc, vpc
+        chef_servers = Util::VPC.instances :chef_server, external_vpc, vpc
+      end
       bastions = Hash[bastions.map { |k, v| [k, v.sub_domain] }]
       chef_servers.each do |key, chef_server|
         chef_clients[key] = Chef.new(
@@ -120,10 +108,39 @@ class Formatron
           ec2_key: @ec2_key,
           bastions: bastions,
           hosted_zone_name: @hosted_zone_name,
-          server_stack: @name,
+          server_stack: chef_server.stack || @name,
           guid: chef_server.guid
         )
       end
+    end
+  end
+  # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength
+
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
+  def _initialize_instances
+    @chef_servers = {}
+    @bastions = {}
+    @nats = {}
+    @instances = {}
+    @all_instances = {}
+    @vpcs.each do |k, v|
+      chef_servers = @chef_servers[k] = {}
+      bastions = @bastions[k] = {}
+      nats = @nats[k] = {}
+      instances = @instances[k] = {}
+      all_instances = @all_instances[k] = {}
+      v.subnet.values.each do |s|
+        chef_servers.merge! s.chef_server
+        bastions.merge! s.bastion
+        nats.merge! s.nat
+        instances.merge! s.instance
+      end
+      all_instances.merge! chef_servers
+      all_instances.merge! bastions
+      all_instances.merge! nats
+      all_instances.merge! instances
     end
   end
   # rubocop:enable Metrics/AbcSize
@@ -321,8 +338,8 @@ class Formatron
 
   private(
     :_initialize,
-    :_initialize_instances,
     :_initialize_chef_clients,
+    :_initialize_instances,
     :_deploy_configuration,
     :_deploy_template,
     :_deploy_stack,

@@ -10,18 +10,12 @@ class Formatron
 
       dsl_initialize_block do |external:|
         @external = external
-        @external_vpcs = external.vpcs
-        @external_global = external.global
       end
 
       dsl_property :name
       dsl_property :bucket
-      dsl_block :global, 'Global' do
-        { external: @external_global }
-      end
-      dsl_hash :vpc, 'VPC' do |key|
-        { external: @external_vpcs[key] }
-      end
+      dsl_block :global, 'Global'
+      dsl_hash :vpc, 'VPC'
 
       def depends(dependency)
         @external.merge dependency: dependency

@@ -10,13 +10,7 @@ class Formatron
         # Subnet configuration
         class Subnet
           extend Util::DSL
-
-          attr_reader :external
-
-          dsl_initialize_hash do |_key, external:|
-            @external = external
-          end
-
+          dsl_initialize_hash
           dsl_property :guid
           dsl_property :cidr
           dsl_property :availability_zone

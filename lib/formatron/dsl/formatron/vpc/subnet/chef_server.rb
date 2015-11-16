@@ -22,6 +22,7 @@ class Formatron
             dsl_property :ssl_key
             dsl_property :ssl_cert
             dsl_property :ssl_verify
+            dsl_property :stack
             dsl_block :organization, 'Organization'
           end
         end

@@ -20,59 +20,97 @@ class Formatron
           @guid = 'guid'
           @private_hosted_zone_id = "hostedZone#{@guid}"
           @cidr = 'cidr'
-          key_pair = 'key_pair'
+          @key_pair = 'key_pair'
           @hosted_zone_name = 'hosted_zone_name'
-          kms_key = 'kms_key'
-          nats = 'nats'
-          hosted_zone_id = 'hosted_zone_id'
-          bucket = 'bucket'
-          name = 'name'
-          target = 'target'
+          @kms_key = 'kms_key'
+          @nats = 'nats'
+          @hosted_zone_id = 'hosted_zone_id'
+          @bucket = 'bucket'
+          @name = 'name'
+          @target = 'target'
           test_instances(
             tag: :subnet,
             args: lambda do |_|
               {
+                external: nil,
                 vpc_guid: @guid,
                 vpc_cidr: @cidr,
-                key_pair: key_pair,
+                key_pair: @key_pair,
                 hosted_zone_name: @hosted_zone_name,
-                kms_key: kms_key,
-                nats: nats,
+                kms_key: @kms_key,
+                nats: @nats,
                 private_hosted_zone_id: @private_hosted_zone_id,
-                public_hosted_zone_id: hosted_zone_id,
-                bucket: bucket,
-                name: name,
-                target: target
+                public_hosted_zone_id: @hosted_zone_id,
+                bucket: @bucket,
+                name: @name,
+                target: @target
               }
             end,
             template_cls: 'Formatron::CloudFormation::Template::VPC::Subnet',
             dsl_cls: 'Formatron::DSL::Formatron::VPC::Subnet'
           )
+          @external_vpc = instance_double 'Formatron::DSL::Formatron' \
+                                          '::VPC'
           @dsl_vpc = instance_double 'Formatron::DSL::Formatron::VPC'
           allow(@dsl_vpc).to receive(
             :subnet
           ) { @dsl_instances[:subnet] }
+          @vpc_util_class = class_double(
+            'Formatron::Util::VPC'
+          ).as_stubbed_const
           @template_vpc = VPC.new(
             vpc: @dsl_vpc,
+            external: @external_vpc,
             hosted_zone_name: @hosted_zone_name,
-            key_pair: key_pair,
-            kms_key: kms_key,
-            nats: nats,
-            hosted_zone_id: hosted_zone_id,
-            bucket: bucket,
-            name: name,
-            target: target
+            key_pair: @key_pair,
+            kms_key: @kms_key,
+            hosted_zone_id: @hosted_zone_id,
+            bucket: @bucket,
+            name: @name,
+            target: @target
           )
         end
 
         context 'when the VPC is defined in a dependency' do
           before :each do
+            external_subnets = (0..9).each_with_object({}) do |i, o|
+              o["subnet#{i}"] = "external_subnet#{i}"
+            end
+            test_instances(
+              tag: :subnet,
+              args: lambda do |key|
+                {
+                  external: external_subnets[key],
+                  vpc_guid: @guid,
+                  vpc_cidr: @cidr,
+                  key_pair: @key_pair,
+                  hosted_zone_name: @hosted_zone_name,
+                  kms_key: @kms_key,
+                  nats: @nats,
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  public_hosted_zone_id: @hosted_zone_id,
+                  bucket: @bucket,
+                  name: @name,
+                  target: @target
+                }
+              end,
+              template_cls: 'Formatron::CloudFormation::Template::VPC::Subnet',
+              dsl_cls: 'Formatron::DSL::Formatron::VPC::Subnet'
+            )
+            allow(@dsl_vpc).to receive(
+              :subnet
+            ) { @dsl_instances[:subnet] }
+            allow(@external_vpc).to receive(
+              :subnet
+            ) { external_subnets }
             allow(@dsl_vpc).to receive(:guid) { nil }
-            @external_vpc = instance_double 'Formatron::DSL::Formatron' \
-                                            '::Dependency::VPC'
-            allow(@dsl_vpc).to receive(:external) { @external_vpc }
             allow(@external_vpc).to receive(:guid) { @guid }
             allow(@external_vpc).to receive(:cidr) { @cidr }
+            allow(@vpc_util_class).to receive(:instances).with(
+              :nat,
+              @external_vpc,
+              @dsl_vpc
+            ) { @nats }
           end
 
           describe '#merge' do
@@ -92,6 +130,10 @@ class Formatron
         context 'when the VPC is defined locally' do
           before :each do
             allow(@dsl_vpc).to receive(:guid) { @guid }
+            allow(@vpc_util_class).to receive(:instances).with(
+              :nat,
+              @dsl_vpc
+            ) { @nats }
             allow(@dsl_vpc).to receive(:cidr) { @cidr }
             @vpc = 'vpc'
             allow(@ec2).to receive(:vpc).with(

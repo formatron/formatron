@@ -1,6 +1,7 @@
 require_relative 'vpc/subnet'
 require 'formatron/cloud_formation/resources/ec2'
 require 'formatron/cloud_formation/resources/route53'
+require 'formatron/util/vpc'
 
 class Formatron
   module CloudFormation
@@ -19,20 +20,20 @@ class Formatron
         # rubocop:disable Metrics/ParameterLists
         def initialize(
           vpc:,
+          external:,
           hosted_zone_name:,
           key_pair:,
           kms_key:,
-          nats:,
           hosted_zone_id:,
           bucket:,
           name:,
           target:
         )
           @vpc = vpc
+          @external = external
           @hosted_zone_name = hosted_zone_name
           @key_pair = key_pair
           @kms_key = kms_key
-          @nats = nats
           @hosted_zone_id = hosted_zone_id
           @bucket = bucket
           @name = name
@@ -44,7 +45,6 @@ class Formatron
         def merge(resources:, outputs:)
           @guid = @vpc.guid
           if @guid.nil?
-            @external = @vpc.external
             @guid = @external.guid
             _merge_external resources: resources, outputs: outputs
           else
@@ -68,12 +68,13 @@ class Formatron
           @vpc.subnet.each do |_, subnet|
             template_subnet = Subnet.new(
               subnet: subnet,
+              external: nil,
               vpc_guid: @guid,
               vpc_cidr: @cidr,
               key_pair: @key_pair,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
-              nats: @nats,
+              nats: Util::VPC.instances(:nat, @vpc),
               private_hosted_zone_id: @private_hosted_zone_id,
               public_hosted_zone_id: @hosted_zone_id,
               bucket: @bucket,
@@ -96,15 +97,16 @@ class Formatron
           @cidr = @external.cidr
           @private_hosted_zone_id =
             "#{HOSTED_ZONE_PREFIX}#{@guid}"
-          @vpc.subnet.each do |_, subnet|
+          @vpc.subnet.each do |key, subnet|
             template_subnet = Subnet.new(
               subnet: subnet,
+              external: @external.subnet[key],
               vpc_guid: @guid,
               vpc_cidr: @cidr,
               key_pair: @key_pair,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
-              nats: @nats,
+              nats: Util::VPC.instances(:nat, @external, @vpc),
               private_hosted_zone_id: @private_hosted_zone_id,
               public_hosted_zone_id: @hosted_zone_id,
               bucket: @bucket,

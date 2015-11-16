@@ -21,6 +21,7 @@ class Formatron
           # rubocop:disable Metrics/AbcSize
           def initialize(
             subnet:,
+            external:,
             vpc_guid:,
             vpc_cidr:,
             key_pair:,
@@ -34,17 +35,9 @@ class Formatron
             target:
           )
             @subnet = subnet
-            @guid = @subnet.guid
+            @external = external
             @vpc_guid = vpc_guid
             @vpc_cidr = vpc_cidr
-            @subnet_id = "#{SUBNET_PREFIX}#{@guid}"
-            @subnet_route_table_association_id =
-              "#{SUBNET_ROUTE_TABLE_ASSOCIATION_PREFIX}#{@guid}"
-            @vpc_id = "#{VPC::VPC_PREFIX}#{@vpc_guid}"
-            @public_route_table_id =
-              "#{VPC::ROUTE_TABLE_PREFIX}#{@vpc_guid}"
-            @gateway = @subnet.gateway
-            @availability_zone = @subnet.availability_zone
             @cidr = @subnet.cidr
             @acl = @subnet.acl
             @key_pair = key_pair
@@ -63,6 +56,56 @@ class Formatron
 
           # rubocop:disable Metrics/MethodLength
           def merge(resources:, outputs:)
+            @guid = @subnet.guid
+            if @guid.nil?
+              @guid = @external.guid
+              _merge_external resources: resources, outputs: outputs
+            else
+              _merge_local resources: resources, outputs: outputs
+            end
+          end
+
+          def _merge_external(resources:, outputs:)
+            @gateway = @external.gateway
+            @availability_zone = @external.availability_zone
+            {
+              nat: NAT,
+              bastion: Bastion,
+              chef_server: ChefServer,
+              instance: Instance
+            }.each do |symbol, cls|
+              @subnet.send(symbol).each do |_, instance|
+                args = {
+                  symbol => instance,
+                  key_pair: @key_pair,
+                  availability_zone: @availability_zone,
+                  subnet_guid: @guid,
+                  hosted_zone_name: @hosted_zone_name,
+                  vpc_guid: @vpc_guid,
+                  vpc_cidr: @vpc_cidr,
+                  kms_key: @kms_key,
+                  private_hosted_zone_id: @private_hosted_zone_id,
+                  public_hosted_zone_id:
+                    @gateway.nil? ? @public_hosted_zone_id : nil,
+                  bucket: @bucket,
+                  name: @name,
+                  target: @target
+                }
+                instance = cls.new(**args)
+                instance.merge resources: resources, outputs: outputs
+              end
+            end
+          end
+
+          def _merge_local(resources:, outputs:)
+            @subnet_id = "#{SUBNET_PREFIX}#{@guid}"
+            @subnet_route_table_association_id =
+              "#{SUBNET_ROUTE_TABLE_ASSOCIATION_PREFIX}#{@guid}"
+            @vpc_id = "#{VPC::VPC_PREFIX}#{@vpc_guid}"
+            @public_route_table_id =
+              "#{VPC::ROUTE_TABLE_PREFIX}#{@vpc_guid}"
+            @gateway = @subnet.gateway
+            @availability_zone = @subnet.availability_zone
             {
               nat: NAT,
               bastion: Bastion,
@@ -130,6 +173,8 @@ class Formatron
           end
 
           private(
+            :_merge_local,
+            :_merge_external,
             :_add_subnet,
             :_add_subnet_route_table_association,
             :_add_acl

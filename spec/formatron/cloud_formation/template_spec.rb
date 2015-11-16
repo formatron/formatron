@@ -17,7 +17,7 @@ class Formatron
         bucket = 'bucket'
         @name = 'name'
         target = 'target'
-        nats = {}
+        external_vpcs = {}
         test_instances(
           tag: :vpc,
           args: lambda do |dsl_key|
@@ -25,32 +25,34 @@ class Formatron
               hosted_zone_name: hosted_zone_name,
               key_pair: key_pair,
               kms_key: kms_key,
-              nats: "nats#{dsl_key}",
               hosted_zone_id: hosted_zone_id,
               bucket: bucket,
               name: @name,
-              target: target
+              target: target,
+              external: "external_vpcs#{dsl_key}"
             }
           end,
           template_cls: 'Formatron::CloudFormation::Template::VPC',
           dsl_cls: 'Formatron::DSL::Formatron::VPC'
         )
         @dsl_instances[:vpc].keys.each do |dsl_key|
-          nats[dsl_key] = "nats#{dsl_key}"
+          external_vpcs[dsl_key] = "external_vpcs#{dsl_key}"
         end
         formatron = instance_double 'Formatron::DSL::Formatron'
         allow(formatron).to receive(:vpc) { @dsl_instances[:vpc] }
         allow(formatron).to receive(:name) { @name }
         allow(formatron).to receive(:bucket) { bucket }
         stub_const('Formatron::AWS::REGIONS', 'regions')
+        external = instance_double 'Formatron::DSL::Formatron'
+        allow(external).to receive(:vpc) { external_vpcs }
         @template = Template.new(
           formatron: formatron,
           hosted_zone_name: hosted_zone_name,
           key_pair: key_pair,
           kms_key: kms_key,
-          nats: nats,
           hosted_zone_id: hosted_zone_id,
-          target: target
+          target: target,
+          external: external
         )
       end
 

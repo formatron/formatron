@@ -11,18 +11,18 @@ class Formatron
       # rubocop:disable Metrics/ParameterLists
       def initialize(
         formatron:,
+        external:,
         hosted_zone_name:,
         key_pair:,
         kms_key:,
-        nats:,
         hosted_zone_id:,
         target:
       )
         @formatron = formatron
+        @external = external
         @hosted_zone_name = hosted_zone_name
         @key_pair = key_pair
         @kms_key = kms_key
-        @nats = nats
         @hosted_zone_id = hosted_zone_id
         @bucket = formatron.bucket
         @name = formatron.name
@@ -38,10 +38,10 @@ class Formatron
         @formatron.vpc.each do |key, vpc|
           template_vpc = VPC.new(
             vpc: vpc,
+            external: @external.vpc[key],
             hosted_zone_name: @hosted_zone_name,
             key_pair: @key_pair,
             kms_key: @kms_key,
-            nats: @nats[key],
             hosted_zone_id: @hosted_zone_id,
             bucket: @bucket,
             name: @name,

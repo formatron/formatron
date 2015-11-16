@@ -34,6 +34,16 @@ describe Formatron do
       aws: @aws,
       config: @config
     ) { @external }
+    @external_formatron = instance_double 'Formatron::DSL::Formatron'
+    allow(@external).to receive(:formatron) { @external_formatron }
+    @external_vpcs = 'external_vpcs'
+    allow(@external_formatron).to receive(:vpc) { @external_vpcs }
+    @external_global = instance_double 'Formatron::DSL::Formatron::Global'
+    allow(@external_formatron).to receive(:global) { @external_global }
+    @external_ec2 = instance_double(
+      'Formatron::DSL::Formatron::Global:EC2'
+    )
+    allow(@external_global).to receive(:ec2) { @external_ec2 }
 
     dsl = instance_double 'Formatron::DSL'
     @dsl_class = class_double(
@@ -69,7 +79,6 @@ describe Formatron do
     allow(ec2).to receive(:private_key).with(no_args) { @ec2_key }
 
     vpcs = {}
-    @nats = {}
     @chef_class = class_double(
       'Formatron::Chef'
     ).as_stubbed_const
@@ -82,7 +91,6 @@ describe Formatron do
       vpcs[vpc_key] = vpc
       subnets = {}
       bastion_sub_domains = @bastion_sub_domains[vpc_key] = {}
-      vpc_nats = @nats[vpc_key] = {}
       (0..2).each do |subnet_index|
         subnet_chef_clients = vpc_chef_clients[subnet_index] = []
         subnet_index = "#{vpc_index}_#{subnet_index}"
@@ -156,6 +164,9 @@ describe Formatron do
           allow(chef_server).to receive(:ssl_key).with(
             no_args
           ) { "chef_server_ssl_key#{chef_server_index}" }
+          allow(chef_server).to receive(:stack).with(
+            no_args
+          ) { nil }
 
           organization = instance_double 'Formatron::DSL::Formatron::VPC' \
                                          '::Subnet::ChefServer::Organization'
@@ -222,7 +233,6 @@ describe Formatron do
             no_args
           ) { "nat_sub_domain#{nat_index}" }
         end
-        vpc_nats.merge! nats
         allow(subnet).to receive(:nat).with(no_args) { nats }
         instances = {}
         (0..2).each do |instance_index|
@@ -269,9 +279,9 @@ describe Formatron do
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
       kms_key: @kms_key,
-      nats: @nats,
       hosted_zone_id: @hosted_zone_id,
-      target: @target
+      target: @target,
+      external: @external_formatron
     ) { @template }
     @template_hash = {
       template: 'template'
@@ -366,9 +376,9 @@ describe Formatron do
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
       kms_key: @kms_key,
-      nats: @nats,
       hosted_zone_id: @hosted_zone_id,
-      target: @target
+      target: @target,
+      external: @external_formatron
     )
   end
 
