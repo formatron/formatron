@@ -22,6 +22,17 @@ class Formatron
       end
       # rubocop:enable Metrics/ParameterLists
 
+      def self.get(aws:, bucket:, name:, target:)
+        key = self.key name: name, target: target
+        Formatron::LOG.info do
+          "Get configuration from #{bucket}/#{key}"
+        end
+        aws.get_file(
+          bucket: bucket,
+          key: key
+        )
+      end
+
       def self.destroy(aws:, bucket:, name:, target:)
         key = self.key name: name, target: target
         Formatron::LOG.info do

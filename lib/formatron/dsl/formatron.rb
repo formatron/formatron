@@ -18,7 +18,7 @@ class Formatron
       dsl_hash :vpc, 'VPC'
 
       def depends(dependency)
-        @external.merge dependency: dependency
+        @external.merge bucket: @bucket, dependency: dependency
       end
     end
   end

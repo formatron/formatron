@@ -125,6 +125,25 @@ class Formatron
         end
       end
 
+      describe '#get_file' do
+        bucket = 'bucket'
+        key = 'key'
+        content = 'content'
+
+        it 'should get the file content from S3' do
+          expect(@s3_client).to receive(:get_object).once.with(
+            bucket: bucket,
+            key: key
+          ) { S3GetObjectResponse.new content }
+          expect(
+            @aws.get_file(
+              bucket: bucket,
+              key: key
+            )
+          ).to eql content
+        end
+      end
+
       describe '#deploy_stack' do
         stack_name = 'stack_name'
         template_url = 'template_url'

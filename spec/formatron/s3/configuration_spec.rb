@@ -48,6 +48,29 @@ class Formatron
         end
       end
 
+      describe '::get' do
+        it 'should get the JSON configuration from S3' do
+          content = 'content'
+          expect(@s3_path).to receive(:key).once.with(
+            name: name,
+            target: target,
+            sub_key: 'config.json'
+          ) { key }
+          expect(@aws).to receive(:get_file).once.with(
+            bucket: bucket,
+            key: key
+          ) { content }
+          expect(
+            Configuration.get(
+              aws: @aws,
+              bucket: bucket,
+              name: name,
+              target: target
+            )
+          ).to eql content
+        end
+      end
+
       describe '::destroy' do
         it 'should delete the JSON configuration from S3' do
           expect(@s3_path).to receive(:key).once.with(

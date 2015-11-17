@@ -11,6 +11,7 @@ require 'formatron/chef'
 require 'formatron/logger'
 require 'formatron/util/vpc'
 require 'formatron/chef_clients'
+require 'formatron/external'
 
 # manages a Formatron stack
 # rubocop:disable Metrics/ClassLength

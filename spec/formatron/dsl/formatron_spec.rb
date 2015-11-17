@@ -20,7 +20,10 @@ class Formatron
       describe '#depends' do
         it 'should merge the dependency with the External object' do
           dependency = 'dependency'
+          bucket = 'bucket'
+          @dsl_instance.bucket bucket
           expect(@external).to receive(:merge).with(
+            bucket: bucket,
             dependency: dependency
           )
           @dsl_instance.depends dependency
