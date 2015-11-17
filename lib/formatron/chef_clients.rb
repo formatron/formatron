@@ -12,7 +12,9 @@ class Formatron
       ec2_key:,
       hosted_zone_name:,
       vpc:,
-      external:
+      external:,
+      config:,
+      databag_secret:
     )
       @chef_clients = {}
       if external.nil?
@@ -37,7 +39,9 @@ class Formatron
           bastions: bastions,
           hosted_zone_name: hosted_zone_name,
           server_stack: chef_server.stack || name,
-          guid: chef_server.guid
+          guid: chef_server.guid,
+          config: config,
+          databag_secret: databag_secret
         )
       end
     end

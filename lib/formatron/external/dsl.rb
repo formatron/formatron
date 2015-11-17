@@ -20,6 +20,9 @@ class Formatron
           global.kms_key(
             new_global['kms_key']
           ) unless new_global['kms_key'].nil?
+          global.databag_secret(
+            new_global['databag_secret']
+          ) unless new_global['databag_secret'].nil?
           global.hosted_zone_id(
             new_global['hosted_zone_id']
           ) unless new_global['hosted_zone_id'].nil?
@@ -96,6 +99,8 @@ class Formatron
             global.protect unless global.protect.nil?
           configuration_global['kms_key'] =
             global.kms_key unless global.kms_key.nil?
+          configuration_global['databag_secret'] =
+            global.databag_secret unless global.databag_secret.nil?
           configuration_global['hosted_zone_id'] =
             global.hosted_zone_id unless global.hosted_zone_id.nil?
           ec2 = global.ec2

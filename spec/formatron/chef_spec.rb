@@ -10,6 +10,8 @@ class Formatron
       @aws = instance_double 'Formatron::AWS'
       @guid = 'guid'
       @name = 'name'
+      @config = 'config'
+      @databag_secret = 'databag_secret'
       @server_stack = 'server_stack'
       @hosted_zone_name = 'hosted_zone_name'
       @cookbook_name = 'cookbook'
@@ -77,7 +79,9 @@ class Formatron
         bastions: @bastions,
         hosted_zone_name: @hosted_zone_name,
         server_stack: @server_stack,
-        guid: @guid
+        guid: @guid,
+        config: @config,
+        databag_secret: @databag_secret
       )
     end
 
@@ -192,6 +196,9 @@ class Formatron
             expect(@knife).to have_received(:create_environment).once.with(
               environment: @sub_domain
             )
+          end
+
+          skip 'should deploy the instance databag' do
           end
 
           it 'should deploy the instance cookbooks' do

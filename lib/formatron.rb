@@ -63,6 +63,7 @@ class Formatron
     @ec2_key = ec2.private_key || external_ec2.private_key
     @protected = global.protect || external_global.protect
     @kms_key = global.kms_key || external_global.kms_key
+    @databag_secret = global.databag_secret || external_global.databag_secret
     hosted_zone_id = global.hosted_zone_id || external_global.hosted_zone_id
     @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
     @cloud_formation_template = CloudFormation::Template.new(
@@ -94,7 +95,9 @@ class Formatron
         ec2_key: @ec2_key,
         hosted_zone_name: @hosted_zone_name,
         vpc: vpc,
-        external: @external_vpcs[key]
+        external: @external_vpcs[key],
+        config: @config,
+        databag_secret: @databag_secret
       )
     end
   end

@@ -78,6 +78,8 @@ describe Formatron do
     allow(global).to receive(:protect).with(no_args) { @protect }
     @kms_key = 'kms_key'
     allow(global).to receive(:kms_key).with(no_args) { @kms_key }
+    @databag_secret = 'databag_secret'
+    allow(global).to receive(:databag_secret).with(no_args) { @databag_secret }
     allow(global).to receive(:hosted_zone_id).with(no_args) { @hosted_zone_id }
 
     ec2 = instance_double 'Formatron::DSL::Formatron::Global::EC2'
@@ -130,7 +132,9 @@ describe Formatron do
             bastions: bastion_sub_domains,
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
-            guid: guid
+            guid: guid,
+            config: @config,
+            databag_secret: @databag_secret
           ) { chef }
           allow(chef).to receive :init
           allow(chef).to receive :unlink
@@ -363,7 +367,9 @@ describe Formatron do
             bastions: @bastion_sub_domains[vpc_key],
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
-            guid: "chef_server_guid#{chef_server_index}"
+            guid: "chef_server_guid#{chef_server_index}",
+            config: @config,
+            databag_secret: @databag_secret
           )
         end
       end
