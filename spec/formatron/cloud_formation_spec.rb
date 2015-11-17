@@ -42,13 +42,29 @@ class Formatron
     describe '::destroy' do
       it 'should delete the CloudFormation stack' do
         expect(@aws).to receive(:delete_stack).once.with(
-          "#{@name}-#{@target}"
+          stack_name: "#{@name}-#{@target}"
         )
         CloudFormation.destroy(
           aws: @aws,
           name: @name,
           target: @target
         )
+      end
+    end
+
+    describe '::outputs' do
+      it 'should return the outputs of the CloudFormation stack' do
+        outputs = 'outputs'
+        expect(@aws).to receive(:stack_outputs).once.with(
+          stack_name: "#{@name}-#{@target}"
+        ) { outputs }
+        expect(
+          CloudFormation.outputs(
+            aws: @aws,
+            name: @name,
+            target: @target
+          )
+        ).to eql outputs
       end
     end
 

@@ -20,8 +20,8 @@ class Formatron
 
         def initialize(outputs, stack_status)
           @stack_status = stack_status
-          @outputs = outputs.map do |output|
-            Output.new output[:name], output[:value]
+          @outputs = outputs.map do |key, value|
+            Output.new key, value
           end unless outputs.nil?
         end
       end

@@ -27,7 +27,15 @@ class Formatron
       Formatron::LOG.info do
         "Destroy CloudFormation stack: #{stack_name}"
       end
-      aws.delete_stack stack_name
+      aws.delete_stack stack_name: stack_name
+    end
+
+    def self.outputs(aws:, name:, target:)
+      stack_name = _stack_name name, target
+      Formatron::LOG.info do
+        "Query CloudFormation stack outputs: #{stack_name}"
+      end
+      aws.stack_outputs stack_name: stack_name
     end
 
     def self.stack_ready!(aws:, name:, target:)

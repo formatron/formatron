@@ -2,6 +2,7 @@ require 'deep_merge'
 require 'formatron/s3/configuration'
 require 'formatron/dsl/formatron'
 require_relative 'external/dsl'
+require_relative 'external/outputs'
 
 class Formatron
   # downloads and merges config from dependencies

@@ -115,10 +115,22 @@ class Formatron
       )
     end
 
-    def delete_stack(stack_name)
+    def delete_stack(stack_name:)
       @cloudformation_client.delete_stack(
         stack_name: stack_name
       )
+    end
+
+    def stack_outputs(stack_name:)
+      description = @cloudformation_client.describe_stacks(
+        stack_name: stack_name
+      ).stacks[0]
+      status = description.stack_status
+      fail "CloudFormation stack, #{stack_name}, " \
+           "is not ready: #{status}" unless STACK_READY_STATES.include? status
+      description.outputs.each_with_object({}) do |output, outputs|
+        outputs[output.output_key] = output.output_value
+      end
     end
 
     def stack_ready!(stack_name:)

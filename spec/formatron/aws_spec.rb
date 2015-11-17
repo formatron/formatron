@@ -226,7 +226,26 @@ class Formatron
           expect(@cloudformation_client).to receive(:delete_stack).once.with(
             stack_name: stack_name
           )
-          @aws.delete_stack stack_name
+          @aws.delete_stack stack_name: stack_name
+        end
+      end
+
+      describe '#stack_outputs' do
+        stack_name = 'stack_name'
+
+        it 'should return the outputs for the CloudFormation stack' do
+          outputs = {
+            'output1' => 'output1',
+            'output2' => 'output2'
+          }
+          expect(@cloudformation_client).to receive(:describe_stacks).once.with(
+            stack_name: stack_name
+          ) do
+            CloudformationDescribeStacksResponse.new outputs, 'CREATE_COMPLETE'
+          end
+          expect(
+            @aws.stack_outputs stack_name: stack_name
+          ).to eql outputs
         end
       end
 
