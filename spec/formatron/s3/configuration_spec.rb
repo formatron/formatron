@@ -11,7 +11,7 @@ class Formatron
       kms_key = 'kms_key'
       bucket = 'bucket'
       name = 'name'
-      config = {
+      configuration = {
         'param' => 'param'
       }
       key = 'key'
@@ -29,13 +29,13 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'config.json'
+            sub_key: 'configuration.json'
           ) { key }
           expect(@aws).to receive(:upload_file).once.with(
             kms_key: kms_key,
             bucket: bucket,
             key: key,
-            content: "#{JSON.pretty_generate(config)}\n"
+            content: "#{JSON.pretty_generate(configuration)}\n"
           )
           Configuration.deploy(
             aws: @aws,
@@ -43,7 +43,7 @@ class Formatron
             bucket: bucket,
             name: name,
             target: target,
-            config: config
+            configuration: configuration
           )
         end
       end
@@ -54,7 +54,7 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'config.json'
+            sub_key: 'configuration.json'
           ) { key }
           expect(@aws).to receive(:get_file).once.with(
             bucket: bucket,
@@ -76,7 +76,7 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'config.json'
+            sub_key: 'configuration.json'
           ) { key }
           expect(@aws).to receive(:delete_file).once.with(
             bucket: bucket,
@@ -96,7 +96,7 @@ class Formatron
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
-            sub_key: 'config.json'
+            sub_key: 'configuration.json'
           ) { key }
           expect(
             Configuration.key(

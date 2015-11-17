@@ -5,10 +5,10 @@ class Formatron
   module S3
     # manage the configuration stored on S3
     module Configuration
-      FILE_NAME = 'config.json'
+      FILE_NAME = 'configuration.json'
 
       # rubocop:disable Metrics/ParameterLists
-      def self.deploy(aws:, kms_key:, bucket:, name:, target:, config:)
+      def self.deploy(aws:, kms_key:, bucket:, name:, target:, configuration:)
         key = self.key name: name, target: target
         Formatron::LOG.info do
           "Upload configuration to #{bucket}/#{key}"
@@ -17,7 +17,7 @@ class Formatron
           kms_key: kms_key,
           bucket: bucket,
           key: key,
-          content: "#{JSON.pretty_generate(config)}\n"
+          content: "#{JSON.pretty_generate(configuration)}\n"
         )
       end
       # rubocop:enable Metrics/ParameterLists

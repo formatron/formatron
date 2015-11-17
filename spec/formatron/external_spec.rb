@@ -49,6 +49,35 @@ class Formatron
       end
     end
 
+    describe '#export' do
+      before :each do
+        @local_formatron = 'formatron'
+        @dsl_class = class_double(
+          'Formatron::External::DSL'
+        ).as_stubbed_const
+        external_dsl = {
+          external: 'external'
+        }
+        local_dsl = {
+          internal: 'internal'
+        }
+        @merged_dsl = external_dsl.merge local_dsl
+        allow(@dsl_class).to receive(:export).with(
+          formatron: @formatron
+        ) { external_dsl }
+        allow(@dsl_class).to receive(:export).with(
+          formatron: @local_formatron
+        ) { local_dsl }
+      end
+
+      it 'should return the configuration to deploy' do
+        expect(@external.export(formatron: @local_formatron)).to eql(
+          'config' => @config,
+          'dsl' => @merged_dsl
+        )
+      end
+    end
+
     describe '#merge' do
       before :each do
         @dsl_configuration = 'dsl_configuration'

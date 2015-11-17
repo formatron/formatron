@@ -67,6 +67,11 @@ describe Formatron do
     @bucket = 'bucket'
     allow(@dsl_formatron).to receive(:bucket).with(no_args) { @bucket }
 
+    @configuration = 'configuration'
+    allow(@external).to receive(:export).with(
+      formatron: @dsl_formatron
+    ) { @configuration }
+
     global = instance_double 'Formatron::DSL::Formatron::Global'
     allow(@dsl_formatron).to receive(:global).with(no_args) { global }
     @protect = 'protect'
@@ -408,7 +413,7 @@ describe Formatron do
         bucket: @bucket,
         name: @name,
         target: @target,
-        config: @config
+        configuration: @configuration
       )
     end
 

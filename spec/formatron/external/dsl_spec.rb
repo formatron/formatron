@@ -78,7 +78,7 @@ class Formatron
             }
           }
           DSL.merge formatron: formatron, configuration: configuration
-          new_configuration = DSL.export formatron: formatron, name: 'name'
+          new_configuration = DSL.export formatron: formatron
           expect(new_configuration).to eql configuration
         end
       end

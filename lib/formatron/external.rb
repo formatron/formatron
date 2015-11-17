@@ -7,6 +7,9 @@ require_relative 'external/outputs'
 class Formatron
   # downloads and merges config from dependencies
   class External
+    DSL_KEY = 'dsl'
+    CONFIG_KEY = 'config'
+
     attr_reader(
       :formatron,
       :outputs
@@ -31,12 +34,22 @@ class Formatron
       )
       DSL.merge(
         formatron: @formatron,
-        configuration: configuration['dsl']
+        configuration: configuration[DSL_KEY]
       )
-      @config.deep_merge! configuration['config']
+      @config.deep_merge! configuration[CONFIG_KEY]
       @config.deep_merge! @local_config
       @outputs.merge dependency: dependency
     end
     # rubocop:enable Metrics/MethodLength
+
+    def export(formatron:)
+      dsl = DSL.export formatron: @formatron
+      local_dsl = DSL.export formatron: formatron
+      dsl.deep_merge! local_dsl
+      {
+        CONFIG_KEY => @config,
+        DSL_KEY => dsl
+      }
+    end
   end
 end

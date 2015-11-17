@@ -81,22 +81,32 @@ class Formatron
 
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/AbcSize
-      def self.export(formatron:, name:)
+      # rubocop:disable Metrics/CyclomaticComplexity
+      # rubocop:disable Metrics/PerceivedComplexity
+      def self.export(formatron:)
+        name = formatron.name
         global = formatron.global
-        ec2 = global.ec2
         vpcs = formatron.vpc
         configuration = {
-          'global' => {
-            'protect' => global.protect,
-            'kms_key' => global.kms_key,
-            'hosted_zone_id' => global.hosted_zone_id,
-            'ec2' => {
-              'key_pair' => ec2.key_pair,
-              'private_key' => ec2.private_key
-            }
-          },
           'vpcs' => {}
         }
+        unless global.nil?
+          configuration_global = configuration['global'] = {}
+          configuration_global['protect'] =
+            global.protect unless global.protect.nil?
+          configuration_global['kms_key'] =
+            global.kms_key unless global.kms_key.nil?
+          configuration_global['hosted_zone_id'] =
+            global.hosted_zone_id unless global.hosted_zone_id.nil?
+          ec2 = global.ec2
+          unless ec2.nil?
+            configuration_ec2 = configuration_global['ec2'] = {}
+            configuration_ec2['key_pair'] =
+              ec2.key_pair unless ec2.key_pair.nil?
+            configuration_ec2['private_key'] =
+              ec2.private_key unless ec2.private_key.nil?
+          end
+        end
         vpcs.each do |vpc_key, vpc|
           vpc_configuration = configuration['vpcs'][vpc_key] = {
             'subnets' => {},
@@ -140,6 +150,8 @@ class Formatron
         end
         configuration
       end
+      # rubocop:enable Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/CyclomaticComplexity
       # rubocop:enable Metrics/AbcSize
       # rubocop:enable Metrics/MethodLength
     end

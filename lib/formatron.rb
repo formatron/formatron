@@ -180,7 +180,7 @@ class Formatron
       bucket: @bucket,
       name: @name,
       target: @target,
-      config: @config
+      configuration: @external.export(formatron: @formatron)
     )
   end
 
