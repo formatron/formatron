@@ -86,16 +86,30 @@ class Formatron
       ).body.read
     end
 
-    def deploy_stack(stack_name:, template_url:)
+    # rubocop:disable Metrics/MethodLength
+    def deploy_stack(stack_name:, template_url:, parameters:)
+      aws_parameters = parameters.map do |key, value|
+        {
+          parameter_key: key,
+          parameter_value: value,
+          use_previous_value: false
+        }
+      end
       @cloudformation_client.create_stack(
         stack_name: stack_name,
         template_url: template_url,
         capabilities: CAPABILITIES,
-        on_failure: 'DO_NOTHING'
+        on_failure: 'DO_NOTHING',
+        parameters: aws_parameters
       )
     rescue Aws::CloudFormation::Errors::AlreadyExistsException
-      _update_stack stack_name: stack_name, template_url: template_url
+      _update_stack(
+        stack_name: stack_name,
+        template_url: template_url,
+        parameters: aws_parameters
+      )
     end
+    # rubocop:enable Metrics/MethodLength
 
     def hosted_zone_name(hosted_zone_id)
       @route53_client.get_hosted_zone(
@@ -103,11 +117,12 @@ class Formatron
       ).hosted_zone.name.chomp '.'
     end
 
-    def _update_stack(stack_name:, template_url:)
+    def _update_stack(stack_name:, template_url:, parameters:)
       @cloudformation_client.update_stack(
         stack_name: stack_name,
         template_url: template_url,
-        capabilities: CAPABILITIES
+        capabilities: CAPABILITIES,
+        parameters: parameters
       )
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message.eql?(

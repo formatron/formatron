@@ -5,7 +5,7 @@ class Formatron
   # manage the CloudFormation stack
   module CloudFormation
     # rubocop:disable Metrics/MethodLength
-    def self.deploy(aws:, bucket:, name:, target:)
+    def self.deploy(aws:, bucket:, name:, target:, parameters:)
       stack_name = _stack_name name, target
       Formatron::LOG.info do
         "Deploy CloudFormation stack: #{stack_name}"
@@ -17,7 +17,8 @@ class Formatron
           bucket: bucket,
           name: name,
           target: target
-        )
+        ),
+        parameters: parameters
       )
     end
     # rubocop:enable Metrics/MethodLength

@@ -72,7 +72,7 @@ class Formatron
       kms_key: @kms_key,
       hosted_zone_id: hosted_zone_id,
       target: @target,
-      external: external_formatron
+      external: @external
     ).hash
     _initialize_chef_clients
     _initialize_instances
@@ -220,7 +220,8 @@ class Formatron
       aws: @aws,
       bucket: @bucket,
       name: @name,
-      target: @target
+      target: @target,
+      parameters: @external.outputs.hash
     )
   end
 

@@ -44,6 +44,10 @@ describe Formatron do
       'Formatron::DSL::Formatron::Global:EC2'
     )
     allow(@external_global).to receive(:ec2) { @external_ec2 }
+    external_outputs = instance_double 'Formatron::External::Outputs'
+    allow(@external).to receive(:outputs) { external_outputs }
+    @external_outputs_hash = 'external_outputs_hash'
+    allow(external_outputs).to receive(:hash) { @external_outputs_hash }
 
     dsl = instance_double 'Formatron::DSL'
     @dsl_class = class_double(
@@ -281,7 +285,7 @@ describe Formatron do
       kms_key: @kms_key,
       hosted_zone_id: @hosted_zone_id,
       target: @target,
-      external: @external_formatron
+      external: @external
     ) { @template }
     @template_hash = {
       template: 'template'
@@ -378,7 +382,7 @@ describe Formatron do
       kms_key: @kms_key,
       hosted_zone_id: @hosted_zone_id,
       target: @target,
-      external: @external_formatron
+      external: @external
     )
   end
 
@@ -424,7 +428,8 @@ describe Formatron do
         aws: @aws,
         bucket: @bucket,
         name: @name,
-        target: @target
+        target: @target,
+        parameters: @external_outputs_hash
       )
     end
 

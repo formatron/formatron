@@ -10,6 +10,7 @@ class Formatron
       @bucket = 'bucket'
       @name = 'name'
       @target = 'target'
+      @parameters = 'parameters'
       @url = 'url'
       @aws = instance_double 'Formatron::AWS'
       allow(@aws).to receive(:region) { @region }
@@ -28,13 +29,15 @@ class Formatron
         ) { @url }
         expect(@aws).to receive(:deploy_stack).once.with(
           stack_name: "#{@name}-#{@target}",
-          template_url: @url
+          template_url: @url,
+          parameters: @parameters
         )
         CloudFormation.deploy(
           aws: @aws,
           bucket: @bucket,
           name: @name,
-          target: @target
+          target: @target,
+          parameters: @parameters
         )
       end
     end

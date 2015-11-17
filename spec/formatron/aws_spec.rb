@@ -147,6 +147,17 @@ class Formatron
       describe '#deploy_stack' do
         stack_name = 'stack_name'
         template_url = 'template_url'
+        parameters = {
+          'param1' => 'param1',
+          'param2' => 'param2'
+        }
+        aws_parameters = parameters.map do |key, value|
+          {
+            parameter_key: key,
+            parameter_value: value,
+            use_previous_value: false
+          }
+        end
 
         context 'when the stack has not yet been created' do
           it 'should create the stack' do
@@ -154,11 +165,13 @@ class Formatron
               stack_name: stack_name,
               template_url: template_url,
               capabilities: ['CAPABILITY_IAM'],
-              on_failure: 'DO_NOTHING'
+              on_failure: 'DO_NOTHING',
+              parameters: aws_parameters
             )
             @aws.deploy_stack(
               stack_name: stack_name,
-              template_url: template_url
+              template_url: template_url,
+              parameters: parameters
             )
           end
         end
@@ -169,7 +182,8 @@ class Formatron
               stack_name: stack_name,
               template_url: template_url,
               capabilities: ['CAPABILITY_IAM'],
-              on_failure: 'DO_NOTHING'
+              on_failure: 'DO_NOTHING',
+              parameters: aws_parameters
             ) do
               fail Aws::CloudFormation::Errors::AlreadyExistsException.new(
                 nil,
@@ -179,11 +193,13 @@ class Formatron
             expect(@cloudformation_client).to receive(:update_stack).once.with(
               stack_name: stack_name,
               template_url: template_url,
-              capabilities: ['CAPABILITY_IAM']
+              capabilities: ['CAPABILITY_IAM'],
+              parameters: aws_parameters
             )
             @aws.deploy_stack(
               stack_name: stack_name,
-              template_url: template_url
+              template_url: template_url,
+              parameters: parameters
             )
           end
         end
@@ -194,7 +210,8 @@ class Formatron
               stack_name: stack_name,
               template_url: template_url,
               capabilities: ['CAPABILITY_IAM'],
-              on_failure: 'DO_NOTHING'
+              on_failure: 'DO_NOTHING',
+              parameters: aws_parameters
             ) do
               fail Aws::CloudFormation::Errors::AlreadyExistsException.new(
                 nil,
@@ -204,7 +221,8 @@ class Formatron
             expect(@cloudformation_client).to receive(:update_stack).once.with(
               stack_name: stack_name,
               template_url: template_url,
-              capabilities: ['CAPABILITY_IAM']
+              capabilities: ['CAPABILITY_IAM'],
+              parameters: aws_parameters
             ) do
               fail Aws::CloudFormation::Errors::ValidationError.new(
                 nil,
@@ -213,7 +231,8 @@ class Formatron
             end
             @aws.deploy_stack(
               stack_name: stack_name,
-              template_url: template_url
+              template_url: template_url,
+              parameters: parameters
             )
           end
         end

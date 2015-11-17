@@ -1,4 +1,5 @@
 require_relative 'template/vpc'
+require_relative 'template/parameters'
 require 'formatron/aws'
 
 class Formatron
@@ -20,6 +21,8 @@ class Formatron
       )
         @formatron = formatron
         @external = external
+        @external_formatron = external.formatron
+        @external_outputs = external.outputs
         @hosted_zone_name = hosted_zone_name
         @key_pair = key_pair
         @kms_key = kms_key
@@ -35,10 +38,11 @@ class Formatron
       def hash
         resources = {}
         outputs = {}
+        parameters = {}
         @formatron.vpc.each do |key, vpc|
           template_vpc = VPC.new(
             vpc: vpc,
-            external: @external.vpc[key],
+            external: @external_formatron.vpc[key],
             hosted_zone_name: @hosted_zone_name,
             key_pair: @key_pair,
             kms_key: @kms_key,
@@ -49,12 +53,15 @@ class Formatron
           )
           template_vpc.merge resources: resources, outputs: outputs
         end
+        template_parameters = Parameters.new keys: @external_outputs.hash.keys
+        template_parameters.merge parameters: parameters
         {
           AWSTemplateFormatVersion: '2010-09-09',
           Description: "Formatron stack: #{@formatron.name}",
           Mappings: {
             REGION_MAP => AWS::REGIONS
           },
+          Parameters: parameters,
           Resources: resources,
           Outputs: outputs
         }
