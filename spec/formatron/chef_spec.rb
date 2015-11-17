@@ -102,7 +102,8 @@ class Formatron
         chef_server_url: @chef_server_url,
         username: @username,
         organization: @organization,
-        ssl_verify: @ssl_verify
+        ssl_verify: @ssl_verify,
+        databag_secret: @databag_secret
       )
     end
 

@@ -5,19 +5,29 @@ class Formatron
   class Chef
     # Wrapper for the knife cli
     class Knife
+      # rubocop:disable Metrics/MethodLength
+      # rubocop:disable Metrics/ParameterLists
       def initialize(
-        keys:, chef_server_url:, username:, organization:, ssl_verify:
+        keys:,
+        chef_server_url:,
+        username:,
+        organization:,
+        ssl_verify:,
+        databag_secret:
       )
         @keys = keys
         @chef_server_url = chef_server_url
         @username = username
         @organization = organization
         @ssl_verify = ssl_verify
+        @databag_secret = databag_secret
       end
+      # rubocop:enable Metrics/ParameterLists
+      # rubocop:enable Metrics/MethodLength
 
       # rubocop:disable Metrics/MethodLength
       def init
-        @knife_file = Tempfile.new('formatron-knife-')
+        @knife_file = Tempfile.new 'formatron-knife-'
         @knife_file.write <<-EOH.gsub(/^ {10}/, '')
           chef_server_url '#{@chef_server_url}'
           validation_client_name '#{@organization}-validator'
@@ -28,6 +38,9 @@ class Formatron
           ssl_verify_mode #{@ssl_verify ? ':verify_peer' : ':verify_none'}
         EOH
         @knife_file.close
+        @databag_secret_file = Tempfile.new 'formatron-databag-secret-'
+        @databag_secret_file.write @databag_secret
+        @databag_secret_file.close
       end
       # rubocop:enable Metrics/MethodLength
 
@@ -62,7 +75,7 @@ class Formatron
         hostname:
       )
         # rubocop:disable Metrics/LineLength
-        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'}"
+        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file.path}"
         command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
         fail "failed to bootstrap instance: #{hostname}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
@@ -89,6 +102,7 @@ class Formatron
 
       def unlink
         @knife_file.unlink unless @knife_file.nil?
+        @databag_secret_file.unlink unless @databag_secret_file.nil?
       end
 
       private(

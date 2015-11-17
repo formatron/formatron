@@ -12,12 +12,14 @@ ENVIRONMENT_CREATE_COMMAND = 'knife environment create ' \
                              "created by formatron'"
 BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     '--sudo -x ubuntu -i ec2_key -E ' \
-                    "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} -c knife_file"
+                    "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} " \
+                    '-c knife_file --secret-file secret_file'
 BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i ec2_key -E ' \
                                  "#{ENVIRONMENT} -r cookbook " \
                                  "-N #{ENVIRONMENT} " \
-                                 '-c knife_file -G ubuntu@bastion'
+                                 '-c knife_file --secret-file secret_file ' \
+                                 '-G ubuntu@bastion'
 DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -y -c " \
@@ -33,6 +35,7 @@ class Formatron
         @username = 'username'
         @user_key = 'user_key'
         @ec2_key = 'ec2_key'
+        @databag_secret = 'databag_secret'
         allow(@keys).to receive(:user_key) { @user_key }
         @organization = 'organization'
         @organization_key = 'organization_key'
@@ -45,8 +48,20 @@ class Formatron
         allow(@knife_tempfile).to receive(:path) do
           'knife_file'
         end
+        @databag_secret_tempfile = instance_double('Tempfile')
+        allow(@databag_secret_tempfile).to receive(:write)
+        allow(@databag_secret_tempfile).to receive(:close)
+        allow(@databag_secret_tempfile).to receive(:unlink)
+        allow(@databag_secret_tempfile).to receive(:path) do
+          'secret_file'
+        end
         @tempfile_class = class_double('Tempfile').as_stubbed_const
-        allow(@tempfile_class).to receive(:new) { @knife_tempfile }
+        allow(@tempfile_class).to receive(:new).with(
+          'formatron-knife-'
+        ) { @knife_tempfile }
+        allow(@tempfile_class).to receive(:new).with(
+          'formatron-databag-secret-'
+        ) { @databag_secret_tempfile }
       end
 
       context 'when verifying SSL certs' do
@@ -56,16 +71,14 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: true
+            ssl_verify: true,
+            databag_secret: @databag_secret
           )
           @knife.init
         end
 
         it 'should create a temporary file for the knife ' \
            'config setting the verify mode to :verify_peer' do
-          expect(@tempfile_class).to have_received(
-            :new
-          ).with('formatron-knife-')
           expect(@knife_tempfile).to have_received(:write).with(
             <<-EOH.gsub(/^ {14}/, '')
               chef_server_url '#{@chef_server_url}'
@@ -79,6 +92,16 @@ class Formatron
           ).once
           expect(@knife_tempfile).to have_received(:close).with(no_args).once
         end
+
+        it 'should create a temporary file for the databag ' \
+           'encryption secret' do
+          expect(@databag_secret_tempfile).to have_received(
+            :write
+          ).with @databag_secret
+          expect(@databag_secret_tempfile).to have_received(
+            :close
+          ).with no_args
+        end
       end
 
       context 'when not verifying SSL certs' do
@@ -88,16 +111,14 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: false
+            ssl_verify: false,
+            databag_secret: @databag_secret
           )
           @knife.init
         end
 
         it 'should create a temporary file for the knife ' \
            'config setting the verify mode to :verify_none' do
-          expect(@tempfile_class).to have_received(
-            :new
-          ).with('formatron-knife-')
           expect(@knife_tempfile).to have_received(:write).with(
             <<-EOH.gsub(/^\ {14}/, '')
               chef_server_url '#{@chef_server_url}'
@@ -111,6 +132,16 @@ class Formatron
           ).once
           expect(@knife_tempfile).to have_received(:close).with(no_args).once
         end
+
+        it 'should create a temporary file for the databag ' \
+           'encryption secret' do
+          expect(@databag_secret_tempfile).to have_received(
+            :write
+          ).with @databag_secret
+          expect(@databag_secret_tempfile).to have_received(
+            :close
+          ).with no_args
+        end
       end
 
       describe '#unlink' do
@@ -120,7 +151,8 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: false
+            ssl_verify: false,
+            databag_secret: @databag_secret
           )
           @knife.init
           @knife.unlink
@@ -128,6 +160,12 @@ class Formatron
 
         it 'should delete the knife config file' do
           expect(@knife_tempfile).to have_received(:unlink).with(no_args).once
+        end
+
+        it 'should delete the databag secret file' do
+          expect(@databag_secret_tempfile).to have_received(
+            :unlink
+          ).with no_args
         end
       end
 
@@ -138,7 +176,8 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: true
+            ssl_verify: true,
+            databag_secret: @databag_secret
           )
           @knife.init
         end
@@ -220,7 +259,8 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: true
+            ssl_verify: true,
+            databag_secret: @databag_secret
           )
           @knife.init
         end
@@ -299,7 +339,8 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: true
+            ssl_verify: true,
+            databag_secret: @databag_secret
           )
           @knife.init
         end
@@ -351,7 +392,8 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: true
+            ssl_verify: true,
+            databag_secret: @databag_secret
           )
           @knife.init
         end
@@ -403,7 +445,8 @@ class Formatron
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
-            ssl_verify: true
+            ssl_verify: true,
+            databag_secret: @databag_secret
           )
           @knife.init
         end

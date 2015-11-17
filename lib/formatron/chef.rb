@@ -36,7 +36,6 @@ class Formatron
       @server_stack = server_stack
       @bastions = bastions
       @config = config
-      @databag_secret = databag_secret
       chef_server_url = _chef_server_url
       @keys = Keys.new(
         aws: @aws,
@@ -51,7 +50,8 @@ class Formatron
         chef_server_url: chef_server_url,
         username: username,
         organization: organization,
-        ssl_verify: ssl_verify
+        ssl_verify: ssl_verify,
+        databag_secret: databag_secret
       )
       @berkshelf = Berkshelf.new(
         keys: @keys,
