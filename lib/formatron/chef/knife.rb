@@ -121,6 +121,13 @@ class Formatron
         # rubocop:enable Metrics/LineLength
       end
 
+      def delete_databag
+        # rubocop:disable Metrics/LineLength
+        command = "knife data bag delete formatron #{@name} -y -c #{@knife_file.path}"
+        fail "failed to delete data bag item: #{@name}" unless Util::Shell.exec command
+        # rubocop:enable Metrics/LineLength
+      end
+
       def delete_node(node:)
         command = "knife node delete #{node} -y -c #{@knife_file.path}"
         fail "failed to delete node: #{node}" unless Util::Shell.exec command

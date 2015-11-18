@@ -73,14 +73,20 @@ class Formatron
       @keys.init
       @knife.init
       @berkshelf.init
-      _deploy_databag
     end
 
-    def _deploy_databag
+    def deploy_databag
       Formatron::LOG.info do
         "Deploying data bag to chef server: #{@chef_sub_domain}"
       end
       @knife.deploy_databag
+    end
+
+    def delete_databag
+      Formatron::LOG.info do
+        "Deleting data bag from chef server: #{@chef_sub_domain}"
+      end
+      @knife.delete_databag
     end
 
     # rubocop:disable Metrics/MethodLength
@@ -142,7 +148,6 @@ class Formatron
     end
 
     private(
-      :_deploy_databag,
       :_chef_server_url,
       :_hostname
     )

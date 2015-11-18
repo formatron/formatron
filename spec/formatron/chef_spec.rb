@@ -60,6 +60,7 @@ class Formatron
       @knife = instance_double 'Formatron::Chef::Knife'
       allow(@knife_class).to receive(:new) { @knife }
       allow(@knife).to receive(:deploy_databag)
+      allow(@knife).to receive(:delete_databag)
       allow(@knife).to receive(:create_environment)
       allow(@knife).to receive(:bootstrap)
       allow(@knife).to receive(:delete_node)
@@ -159,9 +160,21 @@ class Formatron
         it 'should init a berkshelf client' do
           expect(@berkshelf).to have_received :init
         end
+      end
 
-        it 'should deploy the stack databag' do
+      describe '#deploy_databag' do
+        it 'should deploy the stack databag item' do
+          @chef.deploy_databag
           expect(@knife).to have_received(:deploy_databag).once.with(
+            no_args
+          )
+        end
+      end
+
+      describe '#delete_databag' do
+        it 'should delete the stack databag item' do
+          @chef.delete_databag
+          expect(@knife).to have_received(:delete_databag).once.with(
             no_args
           )
         end

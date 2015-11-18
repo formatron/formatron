@@ -140,6 +140,8 @@ describe Formatron do
           allow(chef).to receive :unlink
           allow(chef).to receive :provision
           allow(chef).to receive :destroy
+          allow(chef).to receive :deploy_databag
+          allow(chef).to receive :delete_databag
           chef_server_key = "chef_server#{chef_server_index}"
           chef_server = instance_double 'Formatron::DSL::Formatron::VPC' \
                                         '::Subnet::ChefServer'
@@ -480,6 +482,7 @@ describe Formatron do
           (0..2).each do |chef_server_index|
             chef = subnet_chef_clients[chef_server_index]
             chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(chef).to have_received :deploy_databag
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "chef_server_sub_domain#{chef_server_index}",
               cookbook: "chef_server_cookbook#{chef_server_index}",
@@ -626,6 +629,7 @@ describe Formatron do
           (0..2).each do |chef_server_index|
             chef = subnet_chef_clients[chef_server_index]
             chef_server_index = "#{subnet_index}_#{chef_server_index}"
+            expect(chef).to have_received :delete_databag
             expect(chef).to have_received(:destroy).once.with(
               sub_domain: "chef_server_sub_domain#{chef_server_index}"
             )
@@ -653,6 +657,23 @@ describe Formatron do
             (0..2).each do |chef_server_index|
               chef = subnet_chef_clients[chef_server_index]
               allow(chef).to receive(:destroy) { fail 'error' }
+            end
+          end
+        end
+        @formatron.destroy
+      end
+    end
+
+    context 'when an error occurs cleaning up the Chef Server ' \
+            'data bags' do
+      it 'should continue' do
+        (0..2).each do |vpc_index|
+          vpc_chef_clients = @chef_clients[vpc_index]
+          (0..2).each do |subnet_index|
+            subnet_chef_clients = vpc_chef_clients[subnet_index]
+            (0..2).each do |chef_server_index|
+              chef = subnet_chef_clients[chef_server_index]
+              allow(chef).to receive(:delete_databag) { fail 'error' }
             end
           end
         end

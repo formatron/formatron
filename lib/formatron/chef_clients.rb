@@ -53,5 +53,21 @@ class Formatron
       key ||= @chef_clients.keys[0]
       @chef_clients[key]
     end
+
+    def init
+      @chef_clients.values.each(&:init)
+    end
+
+    def unlink
+      @chef_clients.values.each(&:unlink)
+    end
+
+    def deploy_databags
+      @chef_clients.values.each(&:deploy_databag)
+    end
+
+    def delete_databags
+      @chef_clients.values.each(&:delete_databag)
+    end
   end
 end

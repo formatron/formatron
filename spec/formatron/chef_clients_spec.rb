@@ -30,6 +30,7 @@ class Formatron
       chef_class = class_double(
         'Formatron::Chef'
       ).as_stubbed_const
+      @chef_client = {}
       @chef_servers = (0..9).each_with_object({}) do |i, o|
         key = "chef#{i}"
         chef_server = instance_double(
@@ -50,6 +51,13 @@ class Formatron
         allow(chef_server).to receive(:sub_domain) { sub_domain }
         allow(chef_server).to receive(:guid) { guid }
         allow(chef_server).to receive(:stack) { nil }
+        chef_client = @chef_client[key] = instance_double(
+          'Formatron::Chef'
+        )
+        allow(chef_client).to receive :deploy_databag
+        allow(chef_client).to receive :delete_databag
+        allow(chef_client).to receive :init
+        allow(chef_client).to receive :unlink
         allow(chef_class).to receive(:new).with(
           aws: @aws,
           bucket: @bucket,
@@ -66,7 +74,7 @@ class Formatron
           guid: guid,
           configuration: @configuration,
           databag_secret: @databag_secret
-        ) { key }
+        ) { chef_client }
         o[key] = chef_server
       end
       (0..9).each_with_object(@chef_servers) do |i, o|
@@ -90,6 +98,13 @@ class Formatron
         allow(chef_server).to receive(:sub_domain) { sub_domain }
         allow(chef_server).to receive(:guid) { guid }
         allow(chef_server).to receive(:stack) { stack_name }
+        chef_client = @chef_client[key] = instance_double(
+          'Formatron::Chef'
+        )
+        allow(chef_client).to receive :deploy_databag
+        allow(chef_client).to receive :delete_databag
+        allow(chef_client).to receive :init
+        allow(chef_client).to receive :unlink
         allow(chef_class).to receive(:new).with(
           aws: @aws,
           bucket: @bucket,
@@ -106,7 +121,7 @@ class Formatron
           guid: guid,
           configuration: @configuration,
           databag_secret: @databag_secret
-        ) { key }
+        ) { chef_client }
         o[key] = chef_server
       end
     end
@@ -138,16 +153,52 @@ class Formatron
         )
       end
 
+      describe '#init' do
+        it 'should init the chef clients' do
+          @chef_clients.init
+          @chef_client.values.each do |chef_client|
+            expect(chef_client).to have_received :init
+          end
+        end
+      end
+
+      describe '#unlink' do
+        it 'should unlink the chef clients' do
+          @chef_clients.unlink
+          @chef_client.values.each do |chef_client|
+            expect(chef_client).to have_received :unlink
+          end
+        end
+      end
+
+      describe '#deploy_databags' do
+        it 'should deploy data bag items to each chef server' do
+          @chef_clients.deploy_databags
+          @chef_client.values.each do |chef_client|
+            expect(chef_client).to have_received :deploy_databag
+          end
+        end
+      end
+
+      describe '#delete_databags' do
+        it 'should deploy data bag items to each chef server' do
+          @chef_clients.delete_databags
+          @chef_client.values.each do |chef_client|
+            expect(chef_client).to have_received :delete_databag
+          end
+        end
+      end
+
       describe '#get' do
         it 'should return the corresponding Chef client' do
-          @chef_servers.keys.each do |k|
-            expect(@chef_clients.get(k)).to eql k
+          @chef_client.keys.each do |k|
+            expect(@chef_clients.get(k)).to eql @chef_client[k]
           end
         end
 
         context 'with nil' do
           it 'should return the first chef client' do
-            expect(@chef_clients.get).to eql @chef_servers.keys[0]
+            expect(@chef_clients.get).to eql @chef_client.values[0]
           end
         end
       end
@@ -180,13 +231,13 @@ class Formatron
       describe '#get' do
         it 'should return the corresponding Chef client' do
           @chef_servers.keys.each do |k|
-            expect(@chef_clients.get(k)).to eql k
+            expect(@chef_clients.get(k)).to eql @chef_client[k]
           end
         end
 
         context 'with nil' do
           it 'should return the first chef client' do
-            expect(@chef_clients.get).to eql @chef_servers.keys[0]
+            expect(@chef_clients.get).to eql @chef_client.values[0]
           end
         end
       end

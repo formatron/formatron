@@ -140,32 +140,39 @@ class Formatron
     _deploy_stack
   end
 
-  # rubocop:disable Metrics/MethodLength
   def provision
-    @all_instances.each do |key, all_instances|
-      chef_clients = @chef_clients[key]
-      all_instances.values.each do |instance|
-        dsl_chef = instance.chef
-        next if dsl_chef.nil?
-        chef = chef_clients.get dsl_chef.server
-        cookbook = dsl_chef.cookbook
-        bastion = dsl_chef.bastion
-        sub_domain = instance.sub_domain
-        _provision chef, cookbook, sub_domain, bastion
-      end
+    @all_instances.each do |key, instances|
+      _provision_vpc key, instances
     end
   end
+
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
+  def _provision_vpc(key, instances)
+    chef_clients = @chef_clients[key]
+    chef_clients.init
+    chef_clients.deploy_databags
+    instances.values.each do |instance|
+      dsl_chef = instance.chef
+      next if dsl_chef.nil?
+      chef = chef_clients.get dsl_chef.server
+      cookbook = dsl_chef.cookbook
+      bastion = dsl_chef.bastion
+      sub_domain = instance.sub_domain
+      _provision_instance chef, cookbook, sub_domain, bastion
+    end
+  ensure
+    chef_clients.unlink
+  end
+  # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
-  def _provision(chef, cookbook, sub_domain, bastion)
-    chef.init
+  def _provision_instance(chef, cookbook, sub_domain, bastion)
     chef.provision(
       sub_domain: sub_domain,
       cookbook: cookbook,
       bastion: bastion
     )
-  ensure
-    chef.unlink
   end
 
   def destroy
@@ -298,27 +305,35 @@ class Formatron
   end
 
   def _destroy_chef_instances
-    @all_instances.each do |key, all_instances|
-      chef_clients = @chef_clients[key]
-      all_instances.values.each do |instance|
-        dsl_chef = instance.chef
-        next if dsl_chef.nil?
-        chef = chef_clients.get dsl_chef.server
-        sub_domain = instance.sub_domain
-        _destroy_chef_instance chef, sub_domain
-      end
+    @all_instances.each do |key, instances|
+      _destroy_chef_vpc_instances key, instances
     end
   end
 
+  # rubocop:disable Metrics/MethodLength
+  def _destroy_chef_vpc_instances(key, instances)
+    chef_clients = @chef_clients[key]
+    chef_clients.delete_databags
+    instances.values.each do |instance|
+      dsl_chef = instance.chef
+      next if dsl_chef.nil?
+      chef = chef_clients.get dsl_chef.server
+      sub_domain = instance.sub_domain
+      _destroy_chef_instance chef, sub_domain
+    end
+  rescue => error
+    LOG.warn error
+  ensure
+    chef_clients.unlink
+  end
+  # rubocop:enable Metrics/MethodLength
+
   def _destroy_chef_instance(chef, sub_domain)
-    chef.init
     chef.destroy(
       sub_domain: sub_domain
     )
   rescue => error
     LOG.warn error
-  ensure
-    chef.unlink
   end
 
   private(
@@ -332,8 +347,10 @@ class Formatron
     :_destroy_template,
     :_destroy_stack,
     :_destroy_chef_instances,
+    :_destroy_chef_vpc_instances,
     :_destroy_chef_instance,
-    :_provision
+    :_provision_vpc,
+    :_provision_instance
   )
 end
 # rubocop:enable Metrics/ClassLength

@@ -25,6 +25,8 @@ DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -y -c " \
                              'knife_file'
+DELETE_DATA_BAG_COMMAND = 'knife data bag delete formatron name ' \
+                          '-y -c knife_file'
 CHECK_DATA_BAG_COMMAND = 'knife data bag show formatron -c knife_file'
 CREATE_DATA_BAG_COMMAND = 'knife data bag create formatron -c knife_file'
 CREATE_DATA_BAG_ITEM_COMMAND = 'knife data bag from file formatron ' \
@@ -490,6 +492,57 @@ class Formatron
               )
             end.to raise_error(
               'failed to bootstrap instance: hostname'
+            )
+          end
+        end
+      end
+
+      describe '#delete_databag' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true,
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
+          )
+          @knife.init
+        end
+
+        context 'when the delete command succeeds' do
+          before(:each) do
+            @shell = class_double(
+              'Formatron::Util::Shell'
+            ).as_stubbed_const
+            allow(@shell).to receive(:exec).with(
+              DELETE_DATA_BAG_COMMAND
+            ) { true }
+          end
+
+          it 'should delete the node' do
+            @knife.delete_databag
+            expect(@shell).to have_received(:exec).once
+          end
+        end
+
+        context 'when the delete command fails' do
+          before(:each) do
+            @shell = class_double(
+              'Formatron::Util::Shell'
+            ).as_stubbed_const
+            allow(@shell).to receive(:exec).with(
+              DELETE_DATA_BAG_COMMAND
+            ) { false }
+          end
+
+          it 'should fail' do
+            expect do
+              @knife.delete_databag
+            end.to raise_error(
+              "failed to delete data bag item: #{@name}"
             )
           end
         end
