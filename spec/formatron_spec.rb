@@ -133,7 +133,7 @@ describe Formatron do
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
             guid: guid,
-            config: @config,
+            configuration: @configuration,
             databag_secret: @databag_secret
           ) { chef }
           allow(chef).to receive :init
@@ -368,7 +368,7 @@ describe Formatron do
             hosted_zone_name: @hosted_zone_name,
             server_stack: @name,
             guid: "chef_server_guid#{chef_server_index}",
-            config: @config,
+            configuration: @configuration,
             databag_secret: @databag_secret
           )
         end

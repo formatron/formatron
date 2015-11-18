@@ -7,7 +7,7 @@ class Formatron
       @aws = 'aws'
       @bucket = 'bucket'
       @name = 'name'
-      @config = 'config'
+      @configuration = 'configuration'
       @databag_secret = 'databag_secret'
       @target = 'target'
       @ec2_key = 'ec2_key'
@@ -64,7 +64,7 @@ class Formatron
           hosted_zone_name: @hosted_zone_name,
           server_stack: @name,
           guid: guid,
-          config: @config,
+          configuration: @configuration,
           databag_secret: @databag_secret
         ) { key }
         o[key] = chef_server
@@ -104,7 +104,7 @@ class Formatron
           hosted_zone_name: @hosted_zone_name,
           server_stack: stack_name,
           guid: guid,
-          config: @config,
+          configuration: @configuration,
           databag_secret: @databag_secret
         ) { key }
         o[key] = chef_server
@@ -133,7 +133,7 @@ class Formatron
           hosted_zone_name: @hosted_zone_name,
           vpc: @vpc,
           external: external,
-          config: @config,
+          configuration: @configuration,
           databag_secret: @databag_secret
         )
       end
@@ -172,7 +172,7 @@ class Formatron
           hosted_zone_name: @hosted_zone_name,
           vpc: @vpc,
           external: nil,
-          config: @config,
+          configuration: @configuration,
           databag_secret: @databag_secret
         )
       end

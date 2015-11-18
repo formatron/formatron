@@ -10,7 +10,7 @@ class Formatron
       @aws = instance_double 'Formatron::AWS'
       @guid = 'guid'
       @name = 'name'
-      @config = 'config'
+      @configuration = 'configuration'
       @databag_secret = 'databag_secret'
       @server_stack = 'server_stack'
       @hosted_zone_name = 'hosted_zone_name'
@@ -80,7 +80,7 @@ class Formatron
         hosted_zone_name: @hosted_zone_name,
         server_stack: @server_stack,
         guid: @guid,
-        config: @config,
+        configuration: @configuration,
         databag_secret: @databag_secret
       )
     end
@@ -200,6 +200,10 @@ class Formatron
           end
 
           skip 'should deploy the instance databag' do
+            expect(@knife).to have_received(:deploy_data_bag).once.with(
+              key: @sub_domain,
+              configuration: @configuration
+            )
           end
 
           it 'should deploy the instance cookbooks' do

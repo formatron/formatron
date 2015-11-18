@@ -66,6 +66,7 @@ class Formatron
     @databag_secret = global.databag_secret || external_global.databag_secret
     hosted_zone_id = global.hosted_zone_id || external_global.hosted_zone_id
     @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
+    @configuration = @external.export formatron: @formatron
     @cloud_formation_template = CloudFormation::Template.new(
       formatron: @formatron,
       hosted_zone_name: @hosted_zone_name,
@@ -96,7 +97,7 @@ class Formatron
         hosted_zone_name: @hosted_zone_name,
         vpc: vpc,
         external: @external_vpcs[key],
-        config: @config,
+        configuration: @configuration,
         databag_secret: @databag_secret
       )
     end
@@ -183,7 +184,7 @@ class Formatron
       bucket: @bucket,
       name: @name,
       target: @target,
-      configuration: @external.export(formatron: @formatron)
+      configuration: @configuration
     )
   end
 

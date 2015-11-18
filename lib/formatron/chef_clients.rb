@@ -13,7 +13,7 @@ class Formatron
       hosted_zone_name:,
       vpc:,
       external:,
-      config:,
+      configuration:,
       databag_secret:
     )
       @chef_clients = {}
@@ -40,7 +40,7 @@ class Formatron
           hosted_zone_name: hosted_zone_name,
           server_stack: chef_server.stack || name,
           guid: chef_server.guid,
-          config: config,
+          configuration: configuration,
           databag_secret: databag_secret
         )
       end

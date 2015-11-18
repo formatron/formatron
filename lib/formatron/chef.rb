@@ -24,7 +24,7 @@ class Formatron
       hosted_zone_name:,
       server_stack:,
       guid:,
-      config:,
+      configuration:,
       databag_secret:
     )
       @aws = aws
@@ -35,7 +35,7 @@ class Formatron
       @organization = organization
       @server_stack = server_stack
       @bastions = bastions
-      @config = config
+      @configuration = configuration
       chef_server_url = _chef_server_url
       @keys = Keys.new(
         aws: @aws,
