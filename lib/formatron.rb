@@ -313,6 +313,7 @@ class Formatron
   # rubocop:disable Metrics/MethodLength
   def _destroy_chef_vpc_instances(key, instances)
     chef_clients = @chef_clients[key]
+    chef_clients.init
     chef_clients.delete_databags
     instances.values.each do |instance|
       dsl_chef = instance.chef
