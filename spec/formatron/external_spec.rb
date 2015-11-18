@@ -1,4 +1,5 @@
 require 'formatron/external'
+require 'json'
 
 # rubocop:disable Metrics/ClassLength
 class Formatron
@@ -134,13 +135,13 @@ class Formatron
           bucket: @bucket,
           name: @dependency0,
           target: @target
-        ) { configuration0 }
+        ) { configuration0.to_json }
         allow(configuration_class).to receive(:get).with(
           aws: @aws,
           bucket: @bucket,
           name: @dependency1,
           target: @target
-        ) { configuration1 }
+        ) { configuration1.to_json }
         @dsl_class = class_double(
           'Formatron::External::DSL'
         ).as_stubbed_const

@@ -1,3 +1,4 @@
+require 'json'
 require 'deep_merge'
 require 'formatron/s3/configuration'
 require 'formatron/dsl/formatron'
@@ -33,6 +34,7 @@ class Formatron
         name: dependency,
         target: @target
       )
+      configuration = JSON.parse configuration
       DSL.merge(
         formatron: @formatron,
         configuration: configuration[DSL_KEY]
