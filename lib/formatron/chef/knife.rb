@@ -147,6 +147,11 @@ class Formatron
       end
 
       private(
+        :_create_databag,
+        :_create_databag_item,
+        :_attempt_to_create_databag,
+        :_attempt_to_create_databag_item,
+        :_databag_exists,
         :_create_environment,
         :_attempt_to_create_environment,
         :_environment_exists

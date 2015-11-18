@@ -73,6 +73,13 @@ class Formatron
       @keys.init
       @knife.init
       @berkshelf.init
+      _deploy_databag
+    end
+
+    def _deploy_databag
+      Formatron::LOG.info do
+        "Deploying data bag to chef server: #{@chef_sub_domain}"
+      end
       @knife.deploy_databag
     end
 
@@ -135,6 +142,7 @@ class Formatron
     end
 
     private(
+      :_deploy_databag,
       :_chef_server_url,
       :_hostname
     )
