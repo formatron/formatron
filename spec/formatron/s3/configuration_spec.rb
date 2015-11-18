@@ -50,7 +50,6 @@ class Formatron
 
       describe '::get' do
         it 'should get the JSON configuration from S3' do
-          content = 'content'
           expect(@s3_path).to receive(:key).once.with(
             name: name,
             target: target,
@@ -59,7 +58,7 @@ class Formatron
           expect(@aws).to receive(:get_file).once.with(
             bucket: bucket,
             key: key
-          ) { content }
+          ) { configuration.to_json }
           expect(
             Configuration.get(
               aws: @aws,
@@ -67,7 +66,7 @@ class Formatron
               name: name,
               target: target
             )
-          ).to eql content
+          ).to eql configuration
         end
       end
 

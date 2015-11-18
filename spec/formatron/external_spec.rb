@@ -135,13 +135,13 @@ class Formatron
           bucket: @bucket,
           name: @dependency0,
           target: @target
-        ) { configuration0.to_json }
+        ) { configuration0 }
         allow(configuration_class).to receive(:get).with(
           aws: @aws,
           bucket: @bucket,
           name: @dependency1,
           target: @target
-        ) { configuration1.to_json }
+        ) { configuration1 }
         @dsl_class = class_double(
           'Formatron::External::DSL'
         ).as_stubbed_const

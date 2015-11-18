@@ -34,7 +34,6 @@ class Formatron
         name: dependency,
         target: @target
       )
-      configuration = JSON.parse configuration
       DSL.merge(
         formatron: @formatron,
         configuration: configuration[DSL_KEY]

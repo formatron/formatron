@@ -27,9 +27,11 @@ class Formatron
         Formatron::LOG.info do
           "Get configuration from #{bucket}/#{key}"
         end
-        aws.get_file(
-          bucket: bucket,
-          key: key
+        JSON.parse(
+          aws.get_file(
+            bucket: bucket,
+            key: key
+          )
         )
       end
 
