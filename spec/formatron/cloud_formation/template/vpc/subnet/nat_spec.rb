@@ -38,13 +38,14 @@ class Formatron
               allow(dsl_setup).to receive(:script).with(
                 no_args
               ) { @scripts }
-              dsl_nat = instance_double(
+              @dsl_nat = instance_double(
                 'Formatron::DSL::Formatron::VPC::Subnet::Instance'
               )
-              allow(dsl_nat).to receive(:guid) { @guid }
-              allow(dsl_nat).to receive(:setup) do |&block|
+              allow(@dsl_nat).to receive(:guid) { @guid }
+              allow(@dsl_nat).to receive(:setup) do |&block|
                 block.call dsl_setup
               end
+              allow(@dsl_nat).to receive :source_dest_check
               @template_instance = instance_double(
                 'Formatron::CloudFormation::Template::VPC' \
                 '::Subnet::Instance'
@@ -54,7 +55,7 @@ class Formatron
                 '::Subnet::Instance'
               ).as_stubbed_const transfer_nested_constants: true
               allow(template_instance_class).to receive(:new).with(
-                instance: dsl_nat,
+                instance: @dsl_nat,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -69,7 +70,7 @@ class Formatron
                 target: target
               ) { @template_instance }
               @template_nat = NAT.new(
-                nat: dsl_nat,
+                nat: @dsl_nat,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -83,6 +84,10 @@ class Formatron
                 name: name,
                 target: target
               )
+            end
+
+            it 'should disable the SourceDestCheck' do
+              expect(@dsl_nat).to have_received(:source_dest_check).with false
             end
 
             it 'should prepend the NAT setup script to the scripts' do

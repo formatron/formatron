@@ -35,6 +35,7 @@ class Formatron
               @route_table_id = "#{ROUTE_TABLE_PREFIX}#{guid}"
               @route_id = "#{ROUTE_PREFIX}#{guid}"
               _add_setup_script
+              _set_source_dest_check
               @instance = Instance.new(
                 instance: nat,
                 key_pair: key_pair,
@@ -61,6 +62,10 @@ class Formatron
               end
             end
 
+            def _set_source_dest_check
+              @nat.source_dest_check false
+            end
+
             def merge(resources:, outputs:)
               _add_route_table resources
               @instance.merge resources: resources, outputs: outputs
@@ -77,6 +82,7 @@ class Formatron
             end
 
             private(
+              :_set_source_dest_check,
               :_add_setup_script,
               :_add_route_table
             )

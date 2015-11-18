@@ -48,6 +48,7 @@ class Formatron
             iptables-restore < /etc/iptables.rules
             exit 0
             EOF
+            chmod +x /etc/network/if-pre-up.d/iptablesload
           EOH
           # rubocop:enable Metrics/LineLength
         end
