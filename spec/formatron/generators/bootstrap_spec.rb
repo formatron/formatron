@@ -35,6 +35,7 @@ describe Formatron::Generators::Bootstrap do
       }
     }
   }
+  databag_secret = 'databag_secret'
   vpc_guid = 'vpc_guid'
   management_subnet_guid = 'management_subnet_guid'
   bastion_guid = 'bastion_guid'
@@ -67,6 +68,7 @@ describe Formatron::Generators::Bootstrap do
       allow(util_class).to receive(:guid) do
         guids.shift
       end
+      allow(util_class).to receive(:databag_secret) { databag_secret }
       Formatron::Generators::Bootstrap.generate directory, params
     end
 
@@ -106,6 +108,7 @@ describe Formatron::Generators::Bootstrap do
         formatron.global do |global|
           global.protect config['protected']
           global.kms_key '#{params[:kms_key]}'
+          global.databag_secret '#{databag_secret}'
           global.hosted_zone_id '#{params[:hosted_zone_id]}'
 
           global.ec2 do |ec2|

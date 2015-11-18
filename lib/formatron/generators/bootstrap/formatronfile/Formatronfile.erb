@@ -4,6 +4,7 @@ formatron.bucket '<%= params[:s3_bucket] %>'
 formatron.global do |global|
   global.protect config['protected']
   global.kms_key '<%= params[:kms_key] %>'
+  global.databag_secret '<%= databag_secret %>'
   global.hosted_zone_id '<%= params[:hosted_zone_id] %>'
 
   global.ec2 do |ec2|

@@ -19,6 +19,10 @@ class Formatron
           def guid
             Util.guid
           end
+
+          def databag_secret
+            Util.databag_secret
+          end
         end
 
         def self.write(directory, params)
