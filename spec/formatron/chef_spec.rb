@@ -59,6 +59,7 @@ class Formatron
       ).as_stubbed_const
       @knife = instance_double 'Formatron::Chef::Knife'
       allow(@knife_class).to receive(:new) { @knife }
+      allow(@knife).to receive(:deploy_databag)
       allow(@knife).to receive(:create_environment)
       allow(@knife).to receive(:bootstrap)
       allow(@knife).to receive(:delete_node)
@@ -103,7 +104,9 @@ class Formatron
         username: @username,
         organization: @organization,
         ssl_verify: @ssl_verify,
-        databag_secret: @databag_secret
+        name: @name,
+        databag_secret: @databag_secret,
+        configuration: @configuration
       )
     end
 
@@ -158,6 +161,15 @@ class Formatron
         end
       end
 
+      describe '#deploy_databag' do
+        it 'should deploy the stack databag' do
+          @chef.deploy_databag
+          expect(@knife).to have_received(:deploy_databag).once.with(
+            no_args
+          )
+        end
+      end
+
       describe '#provision' do
         context 'when the CloudFormation stack is not ready' do
           before :each do
@@ -196,13 +208,6 @@ class Formatron
           it 'should create the instance environments' do
             expect(@knife).to have_received(:create_environment).once.with(
               environment: @sub_domain
-            )
-          end
-
-          skip 'should deploy the instance databag' do
-            expect(@knife).to have_received(:deploy_data_bag).once.with(
-              key: @sub_domain,
-              configuration: @configuration
             )
           end
 

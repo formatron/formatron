@@ -1,9 +1,11 @@
 require 'formatron/util/shell'
 require 'English'
+require 'json'
 
 class Formatron
   class Chef
     # Wrapper for the knife cli
+    # rubocop:disable Metrics/ClassLength
     class Knife
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/ParameterLists
@@ -13,14 +15,18 @@ class Formatron
         username:,
         organization:,
         ssl_verify:,
-        databag_secret:
+        name:,
+        databag_secret:,
+        configuration:
       )
         @keys = keys
         @chef_server_url = chef_server_url
         @username = username
         @organization = organization
         @ssl_verify = ssl_verify
+        @name = name
         @databag_secret = databag_secret
+        @configuration = configuration
       end
       # rubocop:enable Metrics/ParameterLists
       # rubocop:enable Metrics/MethodLength
@@ -41,8 +47,42 @@ class Formatron
         @databag_secret_file = Tempfile.new 'formatron-databag-secret-'
         @databag_secret_file.write @databag_secret
         @databag_secret_file.close
+        @databag_file = Tempfile.new 'formatron-databag-'
+        @databag_file.write @configuration.merge(id: @name).to_json
+        @databag_file.close
       end
       # rubocop:enable Metrics/MethodLength
+
+      def deploy_databag
+        _attempt_to_create_databag unless _databag_exists
+        _attempt_to_create_databag_item
+      end
+
+      def _databag_exists
+        Util::Shell.exec "knife data bag show formatron -c #{@knife_file.path}"
+      end
+
+      def _attempt_to_create_databag
+        fail 'failed to create data bag: formatron' unless _create_databag
+      end
+
+      def _create_databag
+        # rubocop:disable Metrics/LineLength
+        Util::Shell.exec "knife data bag create formatron -c #{@knife_file.path}"
+        # rubocop:enable Metrics/LineLength
+      end
+
+      def _attempt_to_create_databag_item
+        # rubocop:disable Metrics/LineLength
+        fail "failed to create data bag item: #{@name}" unless _create_databag_item
+        # rubocop:enable Metrics/LineLength
+      end
+
+      def _create_databag_item
+        # rubocop:disable Metrics/LineLength
+        Util::Shell.exec "knife data bag from file formatron #{@databag_file.path} --secret-file #{@databag_secret_file.path} -c #{@knife_file.path}"
+        # rubocop:enable Metrics/LineLength
+      end
 
       def create_environment(environment:)
         # rubocop:disable Metrics/LineLength
@@ -103,6 +143,7 @@ class Formatron
       def unlink
         @knife_file.unlink unless @knife_file.nil?
         @databag_secret_file.unlink unless @databag_secret_file.nil?
+        @databag_file.unlink unless @databag_file.nil?
       end
 
       private(
@@ -111,5 +152,6 @@ class Formatron
         :_environment_exists
       )
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

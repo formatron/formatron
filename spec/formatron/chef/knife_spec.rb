@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'json'
 
 require 'formatron/chef/knife'
 
@@ -24,12 +25,21 @@ DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -y -c knife_file"
 DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -y -c " \
                              'knife_file'
+CHECK_DATA_BAG_COMMAND = 'knife data bag show formatron -c knife_file'
+CREATE_DATA_BAG_COMMAND = 'knife data bag create formatron -c knife_file'
+CREATE_DATA_BAG_ITEM_COMMAND = 'knife data bag from file formatron ' \
+                               'databag_file --secret-file secret_file ' \
+                               '-c knife_file'
 
 class Formatron
   # rubocop:disable Metrics/ClassLength
   class Chef
     describe Knife do
       before(:each) do
+        @name = 'name'
+        @configuration = {
+          'configuration' => 'configuration'
+        }
         @keys = instance_double 'Formatron::Chef::Keys'
         @chef_server_url = 'chef_server_url'
         @username = 'username'
@@ -55,6 +65,13 @@ class Formatron
         allow(@databag_secret_tempfile).to receive(:path) do
           'secret_file'
         end
+        @databag_tempfile = instance_double('Tempfile')
+        allow(@databag_tempfile).to receive(:write)
+        allow(@databag_tempfile).to receive(:close)
+        allow(@databag_tempfile).to receive(:unlink)
+        allow(@databag_tempfile).to receive(:path) do
+          'databag_file'
+        end
         @tempfile_class = class_double('Tempfile').as_stubbed_const
         allow(@tempfile_class).to receive(:new).with(
           'formatron-knife-'
@@ -62,6 +79,9 @@ class Formatron
         allow(@tempfile_class).to receive(:new).with(
           'formatron-databag-secret-'
         ) { @databag_secret_tempfile }
+        allow(@tempfile_class).to receive(:new).with(
+          'formatron-databag-'
+        ) { @databag_tempfile }
       end
 
       context 'when verifying SSL certs' do
@@ -72,7 +92,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end
@@ -102,6 +124,15 @@ class Formatron
             :close
           ).with no_args
         end
+
+        it 'should create a temporary file for the databag' do
+          expect(@databag_tempfile).to have_received(
+            :write
+          ).with @configuration.merge(id: @name).to_json
+          expect(@databag_tempfile).to have_received(
+            :close
+          ).with no_args
+        end
       end
 
       context 'when not verifying SSL certs' do
@@ -112,7 +143,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: false,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end
@@ -152,7 +185,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: false,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
           @knife.unlink
@@ -167,6 +202,130 @@ class Formatron
             :unlink
           ).with no_args
         end
+
+        it 'should delete the databag file' do
+          expect(@databag_tempfile).to have_received(
+            :unlink
+          ).with no_args
+        end
+      end
+
+      describe '#deploy_databag' do
+        before(:each) do
+          @knife = Knife.new(
+            keys: @keys,
+            chef_server_url: @chef_server_url,
+            username: @username,
+            organization: @organization,
+            ssl_verify: true,
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
+          )
+          @knife.init
+        end
+
+        context 'when the data bag already exists' do
+          before :each do
+            @shell = class_double(
+              'Formatron::Util::Shell'
+            ).as_stubbed_const
+            allow(@shell).to receive(:exec).with(
+              CHECK_DATA_BAG_COMMAND
+            ) { true }
+            allow(@shell).to receive(:exec).with(
+              CREATE_DATA_BAG_ITEM_COMMAND
+            ) { true }
+          end
+
+          it 'should create the data bag item' do
+            @knife.deploy_databag
+            expect(@shell).to have_received(:exec).with(
+              CHECK_DATA_BAG_COMMAND
+            )
+            expect(@shell).to have_received(:exec).with(
+              CREATE_DATA_BAG_ITEM_COMMAND
+            )
+          end
+
+          context 'when the item fails to create' do
+            before :each do
+              allow(@shell).to receive(:exec).with(
+                CREATE_DATA_BAG_ITEM_COMMAND
+              ) { false }
+            end
+
+            it 'should fail' do
+              expect do
+                @knife.deploy_databag
+              end.to raise_error(
+                "failed to create data bag item: #{@name}"
+              )
+            end
+          end
+        end
+
+        context 'when the data bag does not already exist' do
+          before :each do
+            @shell = class_double(
+              'Formatron::Util::Shell'
+            ).as_stubbed_const
+            allow(@shell).to receive(:exec).with(
+              CHECK_DATA_BAG_COMMAND
+            ) { false }
+            allow(@shell).to receive(:exec).with(
+              CREATE_DATA_BAG_COMMAND
+            ) { true }
+            allow(@shell).to receive(:exec).with(
+              CREATE_DATA_BAG_ITEM_COMMAND
+            ) { true }
+          end
+
+          it 'should create the data bag and item' do
+            @knife.deploy_databag
+            expect(@shell).to have_received(:exec).with(
+              CHECK_DATA_BAG_COMMAND
+            )
+            expect(@shell).to have_received(:exec).with(
+              CREATE_DATA_BAG_COMMAND
+            )
+            expect(@shell).to have_received(:exec).with(
+              CREATE_DATA_BAG_ITEM_COMMAND
+            )
+          end
+
+          context 'when the data bag fails to create' do
+            before :each do
+              allow(@shell).to receive(:exec).with(
+                CREATE_DATA_BAG_COMMAND
+              ) { false }
+            end
+
+            it 'should fail' do
+              expect do
+                @knife.deploy_databag
+              end.to raise_error(
+                'failed to create data bag: formatron'
+              )
+            end
+          end
+
+          context 'when the item fails to create' do
+            before :each do
+              allow(@shell).to receive(:exec).with(
+                CREATE_DATA_BAG_ITEM_COMMAND
+              ) { false }
+            end
+
+            it 'should fail' do
+              expect do
+                @knife.deploy_databag
+              end.to raise_error(
+                "failed to create data bag item: #{@name}"
+              )
+            end
+          end
+        end
       end
 
       describe '#create_environment' do
@@ -177,7 +336,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end
@@ -260,7 +421,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end
@@ -340,7 +503,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end
@@ -393,7 +558,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end
@@ -446,7 +613,9 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            databag_secret: @databag_secret
+            name: @name,
+            databag_secret: @databag_secret,
+            configuration: @configuration
           )
           @knife.init
         end

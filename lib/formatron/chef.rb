@@ -35,7 +35,6 @@ class Formatron
       @organization = organization
       @server_stack = server_stack
       @bastions = bastions
-      @configuration = configuration
       chef_server_url = _chef_server_url
       @keys = Keys.new(
         aws: @aws,
@@ -51,7 +50,9 @@ class Formatron
         username: username,
         organization: organization,
         ssl_verify: ssl_verify,
-        databag_secret: databag_secret
+        name: @name,
+        databag_secret: databag_secret,
+        configuration: configuration
       )
       @berkshelf = Berkshelf.new(
         keys: @keys,
@@ -72,6 +73,10 @@ class Formatron
       @keys.init
       @knife.init
       @berkshelf.init
+    end
+
+    def deploy_databag
+      @knife.deploy_databag
     end
 
     # rubocop:disable Metrics/MethodLength
