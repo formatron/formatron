@@ -45,6 +45,7 @@ class Formatron
             new_subnets.each do |subnet_key, new_subnet|
               vpc.subnet subnet_key do |subnet|
                 subnet.guid new_subnet['guid']
+                subnet.availability_zone new_subnet['availability_zone']
                 new_nats = new_subnet['nats']
                 new_nats.each do |nat_key, new_nat|
                   subnet.nat nat_key do |nat|
@@ -125,7 +126,8 @@ class Formatron
                 'nats' => {},
                 'bastions' => {},
                 'chef_servers' => {},
-                'guid' => subnet.guid
+                'guid' => subnet.guid,
+                'availability_zone' => subnet.availability_zone
               }
             nats = subnet.nat
             bastions = subnet.bastion

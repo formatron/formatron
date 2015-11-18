@@ -24,7 +24,8 @@ class Formatron
                 'cidr' => 'vpc1_cidr',
                 'subnets' => {
                   'subnet1' => {
-                    'guid' => 'subnet2_guid',
+                    'guid' => 'subnet1_guid',
+                    'availability_zone' => 'subnet1_availability_zone',
                     'nats' => {
                       'nat1' => {
                         'guid' => 'nat1_guid'
@@ -64,6 +65,7 @@ class Formatron
                   },
                   'subnet2' => {
                     'guid' => 'subnet2_guid',
+                    'availability_zone' => 'subnet2_availability_zone',
                     'nats' => {},
                     'bastions' => {},
                     'chef_servers' => {}
