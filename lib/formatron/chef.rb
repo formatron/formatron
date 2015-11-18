@@ -73,9 +73,6 @@ class Formatron
       @keys.init
       @knife.init
       @berkshelf.init
-    end
-
-    def deploy_databag
       @knife.deploy_databag
     end
 

@@ -159,11 +159,8 @@ class Formatron
         it 'should init a berkshelf client' do
           expect(@berkshelf).to have_received :init
         end
-      end
 
-      describe '#deploy_databag' do
         it 'should deploy the stack databag' do
-          @chef.deploy_databag
           expect(@knife).to have_received(:deploy_databag).once.with(
             no_args
           )
