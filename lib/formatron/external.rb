@@ -9,6 +9,7 @@ class Formatron
   class External
     DSL_KEY = 'dsl'
     CONFIG_KEY = 'config'
+    OUTPUTS_KEY = 'outputs'
 
     attr_reader(
       :formatron,
@@ -38,7 +39,10 @@ class Formatron
       )
       @config.deep_merge! configuration[CONFIG_KEY]
       @config.deep_merge! @local_config
-      @outputs.merge dependency: dependency
+      @outputs.merge(
+        dependency: dependency,
+        configuration: configuration[OUTPUTS_KEY]
+      )
     end
     # rubocop:enable Metrics/MethodLength
 
@@ -48,7 +52,8 @@ class Formatron
       dsl.deep_merge! local_dsl
       {
         CONFIG_KEY => @config,
-        DSL_KEY => dsl
+        DSL_KEY => dsl,
+        OUTPUTS_KEY => @outputs.hash
       }
     end
   end

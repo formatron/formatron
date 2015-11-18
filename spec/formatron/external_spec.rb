@@ -68,10 +68,13 @@ class Formatron
         allow(@dsl_class).to receive(:export).with(
           formatron: @local_formatron
         ) { local_dsl }
+        @outputs_hash = 'outputs_hash'
+        allow(@outputs).to receive(:hash) { @outputs_hash }
       end
 
       it 'should return the configuration to deploy' do
         expect(@external.export(formatron: @local_formatron)).to eql(
+          'outputs' => @outputs_hash,
           'config' => @config,
           'dsl' => @merged_dsl
         )
@@ -80,6 +83,7 @@ class Formatron
 
     describe '#merge' do
       before :each do
+        @outputs_configuration = 'outputs_configuration'
         @dsl_configuration = 'dsl_configuration'
         config_configuration0 = {
           'param1' => {
@@ -109,10 +113,12 @@ class Formatron
           'param3' => '1param3'
         }
         configuration0 = {
+          'outputs' => @outputs_configuration,
           'dsl' => @dsl_configuration,
           'config' => config_configuration0
         }
         configuration1 = {
+          'outputs' => @outputs_configuration,
           'dsl' => @dsl_configuration,
           'config' => config_configuration1
         }
@@ -144,7 +150,8 @@ class Formatron
 
       it 'should merge the CloudFormation outputs' do
         expect(@outputs).to have_received(:merge).with(
-          dependency: @dependency0
+          dependency: @dependency0,
+          configuration: @outputs_configuration
         )
       end
 

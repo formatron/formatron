@@ -14,6 +14,15 @@ class Formatron
         before :each do
           dependency1 = 'dependency1'
           dependency2 = 'dependency2'
+          coutputs1 = {
+            'coutput1' => 'c1output1',
+            'coutput2' => 'c1output2'
+          }
+          coutputs2 = {
+            'coutput2' => 'c2output2',
+            'coutput2' => 'c2output2',
+            'coutput3' => 'c2output3'
+          }
           outputs1 = {
             'output1' => '1output1',
             'output2' => '1output2'
@@ -23,6 +32,9 @@ class Formatron
             'output3' => '2output3'
           }
           @merged_outputs = {
+            'coutput1' => 'c1output1',
+            'coutput2' => 'c2output2',
+            'coutput3' => 'c2output3',
             'output1' => '1output1',
             'output2' => '2output2',
             'output3' => '2output3'
@@ -40,8 +52,8 @@ class Formatron
             name: dependency2,
             target: @target
           ) { outputs2 }
-          @outputs.merge dependency: dependency1
-          @outputs.merge dependency: dependency2
+          @outputs.merge dependency: dependency1, configuration: coutputs1
+          @outputs.merge dependency: dependency2, configuration: coutputs2
         end
 
         it 'should get the outputs from the CloudFormation ' \

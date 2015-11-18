@@ -12,7 +12,8 @@ class Formatron
         @hash = {}
       end
 
-      def merge(dependency:)
+      def merge(dependency:, configuration:)
+        @hash.merge! configuration
         @hash.merge! CloudFormation.outputs(
           aws: @aws,
           name: dependency,
