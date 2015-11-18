@@ -37,10 +37,12 @@ class Formatron
                     },
                     'bastions' => {
                       'bastion1' => {
-                        'guid' => 'bastion1_guid'
+                        'guid' => 'bastion1_guid',
+                        'sub_domain' => 'bastion1_sub_domain'
                       },
                       'bastion2' => {
-                        'guid' => 'bastion2_guid'
+                        'guid' => 'bastion2_guid',
+                        'sub_domain' => 'bastion2_sub_domain'
                       }
                     },
                     'chef_servers' => {

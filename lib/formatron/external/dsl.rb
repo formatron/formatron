@@ -57,6 +57,7 @@ class Formatron
                 new_bastions.each do |bastion_key, new_bastion|
                   subnet.bastion bastion_key do |bastion|
                     bastion.guid new_bastion['guid']
+                    bastion.sub_domain new_bastion['sub_domain']
                   end
                 end
                 new_chef_servers = new_subnet['chef_servers']
@@ -141,7 +142,8 @@ class Formatron
             end
             bastions.each do |bastion_key, bastion|
               subnet_configuration['bastions'][bastion_key] = {
-                'guid' => bastion.guid
+                'guid' => bastion.guid,
+                'sub_domain' => bastion.sub_domain
               }
             end
             chef_servers.each do |chef_server_key, chef_server|
