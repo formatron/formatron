@@ -26,6 +26,7 @@ class Formatron
                   'subnet1' => {
                     'guid' => 'subnet1_guid',
                     'availability_zone' => 'subnet1_availability_zone',
+                    'gateway' => 'subnet1_gateway',
                     'nats' => {
                       'nat1' => {
                         'guid' => 'nat1_guid'
@@ -66,6 +67,7 @@ class Formatron
                   'subnet2' => {
                     'guid' => 'subnet2_guid',
                     'availability_zone' => 'subnet2_availability_zone',
+                    'gateway' => 'subnet2_gateway',
                     'nats' => {},
                     'bastions' => {},
                     'chef_servers' => {}
