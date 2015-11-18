@@ -62,7 +62,7 @@ class Formatron
             formatron.name '#{params[:name]}'
             formatron.bucket '#{params[:s3_bucket]}'
 
-            formatron.dependency '#{params[:bootstrap_configuration]}'
+            formatron.depends '#{params[:bootstrap_configuration]}'
 
             formatron.vpc '#{params[:vpc]}' do |vpc|
               vpc.subnet '#{params[:subnet]}' do |subnet|
