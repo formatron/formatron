@@ -47,7 +47,7 @@ class Formatron
         @databag_secret_file = Tempfile.new 'formatron-databag-secret-'
         @databag_secret_file.write @databag_secret
         @databag_secret_file.close
-        @databag_file = Tempfile.new 'formatron-databag-'
+        @databag_file = Tempfile.new ['formatron-databag-', '.json']
         @databag_file.write @configuration.merge(id: @name).to_json
         @databag_file.close
       end

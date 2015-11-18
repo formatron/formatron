@@ -80,7 +80,7 @@ class Formatron
           'formatron-databag-secret-'
         ) { @databag_secret_tempfile }
         allow(@tempfile_class).to receive(:new).with(
-          'formatron-databag-'
+          ['formatron-databag-', '.json']
         ) { @databag_tempfile }
       end
 
