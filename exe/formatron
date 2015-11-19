@@ -4,6 +4,8 @@ require 'formatron/cli'
 require 'formatron/cli/generators/credentials'
 require 'formatron/cli/generators/bootstrap'
 require 'formatron/cli/generators/instance'
+require 'formatron/cli/generators/guid'
+require 'formatron/cli/generators/databag_secret'
 require 'formatron/cli/deploy'
 require 'formatron/cli/destroy'
 require 'formatron/cli/provision'
@@ -12,6 +14,8 @@ require 'formatron/cli/completion'
 Formatron::CLI.include Formatron::CLI::Generators::Credentials
 Formatron::CLI.include Formatron::CLI::Generators::Bootstrap
 Formatron::CLI.include Formatron::CLI::Generators::Instance
+Formatron::CLI.include Formatron::CLI::Generators::GUID
+Formatron::CLI.include Formatron::CLI::Generators::DatabagSecret
 Formatron::CLI.include Formatron::CLI::Deploy
 Formatron::CLI.include Formatron::CLI::Destroy
 Formatron::CLI.include Formatron::CLI::Provision
