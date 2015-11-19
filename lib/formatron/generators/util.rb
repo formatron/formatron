@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class Formatron
   module Generators
     # Utility methods
