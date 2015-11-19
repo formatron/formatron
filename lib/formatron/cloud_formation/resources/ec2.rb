@@ -6,6 +6,8 @@ class Formatron
       # Generates CloudFormation template EC2 resources
       # rubocop:disable Metrics/ModuleLength
       module EC2
+        BLOCK_DEVICE_MAPPINGS = :BlockDeviceMappings
+
         def self.vpc(cidr:)
           {
             Type: 'AWS::EC2::VPC',
@@ -231,6 +233,42 @@ class Formatron
           }
         end
         # rubocop:enable Metrics/MethodLength
+
+        def self.block_device_mapping(device:, size:, type:, iops:)
+          mapping = {
+            DeviceName: device,
+            Ebs: {
+              VolumeSize: size
+            }
+          }
+          mapping[:Ebs][:VolumeType] = type unless type.nil?
+          mapping[:Ebs][:Iops] = iops unless iops.nil?
+          mapping
+        end
+
+        def self.volume(size:, type:, iops:, availability_zone:)
+          volume = {
+            Type: 'AWS::EC2::Volume',
+            Properties: {
+              AvailabilityZone: availability_zone,
+              Size: size
+            }
+          }
+          volume[:Properties][:VolumeType] = type unless type.nil?
+          volume[:Properties][:Iops] = iops unless iops.nil?
+          volume
+        end
+
+        def self.volume_attachment(device:, instance:, volume:)
+          {
+            Type: 'AWS::EC2::VolumeAttachment',
+            Properties: {
+              Device: device,
+              InstanceId: Template.ref(instance),
+              VolumeId: Template.ref(volume)
+            }
+          }
+        end
 
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/ParameterLists

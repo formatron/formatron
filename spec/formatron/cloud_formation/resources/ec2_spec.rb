@@ -346,6 +346,77 @@ class Formatron
           end
         end
 
+        describe '::block_device_mapping' do
+          it 'should return a block device mapping entry' do
+            device = 'device'
+            size = 'size'
+            type = 'type'
+            iops = 'iops'
+            expect(
+              EC2.block_device_mapping(
+                device: device,
+                size: size,
+                type: type,
+                iops: iops
+              )
+            ).to eql(
+              DeviceName: device,
+              Ebs: {
+                VolumeType: type,
+                Iops: iops,
+                VolumeSize: size
+              }
+            )
+          end
+        end
+
+        describe '::volume' do
+          it 'should return a Volume resource' do
+            size = 'size'
+            type = 'type'
+            iops = 'iops'
+            availability_zone = 'availability_zone'
+            expect(
+              EC2.volume(
+                availability_zone: availability_zone,
+                size: size,
+                type: type,
+                iops: iops
+              )
+            ).to eql(
+              Type: 'AWS::EC2::Volume',
+              Properties: {
+                AvailabilityZone: availability_zone,
+                Iops: iops,
+                Size: size,
+                VolumeType: type
+              }
+            )
+          end
+        end
+
+        describe '::volume_attachment' do
+          it 'should return a VolumeAttachment resource' do
+            device = 'device'
+            instance = 'instance'
+            volume = 'volume'
+            expect(
+              EC2.volume_attachment(
+                device: device,
+                instance: instance,
+                volume: volume
+              )
+            ).to eql(
+              Type: 'AWS::EC2::VolumeAttachment',
+              Properties: {
+                Device: device,
+                InstanceId: { Ref: instance },
+                VolumeId: { Ref: volume }
+              }
+            )
+          end
+        end
+
         describe '::instance' do
           it 'should return an Instance resource' do
             hostname_sh = 'hostname_sh'

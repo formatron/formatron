@@ -19,6 +19,8 @@ class Formatron
             dsl_block :policy, 'Policy'
             dsl_block :security_group, 'SecurityGroup'
             dsl_block :setup, 'Setup'
+            dsl_block_array :volume, 'Volume'
+            dsl_block_array :block_device, 'BlockDevice'
           end
         end
       end

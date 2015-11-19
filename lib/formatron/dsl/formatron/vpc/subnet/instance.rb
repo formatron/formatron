@@ -2,6 +2,8 @@ require_relative 'instance/chef'
 require_relative 'instance/policy'
 require_relative 'instance/security_group'
 require_relative 'instance/setup'
+require_relative 'instance/volume'
+require_relative 'instance/block_device'
 require 'formatron/util/dsl'
 
 class Formatron
@@ -22,6 +24,8 @@ class Formatron
             dsl_block :policy, 'Policy'
             dsl_block :security_group, 'SecurityGroup'
             dsl_block :setup, 'Setup'
+            dsl_block_array :volume, 'Volume'
+            dsl_block_array :block_device, 'BlockDevice'
           end
         end
       end

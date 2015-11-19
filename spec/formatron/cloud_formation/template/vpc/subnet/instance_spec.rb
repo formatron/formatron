@@ -148,6 +148,27 @@ class Formatron
                 allow(dsl_instance).to receive(
                   :instance_type
                 ) { instance_type }
+                template_block_devices = instance_double(
+                  'Formatron::CloudFormation::Template' \
+                  '::VPC::Subnet::Instance::BlockDevices'
+                )
+                @block_devices = 'block_devices'
+                allow(template_block_devices).to receive(
+                  :merge
+                ) do |properties:|
+                  properties[:block_devices] = @block_devices
+                end
+                dsl_block_devices = 'dsl_block_devices'
+                allow(dsl_instance).to receive(:block_device).with(
+                  no_args
+                ) { dsl_block_devices }
+                template_block_devices_class = class_double(
+                  'Formatron::CloudFormation::Template' \
+                  '::VPC::Subnet::Instance::BlockDevices'
+                ).as_stubbed_const
+                allow(template_block_devices_class).to receive(:new).with(
+                  block_devices: dsl_block_devices
+                ) { template_block_devices }
                 availability_zone = 'availability_zone'
                 subnet_guid = 'subnet_guid'
                 subnet_id = "subnet#{subnet_guid}"
@@ -166,7 +187,8 @@ class Formatron
                   source_dest_check: source_dest_check
                 ) do
                   {
-                    instance: @instance
+                    instance: @instance,
+                    Properties: {}
                   }
                 end
 
@@ -218,6 +240,45 @@ class Formatron
                   ) { @public_alias_record_sets[index] }
                 end
 
+                dsl_volumes = []
+                @volume_attachment_ids = []
+                @volume_attachments = []
+                @volume_ids = []
+                @volumes = []
+                (0..9).each do |index|
+                  @volume_attachment_ids[index] =
+                    "volumeAttachment#{index}#{guid}"
+                  volume_attachment = @volume_attachments[index] =
+                    "volume_attachment#{index}"
+                  volume_id = @volume_ids[index] = "volume#{index}#{guid}"
+                  volume = @volumes[index] = "volume#{index}"
+                  dsl_volume = dsl_volumes[index] = instance_double(
+                    'Formatron::DSL::Formatron::VPC::Subnet::Instance::Volume'
+                  )
+                  device = "device#{index}"
+                  allow(dsl_volume).to receive(:device) { device }
+                  size = "size#{index}"
+                  allow(dsl_volume).to receive(:size) { size }
+                  type = "type#{index}"
+                  allow(dsl_volume).to receive(:type) { type }
+                  iops = "iops#{index}"
+                  allow(dsl_volume).to receive(:iops) { iops }
+                  allow(ec2).to receive(:volume_attachment).with(
+                    device: device,
+                    instance: "instance#{guid}",
+                    volume: volume_id
+                  ) { volume_attachment }
+                  allow(ec2).to receive(:volume).with(
+                    size: size,
+                    type: type,
+                    iops: iops,
+                    availability_zone: availability_zone
+                  ) { volume }
+                end
+                allow(dsl_instance).to receive(:volume).with(
+                  no_args
+                ) { dsl_volumes }
+
                 template_instance = Instance.new(
                   instance: dsl_instance,
                   key_pair: key_pair,
@@ -268,11 +329,31 @@ class Formatron
                 )
               end
 
-              it 'should add an instance with its setup scripts' do
+              it 'should add the volumes' do
+                @volumes.each_index do |index|
+                  expect(@resources).to include(
+                    @volume_ids[index] => @volumes[index]
+                  )
+                end
+              end
+
+              it 'should add the volume attachments' do
+                @volume_attachments.each_index do |index|
+                  expect(@resources).to include(
+                    @volume_attachment_ids[index] => @volume_attachments[index]
+                  )
+                end
+              end
+
+              it 'should add an instance with its block devices ' \
+                 'and setup scripts' do
                 expect(@resources).to include(
                   @instance_id => {
                     instance: @instance,
-                    setup: @setup
+                    setup: @setup,
+                    Properties: {
+                      block_devices: @block_devices
+                    }
                   }
                 )
                 expect(@outputs).to include(

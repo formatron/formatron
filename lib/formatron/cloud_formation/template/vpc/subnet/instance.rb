@@ -5,6 +5,7 @@ require 'formatron/cloud_formation/resources/route53'
 require_relative 'instance/policy'
 require_relative 'instance/security_group'
 require_relative 'instance/setup'
+require_relative 'instance/block_devices'
 
 class Formatron
   module CloudFormation
@@ -22,6 +23,8 @@ class Formatron
             PRIVATE_RECORD_SET_PREFIX = 'privateRecordSet'
             PUBLIC_RECORD_SET_PREFIX = 'publicRecordSet'
             PUBLIC_ALIAS_RECORD_SET_PREFIX = 'publicAliasRecordSet'
+            VOLUME_PREFIX = 'volume'
+            VOLUME_ATTACHMENT_PREFIX = 'volumeAttachment'
 
             # rubocop:disable Metrics/MethodLength
             # rubocop:disable Metrics/AbcSize
@@ -44,6 +47,7 @@ class Formatron
               @instance = instance
               @guid = @instance.guid
               @setup = @instance.setup
+              @block_devices = @instance.block_device
               @instance_id = "#{INSTANCE_PREFIX}#{@guid}"
               @role_id = "#{ROLE_PREFIX}#{@guid}"
               @instance_profile_id = "#{INSTANCE_PROFILE_PREFIX}#{@guid}"
@@ -75,6 +79,7 @@ class Formatron
               @public_record_set_id =
                 "#{PUBLIC_RECORD_SET_PREFIX}#{@guid}"
               @public_aliases = @instance.public_alias
+              @volumes = @instance.volume
               @bucket = bucket
               @name = name
               @target = target
@@ -127,6 +132,10 @@ class Formatron
                 hosted_zone_name: @hosted_zone_name
               )
               setup.merge instance: instance
+              block_devices = BlockDevices.new(
+                block_devices: @block_devices
+              )
+              block_devices.merge properties: instance[:Properties]
               resources[@instance_id] = instance
               outputs[@instance_id] = Template.output(
                 Template.ref(@instance_id)
@@ -153,6 +162,7 @@ class Formatron
                   attribute: 'PublicIp'
                 ) unless @public_hosted_zone_id.nil?
               _add_public_aliases resources unless @public_hosted_zone_id.nil?
+              _add_volumes resources
             end
             # rubocop:enable Metrics/AbcSize
             # rubocop:enable Metrics/MethodLength
@@ -162,20 +172,43 @@ class Formatron
               @public_aliases.each_index do |index|
                 sub_domain = @public_aliases[index]
                 logical_id = "#{PUBLIC_ALIAS_RECORD_SET_PREFIX}#{index}#{@guid}"
-                resources[logical_id] =
-                  Resources::Route53.record_set(
-                    hosted_zone_id: @public_hosted_zone_id,
-                    sub_domain: sub_domain,
-                    hosted_zone_name: @hosted_zone_name,
-                    instance: @instance_id,
-                    attribute: 'PublicIp'
+                resources[logical_id] = Resources::Route53.record_set(
+                  hosted_zone_id: @public_hosted_zone_id,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: @hosted_zone_name,
+                  instance: @instance_id,
+                  attribute: 'PublicIp'
+                )
+              end
+            end
+            # rubocop:enable Metrics/MethodLength
+
+            # rubocop:disable Metrics/MethodLength
+            def _add_volumes(resources)
+              @volumes.each_index do |index|
+                volume = @volumes[index]
+                volume_id = "#{VOLUME_PREFIX}#{index}#{@guid}"
+                volume_attachment_id =
+                  "#{VOLUME_ATTACHMENT_PREFIX}#{index}#{@guid}"
+                resources[volume_id] = Resources::EC2.volume(
+                  availability_zone: @availability_zone,
+                  size: volume.size,
+                  type: volume.type,
+                  iops: volume.iops
+                )
+                resources[volume_attachment_id] =
+                  Resources::EC2.volume_attachment(
+                    device: volume.device,
+                    instance: "#{INSTANCE_PREFIX}#{@guid}",
+                    volume: volume_id
                   )
               end
             end
             # rubocop:enable Metrics/MethodLength
 
             private(
-              :_add_public_aliases
+              :_add_public_aliases,
+              :_add_volumes
             )
           end
           # rubocop:enable Metrics/ClassLength
