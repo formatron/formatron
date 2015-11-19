@@ -9,6 +9,7 @@ class Formatron
       stub_const 'Formatron::LOG', Logger.new('/dev/null')
       @aws = instance_double 'Formatron::AWS'
       @guid = 'guid'
+      @instance_guid = 'instance_guid'
       @name = 'name'
       @configuration = 'configuration'
       @databag_secret = 'databag_secret'
@@ -194,6 +195,7 @@ class Formatron
             expect do
               @chef.provision(
                 sub_domain: @sub_domain,
+                guid: @instance_guid,
                 cookbook: @cookbook,
                 bastion: @bastion
               )
@@ -210,6 +212,7 @@ class Formatron
             )
             @chef.provision(
               sub_domain: @sub_domain,
+              guid: @instance_guid,
               cookbook: @cookbook,
               bastion: @bastion
             )
@@ -217,13 +220,13 @@ class Formatron
 
           it 'should create the instance environments' do
             expect(@knife).to have_received(:create_environment).once.with(
-              environment: @sub_domain
+              environment: @instance_guid
             )
           end
 
           it 'should deploy the instance cookbooks' do
             expect(@berkshelf).to have_received(:upload).once.with(
-              environment: @sub_domain,
+              environment: @instance_guid,
               cookbook: @cookbook
             )
           end
@@ -231,7 +234,7 @@ class Formatron
           it 'should bootstrap the instance' do
             expect(@knife).to have_received(:bootstrap).once.with(
               bastion_hostname: @bastion_hostname,
-              environment: @sub_domain,
+              guid: @instance_guid,
               cookbook: @cookbook_name,
               hostname: @hostname
             )
@@ -242,25 +245,25 @@ class Formatron
       describe '#destroy' do
         before :each do
           @chef.destroy(
-            sub_domain: @sub_domain
+            guid: @instance_guid
           )
         end
 
         it 'should delete the node' do
           expect(@knife).to have_received(:delete_node).once.with(
-            node: @sub_domain
+            node: @instance_guid
           )
         end
 
         it 'should delete the client' do
           expect(@knife).to have_received(:delete_client).once.with(
-            client: @sub_domain
+            client: @instance_guid
           )
         end
 
         it 'should delete the environment' do
           expect(@knife).to have_received(:delete_environment).once.with(
-            environment: @sub_domain
+            environment: @instance_guid
           )
         end
       end

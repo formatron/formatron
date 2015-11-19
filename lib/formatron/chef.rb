@@ -92,11 +92,12 @@ class Formatron
     # rubocop:disable Metrics/MethodLength
     def provision(
       sub_domain:,
+      guid:,
       cookbook:,
       bastion:
     )
       Formatron::LOG.info do
-        "Provision #{sub_domain} with Chef cookbook: #{cookbook}"
+        "Provision #{guid} with Chef cookbook: #{cookbook}"
       end
       bastion ||= @bastions.keys[0]
       bastion_hostname = _hostname(
@@ -111,11 +112,11 @@ class Formatron
       hostname = _hostname(
         sub_domain: sub_domain
       )
-      @knife.create_environment environment: sub_domain
-      @berkshelf.upload environment: sub_domain, cookbook: cookbook
+      @knife.create_environment environment: guid
+      @berkshelf.upload environment: guid, cookbook: cookbook
       @knife.bootstrap(
         bastion_hostname: bastion_hostname,
-        environment: sub_domain,
+        guid: guid,
         cookbook: cookbook_name,
         hostname: hostname
       )
@@ -123,13 +124,13 @@ class Formatron
     # rubocop:enable Metrics/ParameterLists
     # rubocop:enable Metrics/MethodLength
 
-    def destroy(sub_domain:)
+    def destroy(guid:)
       Formatron::LOG.info do
-        "Delete Chef configuration for node: #{sub_domain}"
+        "Delete Chef configuration for node: #{guid}"
       end
-      @knife.delete_node node: sub_domain
-      @knife.delete_client client: sub_domain
-      @knife.delete_environment environment: sub_domain
+      @knife.delete_node node: guid
+      @knife.delete_client client: guid
+      @knife.delete_environment environment: guid
     end
 
     def unlink

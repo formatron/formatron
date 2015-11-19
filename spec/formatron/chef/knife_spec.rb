@@ -3,27 +3,27 @@ require 'json'
 
 require 'formatron/chef/knife'
 
-ENVIRONMENT = 'env'
+GUID = 'guid'
 ENVIRONMENT_CHECK_COMMAND = 'knife environment ' \
-                            "show #{ENVIRONMENT} " \
+                            "show #{GUID} " \
                             '-c knife_file'
 ENVIRONMENT_CREATE_COMMAND = 'knife environment create ' \
-                             "#{ENVIRONMENT} -c " \
-                             "knife_file -d '#{ENVIRONMENT} environment " \
+                             "#{GUID} -c " \
+                             "knife_file -d '#{GUID} environment " \
                              "created by formatron'"
 BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     '--sudo -x ubuntu -i ec2_key -E ' \
-                    "#{ENVIRONMENT} -r cookbook -N #{ENVIRONMENT} " \
+                    "#{GUID} -r cookbook -N #{GUID} " \
                     '-c knife_file --secret-file secret_file'
 BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i ec2_key -E ' \
-                                 "#{ENVIRONMENT} -r cookbook " \
-                                 "-N #{ENVIRONMENT} " \
+                                 "#{GUID} -r cookbook " \
+                                 "-N #{GUID} " \
                                  '-c knife_file --secret-file secret_file ' \
                                  '-G ubuntu@bastion'
-DELETE_NODE_COMMAND = "knife node delete #{ENVIRONMENT} -y -c knife_file"
-DELETE_CLIENT_COMMAND = "knife client delete #{ENVIRONMENT} -y -c knife_file"
-DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{ENVIRONMENT} -y -c " \
+DELETE_NODE_COMMAND = "knife node delete #{GUID} -y -c knife_file"
+DELETE_CLIENT_COMMAND = "knife client delete #{GUID} -y -c knife_file"
+DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{GUID} -y -c " \
                              'knife_file'
 DELETE_DATA_BAG_COMMAND = 'knife data bag delete formatron name ' \
                           '-y -c knife_file'
@@ -359,7 +359,7 @@ class Formatron
           end
 
           it 'should do nothing' do
-            @knife.create_environment environment: ENVIRONMENT
+            @knife.create_environment environment: GUID
             expect(@shell).to have_received(:exec).once
             expect(@shell).to have_received(:exec).with(
               ENVIRONMENT_CHECK_COMMAND
@@ -381,7 +381,7 @@ class Formatron
           end
 
           it 'should create the environment' do
-            @knife.create_environment environment: ENVIRONMENT
+            @knife.create_environment environment: GUID
             expect(@shell).to have_received(:exec).twice
             expect(@shell).to have_received(:exec).with(
               ENVIRONMENT_CHECK_COMMAND
@@ -407,9 +407,9 @@ class Formatron
 
           it 'should fail' do
             expect do
-              @knife.create_environment environment: ENVIRONMENT
+              @knife.create_environment environment: GUID
             end.to raise_error(
-              'failed to create opscode environment: env'
+              "failed to create opscode environment: #{GUID}"
             )
           end
         end
@@ -442,7 +442,7 @@ class Formatron
 
           it 'should bootstrap the host directly' do
             @knife.bootstrap(
-              environment: ENVIRONMENT,
+              guid: GUID,
               bastion_hostname: 'hostname',
               cookbook: 'cookbook',
               hostname: 'hostname'
@@ -463,7 +463,7 @@ class Formatron
 
           it 'should bootstrap the host directly' do
             @knife.bootstrap(
-              environment: ENVIRONMENT,
+              guid: GUID,
               bastion_hostname: 'bastion',
               cookbook: 'cookbook',
               hostname: 'hostname'
@@ -485,13 +485,13 @@ class Formatron
           it 'should fail' do
             expect do
               @knife.bootstrap(
-                environment: ENVIRONMENT,
+                guid: GUID,
                 bastion_hostname: 'bastion',
                 cookbook: 'cookbook',
                 hostname: 'hostname'
               )
             end.to raise_error(
-              'failed to bootstrap instance: hostname'
+              "failed to bootstrap instance: #{GUID}"
             )
           end
         end
@@ -575,7 +575,7 @@ class Formatron
 
           it 'should delete the node' do
             @knife.delete_node(
-              node: ENVIRONMENT
+              node: GUID
             )
             expect(@shell).to have_received(:exec).once
           end
@@ -594,10 +594,10 @@ class Formatron
           it 'should fail' do
             expect do
               @knife.delete_node(
-                node: ENVIRONMENT
+                node: GUID
               )
             end.to raise_error(
-              "failed to delete node: #{ENVIRONMENT}"
+              "failed to delete node: #{GUID}"
             )
           end
         end
@@ -630,7 +630,7 @@ class Formatron
 
           it 'should delete the client' do
             @knife.delete_client(
-              client: ENVIRONMENT
+              client: GUID
             )
             expect(@shell).to have_received(:exec).once
           end
@@ -649,10 +649,10 @@ class Formatron
           it 'should fail' do
             expect do
               @knife.delete_client(
-                client: ENVIRONMENT
+                client: GUID
               )
             end.to raise_error(
-              "failed to delete client: #{ENVIRONMENT}"
+              "failed to delete client: #{GUID}"
             )
           end
         end
@@ -685,7 +685,7 @@ class Formatron
 
           it 'should delete the environment' do
             @knife.delete_environment(
-              environment: ENVIRONMENT
+              environment: GUID
             )
             expect(@shell).to have_received(:exec).once
           end
@@ -704,10 +704,10 @@ class Formatron
           it 'should fail' do
             expect do
               @knife.delete_environment(
-                environment: ENVIRONMENT
+                environment: GUID
               )
             end.to raise_error(
-              "failed to delete environment: #{ENVIRONMENT}"
+              "failed to delete environment: #{GUID}"
             )
           end
         end

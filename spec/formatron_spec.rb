@@ -219,6 +219,9 @@ describe Formatron do
           allow(bastion).to receive(:sub_domain).with(
             no_args
           ) { bastion_sub_domain }
+          allow(bastion).to receive(:guid).with(
+            no_args
+          ) { "bastion_guid#{bastion_index}" }
           bastion_sub_domains[bastion_key] = bastion_sub_domain
         end
         allow(subnet).to receive(:bastion).with(no_args) { bastions }
@@ -247,6 +250,9 @@ describe Formatron do
           allow(nat).to receive(:sub_domain).with(
             no_args
           ) { "nat_sub_domain#{nat_index}" }
+          allow(nat).to receive(:guid).with(
+            no_args
+          ) { "nat_guid#{nat_index}" }
         end
         allow(subnet).to receive(:nat).with(no_args) { nats }
         instances = {}
@@ -274,6 +280,9 @@ describe Formatron do
           allow(instance).to receive(:sub_domain).with(
             no_args
           ) { "instance_sub_domain#{instance_index}" }
+          allow(instance).to receive(:guid).with(
+            no_args
+          ) { "instance_guid#{instance_index}" }
         end
         allow(subnet).to receive(:instance).with(no_args) { instances }
       end
@@ -485,21 +494,25 @@ describe Formatron do
             expect(chef).to have_received :deploy_databag
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "chef_server_sub_domain#{chef_server_index}",
+              guid: "chef_server_guid#{chef_server_index}",
               cookbook: "chef_server_cookbook#{chef_server_index}",
               bastion: "bastion#{chef_server_index}"
             )
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "bastion_sub_domain#{chef_server_index}",
+              guid: "bastion_guid#{chef_server_index}",
               cookbook: "bastion_cookbook#{chef_server_index}",
               bastion: "bastion#{chef_server_index}"
             )
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "nat_sub_domain#{chef_server_index}",
+              guid: "nat_guid#{chef_server_index}",
               cookbook: "nat_cookbook#{chef_server_index}",
               bastion: "bastion#{chef_server_index}"
             )
             expect(chef).to have_received(:provision).once.with(
               sub_domain: "instance_sub_domain#{chef_server_index}",
+              guid: "instance_guid#{chef_server_index}",
               cookbook: "instance_cookbook#{chef_server_index}",
               bastion: "bastion#{chef_server_index}"
             )
@@ -631,16 +644,16 @@ describe Formatron do
             chef_server_index = "#{subnet_index}_#{chef_server_index}"
             expect(chef).to have_received :delete_databag
             expect(chef).to have_received(:destroy).once.with(
-              sub_domain: "chef_server_sub_domain#{chef_server_index}"
+              guid: "chef_server_guid#{chef_server_index}"
             )
             expect(chef).to have_received(:destroy).once.with(
-              sub_domain: "bastion_sub_domain#{chef_server_index}"
+              guid: "bastion_guid#{chef_server_index}"
             )
             expect(chef).to have_received(:destroy).once.with(
-              sub_domain: "nat_sub_domain#{chef_server_index}"
+              guid: "nat_guid#{chef_server_index}"
             )
             expect(chef).to have_received(:destroy).once.with(
-              sub_domain: "instance_sub_domain#{chef_server_index}"
+              guid: "instance_guid#{chef_server_index}"
             )
           end
         end

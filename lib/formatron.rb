@@ -159,7 +159,8 @@ class Formatron
       cookbook = dsl_chef.cookbook
       bastion = dsl_chef.bastion
       sub_domain = instance.sub_domain
-      _provision_instance chef, cookbook, sub_domain, bastion
+      guid = instance.guid
+      _provision_instance chef, cookbook, sub_domain, guid, bastion
     end
   ensure
     chef_clients.unlink
@@ -167,9 +168,10 @@ class Formatron
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
-  def _provision_instance(chef, cookbook, sub_domain, bastion)
+  def _provision_instance(chef, cookbook, sub_domain, guid, bastion)
     chef.provision(
       sub_domain: sub_domain,
+      guid: guid,
       cookbook: cookbook,
       bastion: bastion
     )
@@ -319,8 +321,8 @@ class Formatron
       dsl_chef = instance.chef
       next if dsl_chef.nil?
       chef = chef_clients.get dsl_chef.server
-      sub_domain = instance.sub_domain
-      _destroy_chef_instance chef, sub_domain
+      guid = instance.guid
+      _destroy_chef_instance chef, guid
     end
   rescue => error
     LOG.warn error
@@ -329,9 +331,9 @@ class Formatron
   end
   # rubocop:enable Metrics/MethodLength
 
-  def _destroy_chef_instance(chef, sub_domain)
+  def _destroy_chef_instance(chef, guid)
     chef.destroy(
-      sub_domain: sub_domain
+      guid: guid
     )
   rescue => error
     LOG.warn error

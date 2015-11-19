@@ -109,15 +109,15 @@ class Formatron
       end
 
       def bootstrap(
-        environment:,
+        guid:,
         bastion_hostname:,
         cookbook:,
         hostname:
       )
         # rubocop:disable Metrics/LineLength
-        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{environment} -r #{cookbook} -N #{environment} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file.path}"
+        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file.path}"
         command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
-        fail "failed to bootstrap instance: #{hostname}" unless Util::Shell.exec command
+        fail "failed to bootstrap instance: #{guid}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
