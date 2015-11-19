@@ -15,6 +15,7 @@ class Formatron
             dsl_initialize_hash
             dsl_property :guid
             dsl_property :sub_domain
+            dsl_array :public_alias
             dsl_property :source_dest_check
             dsl_property :instance_type
             dsl_block :chef, 'Chef'

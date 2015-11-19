@@ -197,6 +197,27 @@ class Formatron
                   attribute: 'PublicIp'
                 ) { @public_record_set }
 
+                @public_alias_record_set_ids = []
+                @public_alias_record_sets = []
+                public_aliases = []
+                allow(dsl_instance).to receive(
+                  :public_alias
+                ) { public_aliases }
+                (0..2).each do |index|
+                  public_aliases[index] = "public_alias#{index}"
+                  @public_alias_record_set_ids[index] =
+                    "publicAliasRecordSet#{index}#{guid}"
+                  @public_alias_record_sets[index] =
+                    "public_alias_record_set#{index}"
+                  allow(route53).to receive(:record_set).with(
+                    hosted_zone_id: public_hosted_zone_id,
+                    sub_domain: public_aliases[index],
+                    hosted_zone_name: hosted_zone_name,
+                    instance: @instance_id,
+                    attribute: 'PublicIp'
+                  ) { @public_alias_record_sets[index] }
+                end
+
                 template_instance = Instance.new(
                   instance: dsl_instance,
                   key_pair: key_pair,
@@ -277,6 +298,15 @@ class Formatron
                 expect(@resources).to include(
                   @public_record_set_id => @public_record_set
                 )
+              end
+
+              it 'should add public hosted zone record sets for the aliases' do
+                @public_alias_record_set_ids.each_index do |index|
+                  expect(@resources).to include(
+                    @public_alias_record_set_ids[index] =>
+                      @public_alias_record_sets[index]
+                  )
+                end
               end
             end
           end

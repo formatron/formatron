@@ -21,6 +21,7 @@ class Formatron
             WAIT_CONDITION_PREFIX = 'waitCondition'
             PRIVATE_RECORD_SET_PREFIX = 'privateRecordSet'
             PUBLIC_RECORD_SET_PREFIX = 'publicRecordSet'
+            PUBLIC_ALIAS_RECORD_SET_PREFIX = 'publicAliasRecordSet'
 
             # rubocop:disable Metrics/MethodLength
             # rubocop:disable Metrics/AbcSize
@@ -73,6 +74,7 @@ class Formatron
                 "#{PRIVATE_RECORD_SET_PREFIX}#{@guid}"
               @public_record_set_id =
                 "#{PUBLIC_RECORD_SET_PREFIX}#{@guid}"
+              @public_aliases = @instance.public_alias
               @bucket = bucket
               @name = name
               @target = target
@@ -150,9 +152,31 @@ class Formatron
                   instance: @instance_id,
                   attribute: 'PublicIp'
                 ) unless @public_hosted_zone_id.nil?
+              _add_public_aliases resources unless @public_hosted_zone_id.nil?
             end
             # rubocop:enable Metrics/AbcSize
             # rubocop:enable Metrics/MethodLength
+
+            # rubocop:disable Metrics/MethodLength
+            def _add_public_aliases(resources)
+              @public_aliases.each_index do |index|
+                sub_domain = @public_aliases[index]
+                logical_id = "#{PUBLIC_ALIAS_RECORD_SET_PREFIX}#{index}#{@guid}"
+                resources[logical_id] =
+                  Resources::Route53.record_set(
+                    hosted_zone_id: @public_hosted_zone_id,
+                    sub_domain: sub_domain,
+                    hosted_zone_name: @hosted_zone_name,
+                    instance: @instance_id,
+                    attribute: 'PublicIp'
+                  )
+              end
+            end
+            # rubocop:enable Metrics/MethodLength
+
+            private(
+              :_add_public_aliases
+            )
           end
           # rubocop:enable Metrics/ClassLength
         end
