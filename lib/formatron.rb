@@ -136,8 +136,13 @@ class Formatron
   def deploy
     _deploy_configuration
     _deploy_chef_server_certs
-    _deploy_template
-    _deploy_stack
+    if @cloud_formation_template[:Resources].empty?
+      _destroy_template
+      _destroy_stack
+    else
+      _deploy_template
+      _deploy_stack
+    end
   end
 
   def provision

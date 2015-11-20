@@ -41,6 +41,7 @@ class Formatron
       @config.deep_merge! configuration[CONFIG_KEY]
       @config.deep_merge! @local_config
       @outputs.merge(
+        bucket: bucket,
         dependency: dependency,
         configuration: configuration[OUTPUTS_KEY]
       )

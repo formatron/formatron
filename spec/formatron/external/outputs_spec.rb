@@ -6,8 +6,11 @@ class Formatron
     describe Outputs do
       before :each do
         @aws = instance_double 'Formatron::AWS'
+        @bucket = 'bucket'
         @target = 'target'
-        @outputs = Outputs.new aws: @aws, target: @target
+        @outputs = Outputs.new(
+          aws: @aws, target: @target
+        )
       end
 
       describe '#merge/#hash' do
@@ -19,7 +22,6 @@ class Formatron
             'coutput2' => 'c1output2'
           }
           coutputs2 = {
-            'coutput2' => 'c2output2',
             'coutput2' => 'c2output2',
             'coutput3' => 'c2output3'
           }
@@ -44,16 +46,22 @@ class Formatron
           ).as_stubbed_const
           allow(cloud_formation_class).to receive(:outputs).with(
             aws: @aws,
+            bucket: @bucket,
             name: dependency1,
             target: @target
           ) { outputs1 }
           allow(cloud_formation_class).to receive(:outputs).with(
             aws: @aws,
+            bucket: @bucket,
             name: dependency2,
             target: @target
           ) { outputs2 }
-          @outputs.merge dependency: dependency1, configuration: coutputs1
-          @outputs.merge dependency: dependency2, configuration: coutputs2
+          @outputs.merge(
+            bucket: @bucket, dependency: dependency1, configuration: coutputs1
+          )
+          @outputs.merge(
+            bucket: @bucket, dependency: dependency2, configuration: coutputs2
+          )
         end
 
         it 'should get the outputs from the CloudFormation ' \

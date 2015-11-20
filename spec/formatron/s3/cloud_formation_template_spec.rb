@@ -46,6 +46,29 @@ class Formatron
         end
       end
 
+      describe '::exists?' do
+        it 'should return whether the CloudFormation template is on S3' do
+          exists = 'exists'
+          expect(@s3_path).to receive(:key).once.with(
+            name: name,
+            target: target,
+            sub_key: 'cloud_formation_template.json'
+          ) { key }
+          expect(@aws).to receive(:file_exists?).once.with(
+            bucket: bucket,
+            key: key
+          ) { exists }
+          expect(
+            CloudFormationTemplate.exists?(
+              aws: @aws,
+              bucket: bucket,
+              name: name,
+              target: target
+            )
+          ).to eql exists
+        end
+      end
+
       describe '::destroy' do
         it 'should delete the CloudFormation template from S3' do
           expect(@s3_path).to receive(:key).once.with(

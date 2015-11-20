@@ -31,13 +31,24 @@ class Formatron
       aws.delete_stack stack_name: stack_name
     end
 
-    def self.outputs(aws:, name:, target:)
-      stack_name = _stack_name name, target
-      Formatron::LOG.info do
-        "Query CloudFormation stack outputs: #{stack_name}"
+    # rubocop:disable Metrics/MethodLength
+    def self.outputs(aws:, bucket:, name:, target:)
+      if S3::CloudFormationTemplate.exists?(
+        aws: aws,
+        bucket: bucket,
+        name: name,
+        target: target
+      )
+        stack_name = _stack_name name, target
+        Formatron::LOG.info do
+          "Query CloudFormation stack outputs: #{stack_name}"
+        end
+        aws.stack_outputs stack_name: stack_name
+      else
+        {}
       end
-      aws.stack_outputs stack_name: stack_name
     end
+    # rubocop:enable Metrics/MethodLength
 
     def self.stack_ready!(aws:, name:, target:)
       aws.stack_ready! stack_name: _stack_name(name, target)

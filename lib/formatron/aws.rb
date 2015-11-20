@@ -64,6 +64,13 @@ class Formatron
       )
     end
 
+    def file_exists?(bucket:, key:)
+      @s3_client.list_objects(
+        bucket: bucket,
+        prefix: key
+      ).contents.length > 0
+    end
+
     def delete_file(bucket:, key:)
       @s3_client.delete_object(
         bucket: bucket,

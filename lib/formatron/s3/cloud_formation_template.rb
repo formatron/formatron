@@ -30,6 +30,18 @@ class Formatron
       # rubocop:enable Metrics/MethodLength
       # rubocop:enable Metrics/ParameterLists
 
+      def self.exists?(aws:, bucket:, name:, target:)
+        key = Path.key(
+          name: name,
+          target: target,
+          sub_key: FILE_NAME
+        )
+        aws.file_exists?(
+          bucket: bucket,
+          key: key
+        )
+      end
+
       # rubocop:disable Metrics/MethodLength
       def self.destroy(aws:, bucket:, name:, target:)
         key = Path.key(

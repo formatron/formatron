@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'formatron/cloud_formation'
 
-# namespacing for tests
+# rubocop:disable Metrics/ClassLength
 class Formatron
   describe CloudFormation do
     before(:each) do
@@ -56,18 +56,46 @@ class Formatron
     end
 
     describe '::outputs' do
-      it 'should return the outputs of the CloudFormation stack' do
-        outputs = 'outputs'
-        expect(@aws).to receive(:stack_outputs).once.with(
-          stack_name: "#{@name}-#{@target}"
-        ) { outputs }
-        expect(
-          CloudFormation.outputs(
-            aws: @aws,
-            name: @name,
-            target: @target
-          )
-        ).to eql outputs
+      context 'when there is a CloudFormation stack' do
+        before :each do
+          allow(@s3_cloud_formation_template).to receive(
+            :exists?
+          ) { true }
+        end
+
+        it 'should return the outputs of the CloudFormation stack' do
+          outputs = 'outputs'
+          expect(@aws).to receive(:stack_outputs).once.with(
+            stack_name: "#{@name}-#{@target}"
+          ) { outputs }
+          expect(
+            CloudFormation.outputs(
+              aws: @aws,
+              bucket: @bucket,
+              name: @name,
+              target: @target
+            )
+          ).to eql outputs
+        end
+      end
+
+      context 'when there is no CloudFormation stack' do
+        before :each do
+          allow(@s3_cloud_formation_template).to receive(
+            :exists?
+          ) { false }
+        end
+
+        it 'should return an empty hash' do
+          expect(
+            CloudFormation.outputs(
+              aws: @aws,
+              bucket: @bucket,
+              name: @name,
+              target: @target
+            )
+          ).to eql({})
+        end
       end
     end
 
@@ -108,3 +136,4 @@ class Formatron
     end
   end
 end
+# rubocop:enable Metrics/ClassLength

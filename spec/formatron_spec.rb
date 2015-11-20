@@ -308,7 +308,9 @@ describe Formatron do
       external: @external
     ) { @template }
     @template_hash = {
-      template: 'template'
+      Resources: {
+        resource: 'resource'
+      }
     }
     allow(@template).to receive(:hash) { @template_hash }
     @template_json = JSON.pretty_generate @template_hash
@@ -473,6 +475,42 @@ describe Formatron do
             )
           end
         end
+      end
+    end
+
+    context 'when there are no resources in the template' do
+      before :each do
+        @template_hash = {
+          Resources: {}
+        }
+        allow(@template).to receive(:hash) { @template_hash }
+        allow(@s3_cloud_formation_template).to receive(:destroy)
+        allow(@cloud_formation).to receive(:destroy)
+        @formatron = Formatron.new(
+          credentials: @credentials,
+          directory: @directory,
+          target: @target
+        )
+        @formatron.deploy
+      end
+
+      it 'should delete the CloudFormation template from S3' do
+        expect(@s3_cloud_formation_template).to have_received(
+          :destroy
+        ).once.with(
+          aws: @aws,
+          bucket: @bucket,
+          name: @name,
+          target: @target
+        )
+      end
+
+      it 'should delete the CloudFormation stack' do
+        expect(@cloud_formation).to have_received(:destroy).once.with(
+          aws: @aws,
+          name: @name,
+          target: @target
+        )
       end
     end
   end

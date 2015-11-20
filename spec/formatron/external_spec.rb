@@ -151,6 +151,7 @@ class Formatron
 
       it 'should merge the CloudFormation outputs' do
         expect(@outputs).to have_received(:merge).with(
+          bucket: @bucket,
           dependency: @dependency0,
           configuration: @outputs_configuration
         )

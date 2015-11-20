@@ -90,6 +90,41 @@ class Formatron
         end
       end
 
+      describe '#file_exists?' do
+        bucket = 'bucket'
+        key = 'key'
+
+        context 'when the key exists in the bucket' do
+          it 'should return true' do
+            expect(@s3_client).to receive(:list_objects).once.with(
+              bucket: bucket,
+              prefix: key
+            ) { S3ListObjectsResponse.new [key] }
+            expect(
+              @aws.file_exists?(
+                bucket: bucket,
+                key: key
+              )
+            ).to eql true
+          end
+        end
+
+        context 'when the key does not exist in the bucket' do
+          it 'should return false' do
+            expect(@s3_client).to receive(:list_objects).once.with(
+              bucket: bucket,
+              prefix: key
+            ) { S3ListObjectsResponse.new [] }
+            expect(
+              @aws.file_exists?(
+                bucket: bucket,
+                key: key
+              )
+            ).to eql false
+          end
+        end
+      end
+
       describe '#delete_file' do
         bucket = 'bucket'
         key = 'key'
