@@ -50,7 +50,9 @@ class Formatron
             end
             # rubocop:enable Metrics/MethodLength
 
+            # rubocop:disable Metrics/MethodLength
             def merge(resources:)
+              return if @source_cidrs.length == 0
               resources[@network_acl_id] = Resources::EC2.network_acl(
                 vpc: @vpc_id
               )
