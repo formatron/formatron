@@ -67,7 +67,7 @@ class Formatron
             formatron.vpc '#{params[:vpc]}' do |vpc|
               vpc.subnet '#{params[:subnet]}' do |subnet|
                 subnet.instance '#{params[:instance_name]}' do |instance|
-                  instance.guid 'INSTANCE#{instance_guid}'
+                  instance.guid 'instance#{instance_guid}'
                   instance.sub_domain config['#{params[:instance_name]}']['sub_domain']
                   instance.chef do |chef|
                     chef.cookbook 'cookbooks/#{params[:instance_name]}_instance'

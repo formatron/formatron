@@ -118,11 +118,11 @@ describe Formatron::Generators::Bootstrap do
         end
 
         formatron.vpc 'vpc' do |vpc|
-          vpc.guid 'VPC#{vpc_guid}'
+          vpc.guid 'vpc#{vpc_guid}'
           vpc.cidr '10.0.0.0/16'
 
           vpc.subnet 'management' do |subnet|
-            subnet.guid 'SUBNET#{management_subnet_guid}'
+            subnet.guid 'subnet#{management_subnet_guid}'
             subnet.availability_zone '#{params[:availability_zone]}'
             subnet.cidr '10.0.0.0/24'
             subnet.acl do |acl|
@@ -130,7 +130,7 @@ describe Formatron::Generators::Bootstrap do
             end
 
             subnet.bastion 'bastion' do |bastion|
-              bastion.guid 'BASTION#{bastion_guid}'
+              bastion.guid 'bastion#{bastion_guid}'
               bastion.sub_domain config['bastion']['sub_domain']
               bastion.chef do |chef|
                 chef.cookbook 'cookbooks/bastion_instance'
@@ -138,7 +138,7 @@ describe Formatron::Generators::Bootstrap do
             end
 
             subnet.nat 'nat' do |nat|
-              nat.guid 'NAT#{nat_guid}'
+              nat.guid 'nat#{nat_guid}'
               nat.sub_domain config['nat']['sub_domain']
               nat.chef do |chef|
                 chef.cookbook 'cookbooks/nat_instance'
@@ -146,7 +146,7 @@ describe Formatron::Generators::Bootstrap do
             end
 
             subnet.chef_server 'chef_server' do |chef_server|
-              chef_server.guid 'CHEF#{chef_guid}'
+              chef_server.guid 'chef#{chef_guid}'
               chef_server.version '12.2.0-1'
               chef_server.sub_domain config['chef_server']['sub_domain']
               chef_server.cookbooks_bucket config['chef_server']['cookbooks_bucket']
@@ -169,13 +169,13 @@ describe Formatron::Generators::Bootstrap do
           end
 
           vpc.subnet 'public' do |subnet|
-            subnet.guid 'SUBNET#{public_subnet_guid}'
+            subnet.guid 'subnet#{public_subnet_guid}'
             subnet.availability_zone '#{params[:availability_zone]}'
             subnet.cidr '10.0.1.0/24'
           end
 
           vpc.subnet 'private' do |subnet|
-            subnet.guid 'SUBNET#{private_subnet_guid}'
+            subnet.guid 'subnet#{private_subnet_guid}'
             subnet.availability_zone '#{params[:availability_zone]}'
             subnet.cidr '10.0.2.0/24'
             subnet.gateway 'nat'
