@@ -240,6 +240,27 @@ class Formatron
                   ) { @public_alias_record_sets[index] }
                 end
 
+                @private_alias_record_set_ids = []
+                @private_alias_record_sets = []
+                private_aliases = []
+                allow(dsl_instance).to receive(
+                  :private_alias
+                ) { private_aliases }
+                (0..2).each do |index|
+                  private_aliases[index] = "private_alias#{index}"
+                  @private_alias_record_set_ids[index] =
+                    "privateAliasRecordSet#{index}#{guid}"
+                  @private_alias_record_sets[index] =
+                    "private_alias_record_set#{index}"
+                  allow(route53).to receive(:record_set).with(
+                    hosted_zone_id: private_hosted_zone_id,
+                    sub_domain: private_aliases[index],
+                    hosted_zone_name: hosted_zone_name,
+                    instance: @instance_id,
+                    attribute: 'PrivateIp'
+                  ) { @private_alias_record_sets[index] }
+                end
+
                 dsl_volumes = []
                 @volume_attachment_ids = []
                 @volume_attachments = []
@@ -373,6 +394,15 @@ class Formatron
                 expect(@resources).to include(
                   @private_record_set_id => @private_record_set
                 )
+              end
+
+              it 'should add private hosted zone record sets for the aliases' do
+                @private_alias_record_set_ids.each_index do |index|
+                  expect(@resources).to include(
+                    @private_alias_record_set_ids[index] =>
+                      @private_alias_record_sets[index]
+                  )
+                end
               end
 
               it 'should add a public hosted zone record set' do

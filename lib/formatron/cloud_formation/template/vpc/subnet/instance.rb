@@ -23,6 +23,7 @@ class Formatron
             PRIVATE_RECORD_SET_PREFIX = 'privateRecordSet'
             PUBLIC_RECORD_SET_PREFIX = 'publicRecordSet'
             PUBLIC_ALIAS_RECORD_SET_PREFIX = 'publicAliasRecordSet'
+            PRIVATE_ALIAS_RECORD_SET_PREFIX = 'privateAliasRecordSet'
             VOLUME_PREFIX = 'volume'
             VOLUME_ATTACHMENT_PREFIX = 'volumeAttachment'
 
@@ -79,6 +80,7 @@ class Formatron
               @public_record_set_id =
                 "#{PUBLIC_RECORD_SET_PREFIX}#{@guid}"
               @public_aliases = @instance.public_alias
+              @private_aliases = @instance.private_alias
               @volumes = @instance.volume
               @bucket = bucket
               @name = name
@@ -162,6 +164,7 @@ class Formatron
                   attribute: 'PublicIp'
                 ) unless @public_hosted_zone_id.nil?
               _add_public_aliases resources unless @public_hosted_zone_id.nil?
+              _add_private_aliases resources
               _add_volumes resources
             end
             # rubocop:enable Metrics/AbcSize
@@ -178,6 +181,23 @@ class Formatron
                   hosted_zone_name: @hosted_zone_name,
                   instance: @instance_id,
                   attribute: 'PublicIp'
+                )
+              end
+            end
+            # rubocop:enable Metrics/MethodLength
+
+            # rubocop:disable Metrics/MethodLength
+            def _add_private_aliases(resources)
+              @private_aliases.each_index do |index|
+                sub_domain = @private_aliases[index]
+                logical_id =
+                  "#{PRIVATE_ALIAS_RECORD_SET_PREFIX}#{index}#{@guid}"
+                resources[logical_id] = Resources::Route53.record_set(
+                  hosted_zone_id: @private_hosted_zone_id,
+                  sub_domain: sub_domain,
+                  hosted_zone_name: @hosted_zone_name,
+                  instance: @instance_id,
+                  attribute: 'PrivateIp'
                 )
               end
             end
@@ -208,6 +228,7 @@ class Formatron
 
             private(
               :_add_public_aliases,
+              :_add_private_aliases,
               :_add_volumes
             )
           end
