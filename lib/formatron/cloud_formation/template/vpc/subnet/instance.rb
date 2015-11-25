@@ -193,7 +193,7 @@ class Formatron
                 logical_id =
                   "#{PRIVATE_ALIAS_RECORD_SET_PREFIX}#{index}#{@guid}"
                 resources[logical_id] = Resources::Route53.record_set(
-                  hosted_zone_id: @private_hosted_zone_id,
+                  hosted_zone_id: Template.ref(@private_hosted_zone_id),
                   sub_domain: sub_domain,
                   hosted_zone_name: @hosted_zone_name,
                   instance: @instance_id,

@@ -253,7 +253,7 @@ class Formatron
                   @private_alias_record_sets[index] =
                     "private_alias_record_set#{index}"
                   allow(route53).to receive(:record_set).with(
-                    hosted_zone_id: private_hosted_zone_id,
+                    hosted_zone_id: { Ref: private_hosted_zone_id },
                     sub_domain: private_aliases[index],
                     hosted_zone_name: hosted_zone_name,
                     instance: @instance_id,
