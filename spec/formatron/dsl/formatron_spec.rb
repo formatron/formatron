@@ -8,13 +8,18 @@ class Formatron
       extend DSLTest
 
       dsl_before_block do
+        @aws = instance_double 'Formatron::AWS'
         @external = instance_double 'Formatron::External'
-        { external: @external }
+        { external: @external, aws: @aws }
       end
 
       dsl_property :name
       dsl_property :bucket
-      dsl_block :global, 'Global'
+
+      dsl_block :global, 'Global' do
+        { aws: @aws }
+      end
+
       dsl_hash :vpc, 'VPC'
 
       describe '#depends' do

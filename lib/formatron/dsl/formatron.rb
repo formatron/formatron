@@ -8,13 +8,18 @@ class Formatron
     class Formatron
       extend Util::DSL
 
-      dsl_initialize_block do |external:|
+      dsl_initialize_block do |external:, aws:|
+        @aws = aws
         @external = external
       end
 
       dsl_property :name
       dsl_property :bucket
-      dsl_block :global, 'Global'
+
+      dsl_block :global, 'Global' do
+        { aws: @aws }
+      end
+
       dsl_hash :vpc, 'VPC'
 
       def depends(dependency)

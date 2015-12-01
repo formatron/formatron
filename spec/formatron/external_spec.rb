@@ -21,7 +21,8 @@ class Formatron
         'Formatron::DSL::Formatron'
       ).as_stubbed_const
       allow(formatron_class).to receive(:new).with(
-        external: nil
+        external: nil,
+        aws: @aws
       ) { @formatron }
       @outputs = instance_double 'Formatron::External::Outputs'
       outputs_class = class_double(

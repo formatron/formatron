@@ -15,8 +15,10 @@ class Formatron
       formatron_class = class_double(
         'Formatron::DSL::Formatron'
       ).as_stubbed_const
+      aws = instance_double 'Formatron::AWS'
       expect(formatron_class).to receive(:new).with(
-        external: external
+        external: external,
+        aws: aws
       ) { formatron }
       file = 'file'
       File.write file, <<-EOH
@@ -27,7 +29,8 @@ class Formatron
         file: file,
         target: target,
         config: config,
-        external: external
+        external: external,
+        aws: aws
       )
     end
   end

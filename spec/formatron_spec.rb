@@ -21,9 +21,6 @@ describe Formatron do
     ).as_stubbed_const
     @aws = instance_double('Formatron::AWS')
     allow(@aws_class).to receive(:new) { @aws }
-    allow(@aws).to receive(
-      :hosted_zone_name
-    ).with(@hosted_zone_id) { @hosted_zone_name }
 
     @external_class = class_double(
       'Formatron::External'
@@ -57,7 +54,8 @@ describe Formatron do
       file: @file,
       target: @target,
       config: @config,
-      external: @external
+      external: @external,
+      aws: @aws
     ) { dsl }
 
     @dsl_formatron = instance_double 'Formatron::DSL::Formatron'
@@ -81,6 +79,9 @@ describe Formatron do
     @databag_secret = 'databag_secret'
     allow(global).to receive(:databag_secret).with(no_args) { @databag_secret }
     allow(global).to receive(:hosted_zone_id).with(no_args) { @hosted_zone_id }
+    allow(global).to receive(:hosted_zone_name).with(
+      no_args
+    ) { @hosted_zone_name }
 
     ec2 = instance_double 'Formatron::DSL::Formatron::Global::EC2'
     allow(global).to receive(:ec2).with(no_args) { ec2 }
@@ -394,7 +395,8 @@ describe Formatron do
       config: @config,
       target: @target,
       file: @file,
-      external: @external
+      external: @external,
+      aws: @aws
     )
   end
 

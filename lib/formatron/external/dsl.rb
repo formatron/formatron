@@ -106,6 +106,8 @@ class Formatron
             global.databag_secret unless global.databag_secret.nil?
           configuration_global['hosted_zone_id'] =
             global.hosted_zone_id unless global.hosted_zone_id.nil?
+          configuration_global['hosted_zone_name'] =
+            global.hosted_zone_name unless global.hosted_zone_name.nil?
           ec2 = global.ec2
           unless ec2.nil?
             configuration_ec2 = configuration_global['ec2'] = {}

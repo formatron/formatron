@@ -7,12 +7,17 @@ class Formatron
     describe DSL do
       describe '#merge/#export' do
         it 'should convert to and back from a DSL Formatron object' do
-          formatron = Formatron::DSL::Formatron.new external: nil
+          aws = instance_double 'Formatron::AWS'
+          allow(aws).to receive(:hosted_zone_name).with(
+            'hosted_zone_id'
+          ) { 'hosted_zone_name' }
+          formatron = Formatron::DSL::Formatron.new external: nil, aws: aws
           configuration = {
             'global' => {
               'protect' => true,
               'kms_key' => 'kms_key',
               'hosted_zone_id' => 'hosted_zone_id',
+              'hosted_zone_name' => 'hosted_zone_name',
               'ec2' => {
                 'key_pair' => 'key_pair',
                 'private_key' => 'private_key'

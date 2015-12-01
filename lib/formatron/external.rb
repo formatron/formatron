@@ -22,7 +22,7 @@ class Formatron
       @target = target
       @config = config
       @local_config = Marshal.load Marshal.dump(@config)
-      @formatron = Formatron::DSL::Formatron.new external: nil
+      @formatron = Formatron::DSL::Formatron.new external: nil, aws: @aws
       @outputs = Outputs.new aws: @aws, target: @target
     end
 

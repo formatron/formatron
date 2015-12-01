@@ -38,7 +38,8 @@ class Formatron
       file: File.join(directory, FORMATRONFILE),
       config: @config,
       target: @target,
-      external: @external
+      external: @external,
+      aws: @aws
     )
     _initialize
   end
@@ -65,7 +66,8 @@ class Formatron
     @kms_key = global.kms_key || external_global.kms_key
     @databag_secret = global.databag_secret || external_global.databag_secret
     hosted_zone_id = global.hosted_zone_id || external_global.hosted_zone_id
-    @hosted_zone_name = @aws.hosted_zone_name hosted_zone_id
+    @hosted_zone_name =
+      global.hosted_zone_name || external_global.hosted_zone_name
     @configuration = @external.export formatron: @formatron
     @cloud_formation_template = CloudFormation::Template.new(
       formatron: @formatron,
