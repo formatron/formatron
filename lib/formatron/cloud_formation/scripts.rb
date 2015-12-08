@@ -81,14 +81,24 @@ class Formatron
           region = ${REGION}
           EOF
 
-          mkdir -p /etc/opscode
+          mkdir -p /etc/opscode/chef-server.rb.d
+
           cat << EOF > /etc/opscode/chef-server.rb
+          Dir[File.dirname(__FILE__) + '/chef-server.rb.d/*.rb'].each do |file|
+            self.instance_eval File.read(file), file
+          end
+          EOF
+
+          cat << EOF > /etc/opscode/chef-server.rb.d/s3_cookbooks_bucket.rb
           bookshelf['enable'] = false
           bookshelf['external_url'] = 'https://s3-${REGION}.amazonaws.com'
           bookshelf['vip'] = 's3-${REGION}.amazonaws.com'
           bookshelf['access_key_id'] = '${ACCESS_KEY_ID}'
           bookshelf['secret_access_key'] = '${SECRET_ACCESS_KEY}'
           opscode_erchef['s3_bucket'] = '#{cookbooks_bucket}'
+          EOF
+
+          cat << EOF > /etc/opscode/chef-server.rb.d/ssl_certificate.rb
           nginx['ssl_certificate'] = '/etc/nginx/ssl/chef.crt'
           nginx['ssl_certificate_key'] = '/etc/nginx/ssl/chef.key'
           EOF
