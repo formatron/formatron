@@ -94,7 +94,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -126,15 +125,6 @@ class Formatron
             :close
           ).with no_args
         end
-
-        it 'should create a temporary file for the databag' do
-          expect(@databag_tempfile).to have_received(
-            :write
-          ).with @configuration.merge(id: @name).to_json
-          expect(@databag_tempfile).to have_received(
-            :close
-          ).with no_args
-        end
       end
 
       context 'when not verifying SSL certs' do
@@ -145,7 +135,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: false,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -187,7 +176,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: false,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -204,12 +192,6 @@ class Formatron
             :unlink
           ).with no_args
         end
-
-        it 'should delete the databag file' do
-          expect(@databag_tempfile).to have_received(
-            :unlink
-          ).with no_args
-        end
       end
 
       describe '#deploy_databag' do
@@ -220,11 +202,19 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
           @knife.init
+          expect(@databag_tempfile).to receive(
+            :write
+          ).with @configuration.merge(id: @name).to_json
+          expect(@databag_tempfile).to receive(
+            :close
+          ).with no_args
+          expect(@databag_tempfile).to receive(
+            :unlink
+          ).with no_args
         end
 
         context 'when the data bag already exists' do
@@ -241,7 +231,7 @@ class Formatron
           end
 
           it 'should create the data bag item' do
-            @knife.deploy_databag
+            @knife.deploy_databag name: @name
             expect(@shell).to have_received(:exec).with(
               CHECK_DATA_BAG_COMMAND
             )
@@ -259,7 +249,7 @@ class Formatron
 
             it 'should fail' do
               expect do
-                @knife.deploy_databag
+                @knife.deploy_databag name: @name
               end.to raise_error(
                 "failed to create data bag item: #{@name}"
               )
@@ -284,7 +274,7 @@ class Formatron
           end
 
           it 'should create the data bag and item' do
-            @knife.deploy_databag
+            @knife.deploy_databag name: @name
             expect(@shell).to have_received(:exec).with(
               CHECK_DATA_BAG_COMMAND
             )
@@ -305,7 +295,7 @@ class Formatron
 
             it 'should fail' do
               expect do
-                @knife.deploy_databag
+                @knife.deploy_databag name: @name
               end.to raise_error(
                 'failed to create data bag: formatron'
               )
@@ -321,7 +311,7 @@ class Formatron
 
             it 'should fail' do
               expect do
-                @knife.deploy_databag
+                @knife.deploy_databag name: @name
               end.to raise_error(
                 "failed to create data bag item: #{@name}"
               )
@@ -338,7 +328,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -423,7 +412,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -505,7 +493,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -523,7 +510,7 @@ class Formatron
           end
 
           it 'should delete the node' do
-            @knife.delete_databag
+            @knife.delete_databag name: @name
             expect(@shell).to have_received(:exec).once
           end
         end
@@ -540,7 +527,7 @@ class Formatron
 
           it 'should fail' do
             expect do
-              @knife.delete_databag
+              @knife.delete_databag name: @name
             end.to raise_error(
               "failed to delete data bag item: #{@name}"
             )
@@ -556,7 +543,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -611,7 +597,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )
@@ -666,7 +651,6 @@ class Formatron
             username: @username,
             organization: @organization,
             ssl_verify: true,
-            name: @name,
             databag_secret: @databag_secret,
             configuration: @configuration
           )

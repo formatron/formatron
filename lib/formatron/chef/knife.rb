@@ -15,7 +15,6 @@ class Formatron
         username:,
         organization:,
         ssl_verify:,
-        name:,
         databag_secret:,
         configuration:
       )
@@ -24,7 +23,6 @@ class Formatron
         @username = username
         @organization = organization
         @ssl_verify = ssl_verify
-        @name = name
         @databag_secret = databag_secret
         @configuration = configuration
       end
@@ -47,15 +45,20 @@ class Formatron
         @databag_secret_file = Tempfile.new 'formatron-databag-secret-'
         @databag_secret_file.write @databag_secret
         @databag_secret_file.close
-        @databag_file = Tempfile.new ['formatron-databag-', '.json']
-        @databag_file.write @configuration.merge(id: @name).to_json
-        @databag_file.close
       end
       # rubocop:enable Metrics/MethodLength
 
-      def deploy_databag
+      def deploy_databag(name:)
+        databag_file = Tempfile.new ['formatron-databag-', '.json']
+        databag_file.write @configuration.merge(id: name).to_json
+        databag_file.close
         _attempt_to_create_databag unless _databag_exists
-        _attempt_to_create_databag_item
+        _attempt_to_create_databag_item(
+          name: name,
+          databag_file: databag_file
+        )
+      ensure
+        databag_file.unlink unless databag_file.nil?
       end
 
       def _databag_exists
@@ -72,15 +75,15 @@ class Formatron
         # rubocop:enable Metrics/LineLength
       end
 
-      def _attempt_to_create_databag_item
+      def _attempt_to_create_databag_item(name:, databag_file:)
         # rubocop:disable Metrics/LineLength
-        fail "failed to create data bag item: #{@name}" unless _create_databag_item
+        fail "failed to create data bag item: #{name}" unless _create_databag_item databag_file: databag_file
         # rubocop:enable Metrics/LineLength
       end
 
-      def _create_databag_item
+      def _create_databag_item(databag_file:)
         # rubocop:disable Metrics/LineLength
-        Util::Shell.exec "knife data bag from file formatron #{@databag_file.path} --secret-file #{@databag_secret_file.path} -c #{@knife_file.path}"
+        Util::Shell.exec "knife data bag from file formatron #{databag_file.path} --secret-file #{@databag_secret_file.path} -c #{@knife_file.path}"
         # rubocop:enable Metrics/LineLength
       end
 
@@ -121,10 +124,10 @@ class Formatron
         # rubocop:enable Metrics/LineLength
       end
 
-      def delete_databag
+      def delete_databag(name:)
         # rubocop:disable Metrics/LineLength
-        command = "knife data bag delete formatron #{@name} -y -c #{@knife_file.path}"
-        fail "failed to delete data bag item: #{@name}" unless Util::Shell.exec command
+        command = "knife data bag delete formatron #{name} -y -c #{@knife_file.path}"
+        fail "failed to delete data bag item: #{name}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
@@ -150,7 +153,6 @@ class Formatron
       def unlink
         @knife_file.unlink unless @knife_file.nil?
         @databag_secret_file.unlink unless @databag_secret_file.nil?
-        @databag_file.unlink unless @databag_file.nil?
       end
 
       private(

@@ -158,7 +158,6 @@ class Formatron
   def _provision_vpc(key, instances)
     chef_clients = @chef_clients[key]
     chef_clients.init
-    chef_clients.deploy_databags
     instances.values.each do |instance|
       dsl_chef = instance.chef
       next if dsl_chef.nil?
@@ -323,7 +322,6 @@ class Formatron
   def _destroy_chef_vpc_instances(key, instances)
     chef_clients = @chef_clients[key]
     chef_clients.init
-    chef_clients.delete_databags
     instances.values.each do |instance|
       dsl_chef = instance.chef
       next if dsl_chef.nil?
@@ -331,8 +329,6 @@ class Formatron
       guid = instance.guid
       _destroy_chef_instance chef, guid
     end
-  rescue => error
-    LOG.warn error
   ensure
     chef_clients.unlink
   end

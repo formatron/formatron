@@ -50,7 +50,6 @@ class Formatron
         username: username,
         organization: organization,
         ssl_verify: ssl_verify,
-        name: @name,
         databag_secret: databag_secret,
         configuration: configuration
       )
@@ -75,21 +74,8 @@ class Formatron
       @berkshelf.init
     end
 
-    def deploy_databag
-      Formatron::LOG.info do
-        "Deploying data bag to chef server: #{@chef_sub_domain}"
-      end
-      @knife.deploy_databag
-    end
-
-    def delete_databag
-      Formatron::LOG.info do
-        "Deleting data bag from chef server: #{@chef_sub_domain}"
-      end
-      @knife.delete_databag
-    end
-
     # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize
     def provision(
       sub_domain:,
       guid:,
@@ -112,8 +98,18 @@ class Formatron
       hostname = _hostname(
         sub_domain: sub_domain
       )
+      Formatron::LOG.info do
+        "Deploying data bag item '#{guid}' to chef server: #{@chef_sub_domain}"
+      end
+      @knife.deploy_databag name: guid
+      Formatron::LOG.info do
+        "Lock cookbook versions for environment #{guid}"
+      end
       @knife.create_environment environment: guid
       @berkshelf.upload environment: guid, cookbook: cookbook
+      Formatron::LOG.info do
+        "Bootstrap node #{guid}"
+      end
       @knife.bootstrap(
         bastion_hostname: bastion_hostname,
         guid: guid,
@@ -121,17 +117,32 @@ class Formatron
         hostname: hostname
       )
     end
-    # rubocop:enable Metrics/ParameterLists
+    # rubocop:enable Metrics/AbcSize
     # rubocop:enable Metrics/MethodLength
 
+    # rubocop:disable Metrics/MethodLength
     def destroy(guid:)
       Formatron::LOG.info do
         "Delete Chef configuration for node: #{guid}"
       end
+      Formatron::LOG.info do
+        "Deleting data bag item '#{guid}' from chef server: #{@chef_sub_domain}"
+      end
+      @knife.delete_databag name: guid
+      Formatron::LOG.info do
+        "Deleting node '#{guid}' from chef server: #{@chef_sub_domain}"
+      end
       @knife.delete_node node: guid
+      Formatron::LOG.info do
+        "Deleting client '#{guid}' from chef server: #{@chef_sub_domain}"
+      end
       @knife.delete_client client: guid
+      Formatron::LOG.info do
+        "Deleting environment '#{guid}' from chef server: #{@chef_sub_domain}"
+      end
       @knife.delete_environment environment: guid
     end
+    # rubocop:enable Metrics/MethodLength
 
     def unlink
       @keys.unlink

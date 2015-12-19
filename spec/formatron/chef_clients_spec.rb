@@ -54,8 +54,6 @@ class Formatron
         chef_client = @chef_client[key] = instance_double(
           'Formatron::Chef'
         )
-        allow(chef_client).to receive :deploy_databag
-        allow(chef_client).to receive :delete_databag
         allow(chef_client).to receive :init
         allow(chef_client).to receive :unlink
         allow(chef_class).to receive(:new).with(
@@ -101,8 +99,6 @@ class Formatron
         chef_client = @chef_client[key] = instance_double(
           'Formatron::Chef'
         )
-        allow(chef_client).to receive :deploy_databag
-        allow(chef_client).to receive :delete_databag
         allow(chef_client).to receive :init
         allow(chef_client).to receive :unlink
         allow(chef_class).to receive(:new).with(
@@ -167,24 +163,6 @@ class Formatron
           @chef_clients.unlink
           @chef_client.values.each do |chef_client|
             expect(chef_client).to have_received :unlink
-          end
-        end
-      end
-
-      describe '#deploy_databags' do
-        it 'should deploy data bag items to each chef server' do
-          @chef_clients.deploy_databags
-          @chef_client.values.each do |chef_client|
-            expect(chef_client).to have_received :deploy_databag
-          end
-        end
-      end
-
-      describe '#delete_databags' do
-        it 'should deploy data bag items to each chef server' do
-          @chef_clients.delete_databags
-          @chef_client.values.each do |chef_client|
-            expect(chef_client).to have_received :delete_databag
           end
         end
       end

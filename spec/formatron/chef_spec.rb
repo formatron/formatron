@@ -106,7 +106,6 @@ class Formatron
         username: @username,
         organization: @organization,
         ssl_verify: @ssl_verify,
-        name: @name,
         databag_secret: @databag_secret,
         configuration: @configuration
       )
@@ -163,24 +162,6 @@ class Formatron
         end
       end
 
-      describe '#deploy_databag' do
-        it 'should deploy the stack databag item' do
-          @chef.deploy_databag
-          expect(@knife).to have_received(:deploy_databag).once.with(
-            no_args
-          )
-        end
-      end
-
-      describe '#delete_databag' do
-        it 'should delete the stack databag item' do
-          @chef.delete_databag
-          expect(@knife).to have_received(:delete_databag).once.with(
-            no_args
-          )
-        end
-      end
-
       describe '#provision' do
         context 'when the CloudFormation stack is not ready' do
           before :each do
@@ -218,6 +199,12 @@ class Formatron
             )
           end
 
+          it 'should deploy the instance databag item' do
+            expect(@knife).to have_received(:deploy_databag).once.with(
+              name: @instance_guid
+            )
+          end
+
           it 'should create the instance environments' do
             expect(@knife).to have_received(:create_environment).once.with(
               environment: @instance_guid
@@ -246,6 +233,12 @@ class Formatron
         before :each do
           @chef.destroy(
             guid: @instance_guid
+          )
+        end
+
+        it 'should delete the instance databag item' do
+          expect(@knife).to have_received(:delete_databag).once.with(
+            name: @instance_guid
           )
         end
 

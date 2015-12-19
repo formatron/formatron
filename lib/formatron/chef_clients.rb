@@ -61,13 +61,5 @@ class Formatron
     def unlink
       @chef_clients.values.each(&:unlink)
     end
-
-    def deploy_databags
-      @chef_clients.values.each(&:deploy_databag)
-    end
-
-    def delete_databags
-      @chef_clients.values.each(&:delete_databag)
-    end
   end
 end
