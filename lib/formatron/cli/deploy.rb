@@ -23,8 +23,8 @@ class Formatron
         )
       end
 
-      def deploy_ok(formatron, target)
-        !formatron.protected? || agree(
+      def deploy_ok(options, formatron, target)
+        options.yes || !formatron.protected? || agree(
           "Are you sure you wish to deploy protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -40,7 +40,7 @@ class Formatron
             directory: directory,
             target: target
           )
-          formatron.deploy if deploy_ok(formatron, target)
+          formatron.deploy if deploy_ok options, formatron, target
         end
       end
 

@@ -92,7 +92,7 @@ class Formatron
             'The protected targets (eg. production)'
           )
           c.option(
-            '-y',
+            '-q',
             '--unprotected-targets LIST',
             Array,
             'The unprotected targets (eg. test)'

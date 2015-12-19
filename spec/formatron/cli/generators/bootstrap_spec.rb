@@ -141,7 +141,7 @@ describe Formatron::CLI::Generators::Bootstrap do
             '-f', first_name,
             '-l', last_name,
             '-x', protected_targets.join(','),
-            '-y', unprotected_targets.join(',')
+            '-q', unprotected_targets.join(',')
           ]
       end
     end

@@ -7,6 +7,7 @@ class Formatron
     include Commander::Methods
 
     def global_options
+      global_option '-y', '--yes', 'Automatic yes to prompts'
       global_option '-c', '--credentials FILE', 'The credentials file'
       global_option(
         '-d',

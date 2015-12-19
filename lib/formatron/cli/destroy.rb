@@ -23,8 +23,8 @@ class Formatron
         )
       end
 
-      def destroy_ok(formatron, target)
-        !formatron.protected? || agree(
+      def destroy_ok(options, formatron, target)
+        options.yes || !formatron.protected? || agree(
           "Are you sure you wish to destroy protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -40,7 +40,7 @@ class Formatron
             directory: directory,
             target: target
           )
-          formatron.destroy if destroy_ok formatron, target
+          formatron.destroy if destroy_ok options, formatron, target
         end
       end
 

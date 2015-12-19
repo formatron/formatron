@@ -32,8 +32,8 @@ class Formatron
         )
       end
 
-      def provision_ok(formatron, target)
-        !formatron.protected? || agree(
+      def provision_ok(options, formatron, target)
+        options.yes || !formatron.protected? || agree(
           "Are you sure you wish to provision protected target: #{target}?"
         ) do |q|
           q.default = 'no'
@@ -52,7 +52,7 @@ class Formatron
           )
           formatron.provision(
             guid: options.guid
-          ) if provision_ok formatron, target
+          ) if provision_ok options, formatron, target
         end
       end
       # rubocop:enable Metrics/MethodLength
