@@ -14,6 +14,7 @@ describe Formatron::CLI::Provision do
   credentials = 'credentials'
   directory = 'directory'
   target = 'production'
+  guid = 'guid'
   target_index = 1
 
   expected_constructor_params = {
@@ -62,7 +63,7 @@ describe Formatron::CLI::Provision do
         @formatron
       end
       expect(@formatron).to receive(:provision).with(
-        no_args
+        guid: nil
       ).once
       Test.new.run
     end
@@ -100,7 +101,7 @@ describe Formatron::CLI::Provision do
         @formatron
       end
       expect(@formatron).to receive(:provision).with(
-        no_args
+        guid: nil
       ).once
       Test.new.run
     end
@@ -115,6 +116,7 @@ describe Formatron::CLI::Provision do
             '-t',
             '-c', credentials,
             '-d', directory,
+            '-g', guid,
             target
           ]
       end
@@ -138,7 +140,7 @@ describe Formatron::CLI::Provision do
         @formatron
       end
       expect(@formatron).to receive(:provision).with(
-        no_args
+        guid: guid
       ).once
       Test.new.run
     end
@@ -153,6 +155,7 @@ describe Formatron::CLI::Provision do
             '-t',
             '--credentials', credentials,
             '--directory', directory,
+            '--guid', guid,
             target
           ]
       end
@@ -176,7 +179,7 @@ describe Formatron::CLI::Provision do
         @formatron
       end
       expect(@formatron).to receive(:provision).with(
-        no_args
+        guid: guid
       ).once
       Test.new.run
     end

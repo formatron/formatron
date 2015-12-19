@@ -516,43 +516,68 @@ describe Formatron do
   end
 
   describe '#provision' do
-    before :each do
-      @formatron.provision
+    context 'with an instance guid' do
+      before :each do
+        @formatron.provision(
+          guid: 'instance_guid0_0_0'
+        )
+      end
+
+      it 'should provision the matching instance with Chef' do
+        vpc_chef_clients = @chef_clients[0]
+        subnet_chef_clients = vpc_chef_clients[0]
+        chef = subnet_chef_clients[0]
+        expect(chef).to have_received(:provision).once
+        expect(chef).to have_received(:provision).with(
+          sub_domain: 'instance_sub_domain0_0_0',
+          guid: 'instance_guid0_0_0',
+          cookbook: 'instance_cookbook0_0_0',
+          bastion: 'bastion0_0_0'
+        )
+      end
     end
 
-    it 'should provision the instances with Chef' do
-      (0..2).each do |vpc_index|
-        vpc_chef_clients = @chef_clients[vpc_index]
-        (0..2).each do |subnet_index|
-          subnet_chef_clients = vpc_chef_clients[subnet_index]
-          subnet_index = "#{vpc_index}_#{subnet_index}"
-          (0..2).each do |chef_server_index|
-            chef = subnet_chef_clients[chef_server_index]
-            chef_server_index = "#{subnet_index}_#{chef_server_index}"
-            expect(chef).to have_received(:provision).once.with(
-              sub_domain: "chef_server_sub_domain#{chef_server_index}",
-              guid: "chef_server_guid#{chef_server_index}",
-              cookbook: "chef_server_cookbook#{chef_server_index}",
-              bastion: "bastion#{chef_server_index}"
-            )
-            expect(chef).to have_received(:provision).once.with(
-              sub_domain: "bastion_sub_domain#{chef_server_index}",
-              guid: "bastion_guid#{chef_server_index}",
-              cookbook: "bastion_cookbook#{chef_server_index}",
-              bastion: "bastion#{chef_server_index}"
-            )
-            expect(chef).to have_received(:provision).once.with(
-              sub_domain: "nat_sub_domain#{chef_server_index}",
-              guid: "nat_guid#{chef_server_index}",
-              cookbook: "nat_cookbook#{chef_server_index}",
-              bastion: "bastion#{chef_server_index}"
-            )
-            expect(chef).to have_received(:provision).once.with(
-              sub_domain: "instance_sub_domain#{chef_server_index}",
-              guid: "instance_guid#{chef_server_index}",
-              cookbook: "instance_cookbook#{chef_server_index}",
-              bastion: "bastion#{chef_server_index}"
-            )
+    context 'with no instance guid' do
+      before :each do
+        @formatron.provision(
+          guid: nil
+        )
+      end
+
+      it 'should provision all the instances with Chef' do
+        (0..2).each do |vpc_index|
+          vpc_chef_clients = @chef_clients[vpc_index]
+          (0..2).each do |subnet_index|
+            subnet_chef_clients = vpc_chef_clients[subnet_index]
+            subnet_index = "#{vpc_index}_#{subnet_index}"
+            (0..2).each do |chef_server_index|
+              chef = subnet_chef_clients[chef_server_index]
+              chef_server_index = "#{subnet_index}_#{chef_server_index}"
+              expect(chef).to have_received(:provision).once.with(
+                sub_domain: "chef_server_sub_domain#{chef_server_index}",
+                guid: "chef_server_guid#{chef_server_index}",
+                cookbook: "chef_server_cookbook#{chef_server_index}",
+                bastion: "bastion#{chef_server_index}"
+              )
+              expect(chef).to have_received(:provision).once.with(
+                sub_domain: "bastion_sub_domain#{chef_server_index}",
+                guid: "bastion_guid#{chef_server_index}",
+                cookbook: "bastion_cookbook#{chef_server_index}",
+                bastion: "bastion#{chef_server_index}"
+              )
+              expect(chef).to have_received(:provision).once.with(
+                sub_domain: "nat_sub_domain#{chef_server_index}",
+                guid: "nat_guid#{chef_server_index}",
+                cookbook: "nat_cookbook#{chef_server_index}",
+                bastion: "bastion#{chef_server_index}"
+              )
+              expect(chef).to have_received(:provision).once.with(
+                sub_domain: "instance_sub_domain#{chef_server_index}",
+                guid: "instance_guid#{chef_server_index}",
+                cookbook: "instance_cookbook#{chef_server_index}",
+                bastion: "bastion#{chef_server_index}"
+              )
+            end
           end
         end
       end

@@ -5,6 +5,15 @@ class Formatron
   class CLI
     # CLI command for provision
     module Provision
+      def provision_options(c)
+        c.option(
+          '-g',
+          '--guid STRING',
+          'The guid of an instance to provision ' \
+          '(will provision all instances if not specified)'
+        )
+      end
+
       def provision_directory(options)
         options.directory || Dir.pwd
       end
@@ -31,6 +40,7 @@ class Formatron
         end
       end
 
+      # rubocop:disable Metrics/MethodLength
       def provision_action(c)
         c.action do |args, options|
           directory = provision_directory options
@@ -40,9 +50,12 @@ class Formatron
             directory: directory,
             target: target
           )
-          formatron.provision if provision_ok formatron, target
+          formatron.provision(
+            guid: options.guid
+          ) if provision_ok formatron, target
         end
       end
+      # rubocop:enable Metrics/MethodLength
 
       def provision_formatron_command
         command :provision do |c|
@@ -51,6 +64,7 @@ class Formatron
                       'stack using Opscode Chef'
           c.description = 'Provision the instances in a Formatron ' \
                           'stack using Opscode Chef'
+          provision_options c
           provision_action c
         end
       end

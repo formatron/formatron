@@ -147,25 +147,26 @@ class Formatron
     end
   end
 
-  def provision
+  def provision(guid: nil)
     @all_instances.each do |key, instances|
-      _provision_vpc key, instances
+      _provision_vpc key, instances, guid
     end
   end
 
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/AbcSize
-  def _provision_vpc(key, instances)
+  def _provision_vpc(key, instances, guid_filter)
     chef_clients = @chef_clients[key]
     chef_clients.init
     instances.values.each do |instance|
+      guid = instance.guid
+      next unless guid_filter.nil? || guid_filter.eql?(guid)
       dsl_chef = instance.chef
       next if dsl_chef.nil?
       chef = chef_clients.get dsl_chef.server
       cookbook = dsl_chef.cookbook
       bastion = dsl_chef.bastion
       sub_domain = instance.sub_domain
-      guid = instance.guid
       _provision_instance chef, cookbook, sub_domain, guid, bastion
     end
   ensure
