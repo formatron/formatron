@@ -155,11 +155,6 @@ class Formatron
         false
       end
 
-      def run_chef_client(bastion_hostname:, hostname:)
-        puts bastion_hostname
-        puts hostname
-      end
-
       def unlink
         @knife_file.unlink unless @knife_file.nil?
         @databag_secret_file.unlink unless @databag_secret_file.nil?

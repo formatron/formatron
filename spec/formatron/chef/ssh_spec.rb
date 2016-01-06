@@ -3,7 +3,7 @@ require 'spec_helper'
 require 'formatron/chef/ssh'
 
 class Formatron
-  # comment for linter
+  # rubocop:disable Metrics/ClassLength
   class Chef
     describe SSH do
       ec2_key = 'ec2_key'
@@ -14,6 +14,7 @@ class Formatron
         @net_ssh_class = class_double('Net::SSH').as_stubbed_const
         @net_ssh_session = instance_double 'Net::SSH::Connection::Session'
         @net_ssh_channel = instance_double 'Net::SSH::Connection::Channel'
+        allow(@net_ssh_session).to receive :loop
         allow(@net_ssh_session).to receive(:open_channel) do |&block|
           block.call @net_ssh_channel
         end
@@ -25,29 +26,86 @@ class Formatron
         user = 'ubuntu'
 
         shared_context 'run_chef_client' do
-          before :each do
-            allow(@net_ssh_channel).to receive(:exec).with(
-              'sudo chef-client'
-            )
-          end
+          context 'when the command fails to start' do
+            before :each do
+              expect(@net_ssh_channel).to receive(:exec).with(
+                'sudo chef-client'
+              ) do |&block|
+                block.call @net_ssh_channel, false
+              end
+            end
 
-          context 'when no error is encountered' do
-            it 'should use SSH to run the chef-client on the host directly' do
+            it 'should raise an error' do
+              expect do
+                @ssh.run_chef_client(
+                  hostname: hostname,
+                  bastion_hostname: @bastion_hostname
+                )
+              end.to raise_error
             end
           end
 
-          context 'when the command fails' do
-            it 'should raise an error' do
+          context 'when the command succeeds' do
+            before :each do
+              expect(@net_ssh_channel).to receive(:exec).with(
+                'sudo chef-client'
+              ) do |&block|
+                block.call @net_ssh_channel, true
+              end
+              allow(@net_ssh_channel).to receive(:on_data) do |&block|
+                block.call @net_ssh_channel, 'data'
+              end
+              allow(@net_ssh_channel).to receive(:on_extended_data) do |&block|
+                block.call @net_ssh_channel, 'type', 'data'
+              end
+            end
+
+            context 'when no error is encountered' do
+              before :each do
+                expect(@net_ssh_channel).to receive(:on_request).with(
+                  'exit-status'
+                ) do |&block|
+                  block.call @net_ssh_channel, 0
+                end
+              end
+
+              it 'should use SSH to run the chef-client on the host directly' do
+                @ssh.run_chef_client(
+                  hostname: hostname,
+                  bastion_hostname: @bastion_hostname
+                )
+              end
+            end
+
+            context 'when the command exits with a non zero code' do
+              before :each do
+                expect(@net_ssh_channel).to receive(:on_request).with(
+                  'exit-status'
+                ) do |&block|
+                  block.call @net_ssh_channel, 1
+                end
+              end
+
+              it 'should raise an error' do
+                expect do
+                  @ssh.run_chef_client(
+                    hostname: hostname,
+                    bastion_hostname: @bastion_hostname
+                  )
+                end.to raise_error
+              end
             end
           end
         end
 
         context 'when the host is also the bastion' do
           before :each do
+            @bastion_hostname = hostname
             allow(@net_ssh_class).to receive(:start).with(
               hostname,
               user,
-              keys: [ec2_key]
+              keys: [ec2_key],
+              proxy: nil
             ) do |&block|
               block.call @net_ssh_session
             end
@@ -60,6 +118,7 @@ class Formatron
           bastion_hostname = 'bastion_hostname'
 
           before :each do
+            @bastion_hostname = bastion_hostname
             proxy_command_class = class_double(
               'Net::SSH::Proxy::Command'
             ).as_stubbed_const
@@ -82,4 +141,5 @@ class Formatron
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

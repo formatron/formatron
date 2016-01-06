@@ -715,28 +715,6 @@ class Formatron
           expect(@knife.node_exists?(guid: GUID)).to eql false
         end
       end
-
-      describe '#run_chef_client' do
-        before(:each) do
-          @knife = Knife.new(
-            keys: @keys,
-            chef_server_url: @chef_server_url,
-            username: @username,
-            organization: @organization,
-            ssl_verify: true,
-            databag_secret: @databag_secret,
-            configuration: @configuration
-          )
-          @knife.init
-          @knife.run_chef_client(
-            bastion_hostname: 'bastion',
-            hostname: 'hostname'
-          )
-        end
-
-        it 'should succeed' do
-        end
-      end
     end
   end
   # rubocop:enable Metrics/ClassLength

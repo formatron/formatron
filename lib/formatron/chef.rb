@@ -3,6 +3,7 @@ require 'formatron/logger'
 require_relative 'chef/keys'
 require_relative 'chef/berkshelf'
 require_relative 'chef/knife'
+require_relative 'chef/ssh'
 
 class Formatron
   # manage the instance provisioning with Chef
@@ -59,6 +60,9 @@ class Formatron
         username: username,
         ssl_verify: ssl_verify
       )
+      @ssh = SSH.new(
+        keys: @keys
+      )
     end
     # rubocop:enable Metrics/ParameterLists
     # rubocop:enable Metrics/MethodLength
@@ -108,26 +112,77 @@ class Formatron
       @knife.create_environment environment: guid
       @berkshelf.upload environment: guid, cookbook: cookbook
       if @knife.node_exists? guid: guid
-        Formatron::LOG.info do
-          "Run chef-client on node #{guid}"
-        end
-        @knife.run_chef_client(
+        _reprovision_node(
           bastion_hostname: bastion_hostname,
+          guid: guid,
+          cookbook_name: cookbook_name,
           hostname: hostname
         )
       else
-        Formatron::LOG.info do
-          "Bootstrap node #{guid}"
-        end
-        @knife.bootstrap(
+        _bootstrap_node(
           bastion_hostname: bastion_hostname,
           guid: guid,
-          cookbook: cookbook_name,
+          cookbook_name: cookbook_name,
           hostname: hostname
         )
       end
     end
     # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength
+
+    # rubocop:disable Metrics/MethodLength
+    def _reprovision_node(
+      bastion_hostname:,
+      guid:,
+      cookbook_name:,
+      hostname:
+    )
+      Formatron::LOG.info do
+        "Run chef-client on existing node #{guid}"
+      end
+      @ssh.run_chef_client(
+        bastion_hostname: bastion_hostname,
+        hostname: hostname
+      )
+    rescue
+      Formatron::LOG.info do
+        "Failed to run chef-client on node #{guid}, " \
+        'deleting node and bootstrapping again'
+      end
+      Formatron::LOG.info do
+        "Deleting node '#{guid}' from chef server: #{@chef_sub_domain}"
+      end
+      @knife.delete_node node: guid
+      Formatron::LOG.info do
+        "Deleting client '#{guid}' from chef server: #{@chef_sub_domain}"
+      end
+      @knife.delete_client client: guid
+      _bootstrap_node(
+        bastion_hostname: bastion_hostname,
+        guid: guid,
+        cookbook_name: cookbook_name,
+        hostname: hostname
+      )
+    end
+    # rubocop:enable Metrics/MethodLength
+
+    # rubocop:disable Metrics/MethodLength
+    def _bootstrap_node(
+      bastion_hostname:,
+      guid:,
+      cookbook_name:,
+      hostname:
+    )
+      Formatron::LOG.info do
+        "Bootstrap node #{guid}"
+      end
+      @knife.bootstrap(
+        bastion_hostname: bastion_hostname,
+        guid: guid,
+        cookbook: cookbook_name,
+        hostname: hostname
+      )
+    end
     # rubocop:enable Metrics/MethodLength
 
     # rubocop:disable Metrics/MethodLength
@@ -171,7 +226,9 @@ class Formatron
 
     private(
       :_chef_server_url,
-      :_hostname
+      :_hostname,
+      :_bootstrap_node,
+      :_reprovision_node
     )
   end
   # rubocop:enable Metrics/ClassLength
