@@ -107,15 +107,25 @@ class Formatron
       end
       @knife.create_environment environment: guid
       @berkshelf.upload environment: guid, cookbook: cookbook
-      Formatron::LOG.info do
-        "Bootstrap node #{guid}"
+      if @knife.node_exists? guid: guid
+        Formatron::LOG.info do
+          "Run chef-client on node #{guid}"
+        end
+        @knife.run_chef_client(
+          bastion_hostname: bastion_hostname,
+          hostname: hostname
+        )
+      else
+        Formatron::LOG.info do
+          "Bootstrap node #{guid}"
+        end
+        @knife.bootstrap(
+          bastion_hostname: bastion_hostname,
+          guid: guid,
+          cookbook: cookbook_name,
+          hostname: hostname
+        )
       end
-      @knife.bootstrap(
-        bastion_hostname: bastion_hostname,
-        guid: guid,
-        cookbook: cookbook_name,
-        hostname: hostname
-      )
     end
     # rubocop:enable Metrics/AbcSize
     # rubocop:enable Metrics/MethodLength

@@ -69,6 +69,12 @@ class Formatron
       allow(@knife).to receive(:delete_environment)
       allow(@knife).to receive :unlink
       allow(@knife).to receive :init
+      @ssh_class = class_double(
+        'Formatron::Chef::SSH'
+      ).as_stubbed_const
+      @ssh = instance_double 'Formatron::Chef::SSH'
+      allow(@ssh_class).to receive(:new) { @ssh }
+      allow(@ssh).to receive :run_chef_client
       @chef = Chef.new(
         aws: @aws,
         bucket: @bucket,
@@ -117,6 +123,12 @@ class Formatron
         chef_server_url: @chef_server_url,
         username: @username,
         ssl_verify: @ssl_verify
+      )
+    end
+
+    it 'should create a ssh instance' do
+      expect(@ssh_class).to have_received(:new).once.with(
+        keys: @keys
       )
     end
 
@@ -185,46 +197,113 @@ class Formatron
         end
 
         context 'when the CloudFormation stack is ready' do
-          before :each do
-            expect(@cloud_formation).to receive(:stack_ready!).once.with(
-              aws: @aws,
-              name: @name,
-              target: @target
-            )
-            @chef.provision(
-              sub_domain: @sub_domain,
-              guid: @instance_guid,
-              cookbook: @cookbook,
-              bastion: @bastion
-            )
+          shared_context 'provision' do
+            before :each do
+              expect(@cloud_formation).to receive(:stack_ready!).once.with(
+                aws: @aws,
+                name: @name,
+                target: @target
+              )
+              @chef.provision(
+                sub_domain: @sub_domain,
+                guid: @instance_guid,
+                cookbook: @cookbook,
+                bastion: @bastion
+              )
+            end
+
+            it 'should deploy the instance databag item' do
+              expect(@knife).to have_received(:deploy_databag).once.with(
+                name: @instance_guid
+              )
+            end
+
+            it 'should create the instance environments' do
+              expect(@knife).to have_received(:create_environment).once.with(
+                environment: @instance_guid
+              )
+            end
+
+            it 'should deploy the instance cookbooks' do
+              expect(@berkshelf).to have_received(:upload).once.with(
+                environment: @instance_guid,
+                cookbook: @cookbook
+              )
+            end
           end
 
-          it 'should deploy the instance databag item' do
-            expect(@knife).to have_received(:deploy_databag).once.with(
-              name: @instance_guid
-            )
+          context 'when the node does not exist on the Chef Server' do
+            before :each do
+              expect(@knife).to receive(:node_exists?).once.with(
+                guid: @instance_guid
+              ) { false }
+            end
+
+            include_context 'provision'
+
+            it 'should bootstrap the instance' do
+              expect(@knife).to have_received(:bootstrap).once.with(
+                bastion_hostname: @bastion_hostname,
+                guid: @instance_guid,
+                cookbook: @cookbook_name,
+                hostname: @hostname
+              )
+            end
           end
 
-          it 'should create the instance environments' do
-            expect(@knife).to have_received(:create_environment).once.with(
-              environment: @instance_guid
-            )
-          end
+          context 'when the node does exist on the Chef Server' do
+            before :each do
+              expect(@knife).to receive(:node_exists?).once.with(
+                guid: @instance_guid
+              ) { true }
+            end
 
-          it 'should deploy the instance cookbooks' do
-            expect(@berkshelf).to have_received(:upload).once.with(
-              environment: @instance_guid,
-              cookbook: @cookbook
-            )
-          end
+            context 'when the node is valid' do
+              before :each do
+                allow(@ssh).to receive :run_chef_client
+              end
 
-          it 'should bootstrap the instance' do
-            expect(@knife).to have_received(:bootstrap).once.with(
-              bastion_hostname: @bastion_hostname,
-              guid: @instance_guid,
-              cookbook: @cookbook_name,
-              hostname: @hostname
-            )
+              include_context 'provision'
+
+              it 'should run the chef client on the instance' do
+                expect(@ssh).to have_received(:run_chef_client).once.with(
+                  bastion_hostname: @bastion_hostname,
+                  hostname: @hostname
+                )
+              end
+            end
+
+            context 'when the node is not valid' do
+              before :each do
+                expect(@ssh).to receive(:run_chef_client).once.with(
+                  bastion_hostname: @bastion_hostname,
+                  hostname: @hostname
+                ) { fail 'invalid node' }
+              end
+
+              include_context 'provision'
+
+              it 'should delete the node' do
+                expect(@knife).to have_received(:delete_node).once.with(
+                  node: @instance_guid
+                )
+              end
+
+              it 'should delete the client' do
+                expect(@knife).to have_received(:delete_client).once.with(
+                  client: @instance_guid
+                )
+              end
+
+              it 'should bootstrap the instance' do
+                expect(@knife).to have_received(:bootstrap).once.with(
+                  bastion_hostname: @bastion_hostname,
+                  guid: @instance_guid,
+                  cookbook: @cookbook_name,
+                  hostname: @hostname
+                )
+              end
+            end
           end
         end
       end
