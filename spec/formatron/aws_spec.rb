@@ -1,13 +1,13 @@
 require 'spec_helper'
 require 'formatron/aws'
 
-# namespacing for tests
 # rubocop:disable Metrics/ClassLength
 class Formatron
   describe AWS do
     region = 'region'
     access_key_id = 'access_key_id'
     secret_access_key = 'secret_access_key'
+    stack_name = 'stack_name'
 
     before(:each) do
       aws_credentials = instance_double('Aws::Credentials')
@@ -31,6 +31,16 @@ class Formatron
         region: region,
         credentials: aws_credentials
       ).once { @cloudformation_client }
+      cloudformation_stack_class = class_double(
+        'Formatron::AWS::CloudFormationStack'
+      ).as_stubbed_const
+      @cloudformation_stack = instance_double(
+        'Formatron::AWS::CloudFormationStack'
+      )
+      allow(cloudformation_stack_class).to receive(:new).with(
+        stack_name: stack_name,
+        client: @cloudformation_client
+      ) { @cloudformation_stack }
       @route53_client = instance_double('Aws::Route53::Client')
       route53_client_class = class_double(
         'Aws::Route53::Client'
@@ -180,7 +190,6 @@ class Formatron
       end
 
       describe '#deploy_stack' do
-        stack_name = 'stack_name'
         template_url = 'template_url'
         parameters = {
           'param1' => 'param1',
@@ -195,14 +204,14 @@ class Formatron
         end
 
         context 'when the stack has not yet been created' do
-          it 'should create the stack' do
-            expect(@cloudformation_client).to receive(:create_stack).once.with(
-              stack_name: stack_name,
+          it 'should create the stack and wait until the create completes' do
+            expect(@cloudformation_stack).to receive(:exists?).with(
+              no_args
+            ) { false }
+            expect(@cloudformation_stack).to receive(:create).with(
               template_url: template_url,
-              capabilities: ['CAPABILITY_IAM'],
-              on_failure: 'DO_NOTHING',
               parameters: aws_parameters
-            )
+            ) { true }
             @aws.deploy_stack(
               stack_name: stack_name,
               template_url: template_url,
@@ -212,58 +221,14 @@ class Formatron
         end
 
         context 'when the stack already exists' do
-          it 'should create the stack' do
-            expect(@cloudformation_client).to receive(:create_stack).once.with(
-              stack_name: stack_name,
+          it 'should update the stack and wait until the update completes' do
+            expect(@cloudformation_stack).to receive(:exists?).with(
+              no_args
+            ) { true }
+            expect(@cloudformation_stack).to receive(:update).once.with(
               template_url: template_url,
-              capabilities: ['CAPABILITY_IAM'],
-              on_failure: 'DO_NOTHING',
               parameters: aws_parameters
-            ) do
-              fail Aws::CloudFormation::Errors::AlreadyExistsException.new(
-                nil,
-                'exists'
-              )
-            end
-            expect(@cloudformation_client).to receive(:update_stack).once.with(
-              stack_name: stack_name,
-              template_url: template_url,
-              capabilities: ['CAPABILITY_IAM'],
-              parameters: aws_parameters
-            )
-            @aws.deploy_stack(
-              stack_name: stack_name,
-              template_url: template_url,
-              parameters: parameters
-            )
-          end
-        end
-
-        context 'when an update contains no changes' do
-          it 'should create the stack' do
-            expect(@cloudformation_client).to receive(:create_stack).once.with(
-              stack_name: stack_name,
-              template_url: template_url,
-              capabilities: ['CAPABILITY_IAM'],
-              on_failure: 'DO_NOTHING',
-              parameters: aws_parameters
-            ) do
-              fail Aws::CloudFormation::Errors::AlreadyExistsException.new(
-                nil,
-                'exists'
-              )
-            end
-            expect(@cloudformation_client).to receive(:update_stack).once.with(
-              stack_name: stack_name,
-              template_url: template_url,
-              capabilities: ['CAPABILITY_IAM'],
-              parameters: aws_parameters
-            ) do
-              fail Aws::CloudFormation::Errors::ValidationError.new(
-                nil,
-                'No updates are to be performed.'
-              )
-            end
+            ) { true }
             @aws.deploy_stack(
               stack_name: stack_name,
               template_url: template_url,
@@ -276,10 +241,13 @@ class Formatron
       describe '#delete_stack' do
         stack_name = 'stack_name'
 
-        it 'should delete the stack' do
-          expect(@cloudformation_client).to receive(:delete_stack).once.with(
-            stack_name: stack_name
-          )
+        it 'should delete the stack and wait for the delete to complete' do
+          expect(@cloudformation_stack).to receive(:exists?).with(
+            no_args
+          ) { true }
+          expect(@cloudformation_stack).to receive(:delete).once.with(
+            no_args
+          ) { true }
           @aws.delete_stack stack_name: stack_name
         end
       end

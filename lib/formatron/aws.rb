@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require_relative 'aws/cloud_formation_stack'
 
 class Formatron
   # shared AWS clients
@@ -102,19 +103,21 @@ class Formatron
           use_previous_value: false
         }
       end
-      @cloudformation_client.create_stack(
+      cloud_formation_stack = Formatron::AWS::CloudFormationStack.new(
         stack_name: stack_name,
-        template_url: template_url,
-        capabilities: CAPABILITIES,
-        on_failure: 'DO_NOTHING',
-        parameters: aws_parameters
+        client: @cloudformation_client
       )
-    rescue Aws::CloudFormation::Errors::AlreadyExistsException
-      _update_stack(
-        stack_name: stack_name,
-        template_url: template_url,
-        parameters: aws_parameters
-      )
+      if !cloud_formation_stack.exists?
+        cloud_formation_stack.create(
+          template_url: template_url,
+          parameters: aws_parameters
+        )
+      else
+        cloud_formation_stack.update(
+          template_url: template_url,
+          parameters: aws_parameters
+        )
+      end
     end
     # rubocop:enable Metrics/MethodLength
 
@@ -124,23 +127,12 @@ class Formatron
       ).hosted_zone.name.chomp '.'
     end
 
-    def _update_stack(stack_name:, template_url:, parameters:)
-      @cloudformation_client.update_stack(
-        stack_name: stack_name,
-        template_url: template_url,
-        capabilities: CAPABILITIES,
-        parameters: parameters
-      )
-    rescue Aws::CloudFormation::Errors::ValidationError => error
-      raise error unless error.message.eql?(
-        'No updates are to be performed.'
-      )
-    end
-
     def delete_stack(stack_name:)
-      @cloudformation_client.delete_stack(
-        stack_name: stack_name
+      cloud_formation_stack = Formatron::AWS::CloudFormationStack.new(
+        stack_name: stack_name,
+        client: @cloudformation_client
       )
+      cloud_formation_stack.delete if cloud_formation_stack.exists?
     end
 
     def stack_outputs(stack_name:)
@@ -196,8 +188,7 @@ class Formatron
       :_create_aws_credentials,
       :_create_s3_client,
       :_create_cloudformation_client,
-      :_create_route53_client,
-      :_update_stack
+      :_create_route53_client
     )
   end
   # rubocop:enable Metrics/ClassLength
