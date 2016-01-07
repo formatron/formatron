@@ -66,7 +66,7 @@ class Formatron
                 expect(@net_ssh_channel).to receive(:on_request).with(
                   'exit-status'
                 ) do |&block|
-                  block.call @net_ssh_channel, 0
+                  block.call @net_ssh_channel, SSHData.new(0)
                 end
               end
 
@@ -86,7 +86,7 @@ class Formatron
                 expect(@net_ssh_channel).to receive(:on_request).with(
                   'exit-status'
                 ) do |&block|
-                  block.call @net_ssh_channel, 1
+                  block.call @net_ssh_channel, SSHData.new(1)
                 end
               end
 
