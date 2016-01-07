@@ -258,8 +258,12 @@ class Formatron
               ) { true }
             end
 
-            context 'when the node is valid' do
+            context 'when the node has really been bootstrapped' do
               before :each do
+                allow(@ssh).to receive(:bootstrapped?).with(
+                  bastion_hostname: @bastion_hostname,
+                  hostname: @hostname
+                ) { true }
                 allow(@ssh).to receive :run_chef_client
               end
 
@@ -273,12 +277,13 @@ class Formatron
               end
             end
 
-            context 'when the node is not valid' do
+            context 'when the node has not been bootstrapped ' \
+                    '(eg. it has been recreated)' do
               before :each do
-                expect(@ssh).to receive(:run_chef_client).once.with(
+                allow(@ssh).to receive(:bootstrapped?).with(
                   bastion_hostname: @bastion_hostname,
                   hostname: @hostname
-                ) { fail 'invalid node' }
+                ) { false }
               end
 
               include_context 'provision'

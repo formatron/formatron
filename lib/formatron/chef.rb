@@ -137,32 +137,37 @@ class Formatron
       cookbook_name:,
       hostname:
     )
-      Formatron::LOG.info do
-        "Run chef-client on existing node #{guid}"
-      end
-      @ssh.run_chef_client(
+      if @ssh.bootstrapped?(
         bastion_hostname: bastion_hostname,
         hostname: hostname
       )
-    rescue
-      Formatron::LOG.info do
-        "Failed to run chef-client on node #{guid}, " \
-        'deleting node and bootstrapping again'
+        Formatron::LOG.info do
+          "Run chef-client on existing node #{guid}"
+        end
+        @ssh.run_chef_client(
+          bastion_hostname: bastion_hostname,
+          hostname: hostname
+        )
+      else
+        Formatron::LOG.info do
+          "node #{guid} exists but has not been bootstrapped, " \
+          'likely recreated so deleting node and bootstrapping again'
+        end
+        Formatron::LOG.info do
+          "Deleting node '#{guid}' from chef server: #{@chef_sub_domain}"
+        end
+        @knife.delete_node node: guid
+        Formatron::LOG.info do
+          "Deleting client '#{guid}' from chef server: #{@chef_sub_domain}"
+        end
+        @knife.delete_client client: guid
+        _bootstrap_node(
+          bastion_hostname: bastion_hostname,
+          guid: guid,
+          cookbook_name: cookbook_name,
+          hostname: hostname
+        )
       end
-      Formatron::LOG.info do
-        "Deleting node '#{guid}' from chef server: #{@chef_sub_domain}"
-      end
-      @knife.delete_node node: guid
-      Formatron::LOG.info do
-        "Deleting client '#{guid}' from chef server: #{@chef_sub_domain}"
-      end
-      @knife.delete_client client: guid
-      _bootstrap_node(
-        bastion_hostname: bastion_hostname,
-        guid: guid,
-        cookbook_name: cookbook_name,
-        hostname: hostname
-      )
     end
     # rubocop:enable Metrics/MethodLength
 

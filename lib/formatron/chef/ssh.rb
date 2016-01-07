@@ -1,45 +1,37 @@
-require 'net/ssh'
-require 'formatron/logger'
+require 'formatron/util/ssh'
 
 class Formatron
   class Chef
     # Perform commands on chef nodes over SSH
     class SSH
+      SSH_USER = 'ubuntu'
+
       def initialize(keys:)
         @keys = keys
       end
 
-      # rubocop:disable Metrics/MethodLength
-      # rubocop:disable Metrics/AbcSize
       def run_chef_client(hostname:, bastion_hostname:)
-        proxy_command = Net::SSH::Proxy::Command.new(
-          "ssh ubuntu@#{bastion_hostname} -W %h:%p"
-        ) unless hostname.eql? bastion_hostname
-        Net::SSH.start(
-          hostname,
-          'ubuntu',
-          keys: [@keys.ec2_key],
-          proxy: proxy_command
-        ) do |ssh|
-          ssh.open_channel do |channel|
-            channel.exec('sudo chef-client') do |_ch, success|
-              fail 'Failed to start chef-client' unless success
-              channel.on_request('exit-status') do |_ch, data|
-                fail "chef-client exited with code #{data}" if data != 0
-              end
-              channel.on_data do |_ch, data|
-                Formatron::LOG.info { data }
-              end
-              channel.on_extended_data do |_ch, _type, data|
-                Formatron::LOG.info { data }
-              end
-            end
-          end
-          ssh.loop
-        end
+        Formatron::Util::SSH.exec(
+          hostname: hostname,
+          bastion_hostname: bastion_hostname,
+          user: SSH_USER,
+          key: @keys.ec2_key,
+          command: 'sudo chef-client'
+        )
       end
-      # rubocop:enable Metrics/AbcSize
-      # rubocop:enable Metrics/MethodLength
+
+      def bootstrapped?(hostname:, bastion_hostname:)
+        Formatron::Util::SSH.exec(
+          hostname: hostname,
+          bastion_hostname: bastion_hostname,
+          user: SSH_USER,
+          key: @keys.ec2_key,
+          command: '[ -f /etc/chef/client.pem ]'
+        )
+        true
+      rescue
+        false
+      end
     end
   end
 end
