@@ -32,6 +32,7 @@ CREATE_DATA_BAG_COMMAND = 'knife data bag create formatron -c knife_file'
 CREATE_DATA_BAG_ITEM_COMMAND = 'knife data bag from file formatron ' \
                                'databag_file --secret-file secret_file ' \
                                '-c knife_file'
+SHOW_NODE_COMMAND = "knife node show #{GUID} -c knife_file"
 
 class Formatron
   # rubocop:disable Metrics/ClassLength
@@ -699,6 +700,9 @@ class Formatron
 
       describe '#node_exists?' do
         before(:each) do
+          @shell = class_double(
+            'Formatron::Util::Shell'
+          ).as_stubbed_const
           @knife = Knife.new(
             keys: @keys,
             chef_server_url: @chef_server_url,
@@ -711,8 +715,28 @@ class Formatron
           @knife.init
         end
 
-        it 'should return false' do
-          expect(@knife.node_exists?(guid: GUID)).to eql false
+        context 'when the show command succeeds' do
+          before(:each) do
+            expect(@shell).to receive(:exec).with(
+              SHOW_NODE_COMMAND
+            ) { true }
+          end
+
+          it 'should return true' do
+            expect(@knife.node_exists?(guid: GUID)).to eql true
+          end
+        end
+
+        context 'when the show command fails' do
+          before(:each) do
+            expect(@shell).to receive(:exec).with(
+              SHOW_NODE_COMMAND
+            ) { false }
+          end
+
+          it 'should return false' do
+            expect(@knife.node_exists?(guid: GUID)).to eql false
+          end
         end
       end
     end

@@ -151,8 +151,8 @@ class Formatron
       end
 
       def node_exists?(guid:)
-        puts guid
-        false
+        command = "knife node show #{guid} -c #{@knife_file.path}"
+        Util::Shell.exec command
       end
 
       def unlink
