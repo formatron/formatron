@@ -129,7 +129,7 @@ class Formatron
             ).and_return(
               *CloudformationStackEventsResponses.new(
                 stack_name: stack_name,
-                final_status: 'UPDATE_COMPLETE'
+                final_status: 'NOT_COMPLETE'
               ).responses
             )
             expect(@aws_cloudformation_stack).to receive(:update).with(

@@ -56,7 +56,7 @@ class Formatron
 
       def update(template_url:, parameters:)
         last_event_id = _last_event_id
-        _update_unless_no_changes(
+        return unless _update_unless_no_changes(
           template_url: template_url,
           parameters: parameters
         )
@@ -74,6 +74,7 @@ class Formatron
           parameters: parameters,
           capabilities: CAPABILITIES
         )
+        true
       rescue Aws::CloudFormation::Errors::ValidationError => error
         raise error unless error.message.eql?(
           'No updates are to be performed.'
@@ -81,6 +82,7 @@ class Formatron
         Formatron::LOG.info do
           'No updates are to be performed for CloudFormation stack'
         end
+        false
       end
       # rubocop:enable Metrics/MethodLength
 
