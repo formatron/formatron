@@ -3,6 +3,7 @@ require 'aws-sdk'
 class Formatron
   class AWS
     # utilities for monitoring CloudFormation stack activities
+    # rubocop:disable Metrics/ClassLength
     class CloudFormationStack
       CAPABILITIES = %w(CAPABILITY_IAM)
 
@@ -53,19 +54,33 @@ class Formatron
         fail status unless status.eql? CREATE_COMPLETE_STATUS
       end
 
-      # rubocop:disable Metrics/MethodLength
       def update(template_url:, parameters:)
         last_event_id = _last_event_id
-        @stack.update(
+        _update_unless_no_changes(
           template_url: template_url,
-          parameters: parameters,
-          capabilities: CAPABILITIES
+          parameters: parameters
         )
         status = _wait_for_status(
           statuses: UPDATE_FINAL_STATUSES,
           last_event_id: last_event_id
         )
         fail status unless status.eql? UPDATE_COMPLETE_STATUS
+      end
+
+      # rubocop:disable Metrics/MethodLength
+      def _update_unless_no_changes(template_url:, parameters:)
+        @stack.update(
+          template_url: template_url,
+          parameters: parameters,
+          capabilities: CAPABILITIES
+        )
+      rescue Aws::CloudFormation::Errors::ValidationError => error
+        raise error unless error.message.eql?(
+          'No updates are to be performed.'
+        )
+        Formatron::LOG.info do
+          'No updates are to be performed for CloudFormation stack'
+        end
       end
       # rubocop:enable Metrics/MethodLength
 
@@ -117,9 +132,11 @@ class Formatron
       # rubocop:enable Metrics/MethodLength
 
       private(
+        :_update_unless_no_changes,
         :_last_event_id,
         :_wait_for_status
       )
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

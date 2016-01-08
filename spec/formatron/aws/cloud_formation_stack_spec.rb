@@ -122,15 +122,7 @@ class Formatron
       end
 
       describe '#update' do
-        before :each do
-          expect(@aws_cloudformation_stack).to receive(:update).with(
-            template_url: template_url,
-            capabilities: %w(CAPABILITY_IAM),
-            parameters: parameters
-          )
-        end
-
-        context 'when the update completes successfully' do
+        context 'when the update contains no changes' do
           before :each do
             allow(@aws_cloudformation_stack).to receive(
               :events
@@ -140,6 +132,16 @@ class Formatron
                 final_status: 'UPDATE_COMPLETE'
               ).responses
             )
+            expect(@aws_cloudformation_stack).to receive(:update).with(
+              template_url: template_url,
+              capabilities: %w(CAPABILITY_IAM),
+              parameters: parameters
+            ) do
+              fail Aws::CloudFormation::Errors::ValidationError.new(
+                nil,
+                'No updates are to be performed.'
+              )
+            end
           end
 
           it 'should complete ok' do
@@ -150,29 +152,59 @@ class Formatron
           end
         end
 
-        %w(
-          UPDATE_ROLLBACK_COMPLETE
-          UPDATE_ROLLBACK_FAILED
-        ).each do |failure|
-          context "when the update fails with #{failure}" do
+        context 'when the update does have changes' do
+          before :each do
+            expect(@aws_cloudformation_stack).to receive(:update).with(
+              template_url: template_url,
+              capabilities: %w(CAPABILITY_IAM),
+              parameters: parameters
+            )
+          end
+
+          context 'when the update completes successfully' do
             before :each do
               allow(@aws_cloudformation_stack).to receive(
                 :events
               ).and_return(
                 *CloudformationStackEventsResponses.new(
                   stack_name: stack_name,
-                  final_status: failure
+                  final_status: 'UPDATE_COMPLETE'
                 ).responses
               )
             end
 
-            it 'should raise an error' do
-              expect do
-                @cloudformation_stack.update(
-                  template_url: template_url,
-                  parameters: parameters
+            it 'should complete ok' do
+              @cloudformation_stack.update(
+                template_url: template_url,
+                parameters: parameters
+              )
+            end
+          end
+
+          %w(
+            UPDATE_ROLLBACK_COMPLETE
+            UPDATE_ROLLBACK_FAILED
+          ).each do |failure|
+            context "when the update fails with #{failure}" do
+              before :each do
+                allow(@aws_cloudformation_stack).to receive(
+                  :events
+                ).and_return(
+                  *CloudformationStackEventsResponses.new(
+                    stack_name: stack_name,
+                    final_status: failure
+                  ).responses
                 )
-              end.to raise_error failure
+              end
+
+              it 'should raise an error' do
+                expect do
+                  @cloudformation_stack.update(
+                    template_url: template_url,
+                    parameters: parameters
+                  )
+                end.to raise_error failure
+              end
             end
           end
         end
