@@ -84,7 +84,7 @@ class Formatron
             )
           end
 
-          it 'should create a stack and wait for the operation to finish' do
+          it 'return true' do
             expect(
               @cloudformation_stack.create(
                 template_url: template_url,
