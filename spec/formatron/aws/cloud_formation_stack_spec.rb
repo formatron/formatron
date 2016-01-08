@@ -10,6 +10,7 @@ class Formatron
       parameters = 'parameters'
 
       before :each do
+        stub_const 'Formatron::LOG', Logger.new('/dev/null')
         @aws_cloudformation_client = instance_double(
           'Aws::CloudFormation::Client'
         )
@@ -68,6 +69,7 @@ class Formatron
             on_failure: 'DO_NOTHING',
             parameters: parameters
           )
+          expect(@aws_cloudformation_stack).to receive(:wait_until_exists)
         end
 
         context 'when the create completes successfully' do

@@ -8,10 +8,9 @@ class Formatron
 
       attr_reader :responses
 
-      @next_event_id = 0
-
       # rubocop:disable Metrics/MethodLength
       def initialize(stack_name:, final_status:)
+        @next_event_id = 0
         first_response = [
           event,
           event,
@@ -56,7 +55,9 @@ class Formatron
         allow(event).to receive(
           :resource_status_reason
         ) { 'resource_status_reason' }
-        allow(event).to receive(:event_id) { self.class.next_event_id }
+        allow(event).to receive(:event_id) do
+          @next_event_id += 1
+        end
         event
       end
       # rubocop:enable Metrics/AbcSize
