@@ -5,6 +5,7 @@ require 'pry'
 require 'fakefs/spec_helpers'
 
 require 'cloudformation_describe_stacks_response'
+require 'cloudformation_stack_events_responses'
 require 's3_get_object_response'
 require 's3_list_objects_response'
 require 'route53_get_hosted_zone_response'

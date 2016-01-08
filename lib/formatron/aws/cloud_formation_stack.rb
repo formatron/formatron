@@ -4,18 +4,29 @@ class Formatron
   class AWS
     # utilities for monitoring CloudFormation stack activities
     class CloudFormationStack
+      CAPABILITIES = %w(CAPABILITY_IAM)
+
       def initialize(stack_name:, client:)
-        puts stack_name
-        puts client
+        @stack_name = stack_name
+        @client = client
+        @stack = Aws::CloudFormation::Stack.new(
+          stack_name,
+          client: @client
+        )
       end
 
       def exists?
-        true
+        @stack.exists?
       end
 
       def create(template_url:, parameters:)
-        puts template_url
-        puts parameters
+        @client.create_stack(
+          stack_name: @stack_name,
+          template_url: template_url,
+          capabilities: CAPABILITIES,
+          on_failure: 'DO_NOTHING',
+          parameters: parameters
+        )
         true
       end
 
