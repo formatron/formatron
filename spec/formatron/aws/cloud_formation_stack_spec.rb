@@ -84,7 +84,7 @@ class Formatron
             )
           end
 
-          it 'return true' do
+          it 'should return true' do
             expect(
               @cloudformation_stack.create(
                 template_url: template_url,
