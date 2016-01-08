@@ -6,6 +6,27 @@ class Formatron
     class CloudFormationStack
       CAPABILITIES = %w(CAPABILITY_IAM)
 
+      CREATE_COMPLETE_STATUS = 'CREATE_COMPLETE'
+      CREATE_FINAL_STATUSES = %W(
+        #{CREATE_COMPLETE_STATUS}
+        CREATE_FAILED
+        ROLLBACK_COMPLETE
+        ROLLBACK_FAILED
+      )
+
+      UPDATE_COMPLETE_STATUS = 'UPDATE_COMPLETE'
+      UPDATE_FINAL_STATUSES = %W(
+        #{UPDATE_COMPLETE_STATUS}
+        UPDATE_ROLLBACK_COMPLETE
+        UPDATE_ROLLBACK_FAILED
+      )
+
+      DELETE_COMPLETE_STATUS = 'DELETE_COMPLETE'
+      DELETE_FINAL_STATUSES = %W(
+        #{DELETE_COMPLETE_STATUS}
+        DELETE_FAILED
+      )
+
       def initialize(stack_name:, client:)
         @stack_name = stack_name
         @client = client
@@ -28,18 +49,40 @@ class Formatron
           parameters: parameters
         )
         @stack.wait_until_exists
-        _wait_for_status statuses: %w(CREATE_COMPLETE)
-        true
+        status = _wait_for_status statuses: CREATE_FINAL_STATUSES
+        fail status unless status.eql? CREATE_COMPLETE_STATUS
       end
 
+      # rubocop:disable Metrics/MethodLength
       def update(template_url:, parameters:)
-        puts template_url
-        puts parameters
-        true
+        last_event_id = _last_event_id
+        @stack.update(
+          template_url: template_url,
+          parameters: parameters,
+          capabilities: CAPABILITIES
+        )
+        status = _wait_for_status(
+          statuses: UPDATE_FINAL_STATUSES,
+          last_event_id: last_event_id
+        )
+        fail status unless status.eql? UPDATE_COMPLETE_STATUS
       end
+      # rubocop:enable Metrics/MethodLength
 
       def delete
-        true
+        last_event_id = _last_event_id
+        @stack.delete
+        status = _wait_for_status(
+          statuses: DELETE_FINAL_STATUSES,
+          last_event_id: last_event_id
+        )
+        fail status unless status.eql? DELETE_COMPLETE_STATUS
+      end
+
+      def _last_event_id
+        @stack.events.each do |event|
+          return event.event_id
+        end
       end
 
       # rubocop:disable Metrics/MethodLength
@@ -74,6 +117,7 @@ class Formatron
       # rubocop:enable Metrics/MethodLength
 
       private(
+        :_last_event_id,
         :_wait_for_status
       )
     end

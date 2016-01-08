@@ -84,33 +84,145 @@ class Formatron
             )
           end
 
-          it 'should return true' do
-            expect(
-              @cloudformation_stack.create(
-                template_url: template_url,
-                parameters: parameters
+          it 'should complete ok' do
+            @cloudformation_stack.create(
+              template_url: template_url,
+              parameters: parameters
+            )
+          end
+        end
+
+        %w(
+          CREATE_FAILED
+          ROLLBACK_COMPLETE
+          ROLLBACK_FAILED
+        ).each do |failure|
+          context "when the create fails with #{failure}" do
+            before :each do
+              allow(@aws_cloudformation_stack).to receive(
+                :events
+              ).and_return(
+                *CloudformationStackEventsResponses.new(
+                  stack_name: stack_name,
+                  final_status: failure
+                ).responses
               )
-            ).to eql true
+            end
+
+            it 'should raise an error' do
+              expect do
+                @cloudformation_stack.create(
+                  template_url: template_url,
+                  parameters: parameters
+                )
+              end.to raise_error failure
+            end
           end
         end
       end
 
       describe '#update' do
-        it 'should update a stack and wait for the operation to finish' do
-          expect(
+        before :each do
+          expect(@aws_cloudformation_stack).to receive(:update).with(
+            template_url: template_url,
+            capabilities: %w(CAPABILITY_IAM),
+            parameters: parameters
+          )
+        end
+
+        context 'when the update completes successfully' do
+          before :each do
+            allow(@aws_cloudformation_stack).to receive(
+              :events
+            ).and_return(
+              *CloudformationStackEventsResponses.new(
+                stack_name: stack_name,
+                final_status: 'UPDATE_COMPLETE'
+              ).responses
+            )
+          end
+
+          it 'should complete ok' do
             @cloudformation_stack.update(
               template_url: template_url,
               parameters: parameters
             )
-          ).to eql true
+          end
+        end
+
+        %w(
+          UPDATE_ROLLBACK_COMPLETE
+          UPDATE_ROLLBACK_FAILED
+        ).each do |failure|
+          context "when the update fails with #{failure}" do
+            before :each do
+              allow(@aws_cloudformation_stack).to receive(
+                :events
+              ).and_return(
+                *CloudformationStackEventsResponses.new(
+                  stack_name: stack_name,
+                  final_status: failure
+                ).responses
+              )
+            end
+
+            it 'should raise an error' do
+              expect do
+                @cloudformation_stack.update(
+                  template_url: template_url,
+                  parameters: parameters
+                )
+              end.to raise_error failure
+            end
+          end
         end
       end
 
       describe '#delete' do
-        it 'should delete a stack and  wait for the operation to finish' do
-          expect(
+        before :each do
+          expect(@aws_cloudformation_stack).to receive(:delete).with(
+            no_args
+          )
+        end
+
+        context 'when the delete completes successfully' do
+          before :each do
+            allow(@aws_cloudformation_stack).to receive(
+              :events
+            ).and_return(
+              *CloudformationStackEventsResponses.new(
+                stack_name: stack_name,
+                final_status: 'DELETE_COMPLETE'
+              ).responses
+            )
+          end
+
+          it 'should complete ok' do
             @cloudformation_stack.delete
-          ).to eql true
+          end
+        end
+
+        %w(
+          DELETE_FAILED
+        ).each do |failure|
+          context "when the delete fails with #{failure}" do
+            before :each do
+              allow(@aws_cloudformation_stack).to receive(
+                :events
+              ).and_return(
+                *CloudformationStackEventsResponses.new(
+                  stack_name: stack_name,
+                  final_status: failure
+                ).responses
+              )
+            end
+
+            it 'should raise an error' do
+              expect do
+                @cloudformation_stack.delete
+              end.to raise_error failure
+            end
+          end
         end
       end
     end
