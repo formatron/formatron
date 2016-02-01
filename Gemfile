@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'fakefs', require: 'fakefs/safe'
+gem 'codacy-coverage', require: false

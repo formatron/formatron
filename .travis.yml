@@ -1,17 +1,15 @@
 language: ruby
 cache: bundler
-
 rvm:
-  - 2.1.2
-
+- 2.1.2
 before_install:
-  - gem install bundler
-
-script: 'bundle exec rake'
-
+- gem install bundler
+script: bundle exec rake
 notifications:
   email:
     recipients:
-      - pghalliday@gmail.com
+    - pghalliday@gmail.com
     on_failure: change
     on_success: never
+env:
+  secure: OZ2tLwvM+Rdxk32itu2NKguaVBWqmvVCvkzbLS0N3ST1W4nawJZQcINz7/V4hAFkCKczpKpbACCMxlRZquQkClSMj4DMH/rwiK3r7BLjRN40jOkpXEbilbCE+ZCgVLYoUJLeVJOrIPk0S7ipktR7Tof8fYsc2DXB5jtuwklFL44SkgAXpgtuA0pSx7Sizjk/xBA3cMPDBeX36kxJiKypLvqKXcW18EwjLEW/cfYrrW2+31lUOHXdTOrDpEEU3gBcK4oxt+MYox99BUWSDoaySrHqixELlw2b6QEZlnrY/w23ImqjVNeHgYH+fOS7al5JcCI3bBqvdu/d94RInzfy9YF/Uv50cBj5azmvrwJKqAk+uOIk3at2FM5aasaMkgIKMnoQ8w0S4+mOVl1n/ACsF+CkVDREINUEC0z0qZb2pwSSMEY/oGfE4ef9C6pxh/QlCiBw0IU899XO+W2UUkVcwSpYVmlCM3JAL8/B2R0lTr5ta3qoLtn7oTOBkyDmCJuBKBg05Q2TRwSnzETp4X/E6Ax0WcPKi2XA3q2722jhlzFOWSNf8eC5NS7rdR3Mevpdh0Ds180tH5dDmJ8+JUnJcfCXd1RQ0OwWeI7ym5y8/TQYayaxZnEk1E5vtgemQ8p/JGfae7T2AOO7qUxf8H+5rwkj716Ro1lKDpjTHlgRFro=
