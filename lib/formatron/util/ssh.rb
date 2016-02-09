@@ -10,7 +10,8 @@ class Formatron
       # rubocop:disable Metrics/AbcSize
       def self.exec(hostname:, bastion_hostname:, user:, key:, command:)
         proxy_command = Net::SSH::Proxy::Command.new(
-          "ssh -o StrictHostKeyChecking=no #{user}@#{bastion_hostname} -W %h:%p"
+          "ssh -i #{key} -o StrictHostKeyChecking=no " \
+          "#{user}@#{bastion_hostname} -W %h:%p"
         ) unless hostname.eql? bastion_hostname
         Net::SSH.start(
           hostname,

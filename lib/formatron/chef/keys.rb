@@ -15,6 +15,7 @@ class Formatron
       end
       # rubocop:enable Metrics/ParameterLists
 
+      # rubocop:disable Metrics/MethodLength
       def init
         @directory = Dir.mktmpdir 'formatron-chef-server-keys-'
         S3::ChefServerKeys.get(
@@ -26,7 +27,9 @@ class Formatron
           directory: @directory
         )
         File.write ec2_key, @ec2_key
+        File.chmod 0600, ec2_key
       end
+      # rubocop:enable Metrics/MethodLength
 
       def user_key
         S3::ChefServerKeys.user_pem_path directory: @directory

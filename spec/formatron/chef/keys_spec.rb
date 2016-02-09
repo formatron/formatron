@@ -27,6 +27,7 @@ class Formatron
         ) { @organization_pem_path }
         allow(Dir).to receive(:mktmpdir) { @directory }
         allow(File).to receive :write
+        allow(File).to receive :chmod
         allow(FileUtils).to receive :rm_rf
         @keys = Keys.new(
           aws: @aws,
@@ -62,6 +63,10 @@ class Formatron
           expect(File).to have_received(:write).with(
             File.join(@directory, 'ec2_key'),
             @ec2_key
+          )
+          expect(File).to have_received(:chmod).with(
+            0600,
+            File.join(@directory, 'ec2_key')
           )
         end
       end
