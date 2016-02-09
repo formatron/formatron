@@ -112,7 +112,8 @@ class Formatron
               hostname,
               user,
               keys: [key],
-              proxy: nil
+              proxy: nil,
+              paranoid: false
             ) do |&block|
               block.call @net_ssh_session
             end
@@ -131,13 +132,15 @@ class Formatron
             ).as_stubbed_const
             proxy_command = instance_double 'Net::SSH::Proxy::Command'
             allow(proxy_command_class).to receive(:new).with(
-              "ssh #{user}@#{bastion_hostname} -W %h:%p"
+              'ssh -o StrictHostKeyChecking=no ' \
+              "#{user}@#{bastion_hostname} -W %h:%p"
             ) { proxy_command }
             allow(@net_ssh_class).to receive(:start).with(
               hostname,
               user,
               keys: [key],
-              proxy: proxy_command
+              proxy: proxy_command,
+              paranoid: false
             ) do |&block|
               block.call @net_ssh_session
             end
