@@ -25,6 +25,7 @@ class Formatron
               target:
             )
               @bastion = bastion
+              _set_os
               _add_open_ports
               @instance = Instance.new(
                 instance: bastion,
@@ -45,6 +46,12 @@ class Formatron
             # rubocop:enable Metrics/ParameterLists
             # rubocop:enable Metrics/MethodLength
 
+            def _set_os
+              @bastion.os(
+                'ubuntu'
+              )
+            end
+
             def _add_open_ports
               @bastion.security_group do |security_group|
                 security_group.open_tcp_port 22
@@ -56,6 +63,7 @@ class Formatron
             end
 
             private(
+              :_set_os,
               :_add_open_ports
             )
           end

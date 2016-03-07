@@ -20,6 +20,7 @@ class Formatron
                 bucket = 'bucket'
                 name = 'name'
                 target = 'target'
+                os = 'os'
                 dsl_instance = instance_double(
                   'Formatron::DSL::Formatron::VPC::Subnet::Instance'
                 )
@@ -132,7 +133,8 @@ class Formatron
                 allow(template_setup_class).to receive(:new).with(
                   setup: dsl_setup,
                   sub_domain: sub_domain,
-                  hosted_zone_name: hosted_zone_name
+                  hosted_zone_name: hosted_zone_name,
+                  os: os
                 ) { template_setup }
                 allow(dsl_instance).to receive(
                   :setup
@@ -148,6 +150,9 @@ class Formatron
                 allow(dsl_instance).to receive(
                   :instance_type
                 ) { instance_type }
+                allow(dsl_instance).to receive(
+                  :os
+                ) { os }
                 template_block_devices = instance_double(
                   'Formatron::CloudFormation::Template' \
                   '::VPC::Subnet::Instance::BlockDevices'
@@ -184,7 +189,8 @@ class Formatron
                   wait_condition_handle: @wait_condition_handle_id,
                   security_group: @security_group_id,
                   logical_id: @instance_id,
-                  source_dest_check: source_dest_check
+                  source_dest_check: source_dest_check,
+                  os: os
                 ) do
                   {
                     instance: @instance,

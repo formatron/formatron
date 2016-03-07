@@ -173,6 +173,7 @@ class Formatron
               allow(@dsl_chef_server).to receive(:last_name) { last_name }
               allow(@dsl_chef_server).to receive(:email) { email }
               allow(@dsl_chef_server).to receive(:instance_type)
+              allow(@dsl_chef_server).to receive(:os)
               allow(@dsl_chef_server).to receive(
                 :version
               ) { version }
@@ -233,6 +234,12 @@ class Formatron
               expect(@dsl_chef_server).to have_received(
                 :instance_type
               ).with 't2.medium'
+            end
+
+            it 'should set the os to ubuntu' do
+              expect(@dsl_chef_server).to have_received(
+                :os
+              ).with 'ubuntu'
             end
 
             it 'should add ssl cert policy' do

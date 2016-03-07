@@ -62,6 +62,7 @@ class Formatron
                 "#{SecurityGroup::SECURITY_GROUP_PREFIX}#{@guid}"
               @availability_zone = availability_zone
               @instance_type = @instance.instance_type || 't2.micro'
+              @os = @instance.os || 'ubuntu'
               @key_pair = key_pair
               @subnet_guid = subnet_guid
               @subnet_id = "#{Subnet::SUBNET_PREFIX}#{@subnet_guid}"
@@ -126,12 +127,14 @@ class Formatron
                 wait_condition_handle: @wait_condition_handle_id,
                 security_group: @security_group_id,
                 logical_id: @instance_id,
-                source_dest_check: @source_dest_check
+                source_dest_check: @source_dest_check,
+                os: @os
               )
               setup = Setup.new(
                 setup: @setup,
                 sub_domain: @sub_domain,
-                hosted_zone_name: @hosted_zone_name
+                hosted_zone_name: @hosted_zone_name,
+                os: @os
               )
               setup.merge instance: instance
               block_devices = BlockDevices.new(

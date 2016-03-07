@@ -8,12 +8,13 @@ class Formatron
           class Instance
             # Adds setup scripts to an instance
             class Setup
-              def initialize(setup:, sub_domain:, hosted_zone_name:)
+              def initialize(setup:, sub_domain:, hosted_zone_name:, os:)
                 @setup = setup
                 @sub_domain = sub_domain
                 @hosted_zone_name = hosted_zone_name
                 @scripts = @setup.script unless @setup.nil?
                 @variables = @setup.variable unless @setup.nil?
+                @os = os
               end
 
               # rubocop:disable Metrics/MethodLength

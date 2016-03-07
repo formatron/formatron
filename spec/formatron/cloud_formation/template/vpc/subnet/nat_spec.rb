@@ -42,6 +42,7 @@ class Formatron
                 'Formatron::DSL::Formatron::VPC::Subnet::Instance'
               )
               allow(@dsl_nat).to receive(:guid) { @guid }
+              allow(@dsl_nat).to receive(:os)
               allow(@dsl_nat).to receive(:setup) do |&block|
                 block.call dsl_setup
               end
@@ -84,6 +85,12 @@ class Formatron
                 name: name,
                 target: target
               )
+            end
+
+            it 'should set the os to ubuntu' do
+              expect(@dsl_nat).to have_received(
+                :os
+              ).with 'ubuntu'
             end
 
             it 'should disable the SourceDestCheck' do

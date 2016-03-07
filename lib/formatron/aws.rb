@@ -9,31 +9,44 @@ class Formatron
 
     REGIONS = {
       'us-east-1' => {
-        ami: 'ami-ff02509a'
-      },
-      'us-west-2' => {
-        ami: 'ami-8ee605bd'
+        'ubuntu' => 'ami-fce3c696',
+        'windows' => 'ami-3586ac5f'
       },
       'us-west-1' => {
-        ami: 'ami-198a495d'
+        'ubuntu' => 'ami-06116566',
+        'windows' => 'ami-95fd8bf5'
+      },
+      'us-west-2' => {
+        'ubuntu' => 'ami-9abea4fb',
+        'windows' => 'ami-df8767bf'
       },
       'eu-west-1' => {
-        ami: 'ami-37360a40'
+        'ubuntu' => 'ami-f95ef58a',
+        'windows' => 'ami-8519a9f6'
       },
       'eu-central-1' => {
-        ami: 'ami-46272b5b'
-      },
-      'ap-southeast-1' => {
-        ami: 'ami-42170410'
-      },
-      'ap-southeast-2' => {
-        ami: 'ami-6d6c2657'
+        'ubuntu' => 'ami-87564feb',
+        'windows' => 'ami-5dd2c931'
       },
       'ap-northeast-1' => {
-        ami: 'ami-402e4c40'
+        'ubuntu' => 'ami-a21529cc',
+        'windows' => 'ami-14b8bc7a'
+      },
+      'ap-northeast-2' => {
+        'ubuntu' => 'ami-09dc1267',
+        'windows' => 'ami-d31dd3bd'
+      },
+      'ap-southeast-1' => {
+        'ubuntu' => 'ami-25c00c46',
+        'windows' => 'ami-9801cffb'
+      },
+      'ap-southeast-2' => {
+        'ubuntu' => 'ami-6c14310f',
+        'windows' => 'ami-db0a2db8'
       },
       'sa-east-1' => {
-        ami: 'ami-1f4bda02'
+        'ubuntu' => 'ami-0fb83963',
+        'windows' => 'ami-828e0dee'
       }
     }
 

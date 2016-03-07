@@ -21,7 +21,7 @@ class Formatron
               kms_key = 'kms_key'
               private_hosted_zone_id = 'private_hosted_zone_id'
               public_hosted_zone_id = 'public_hosted_zone_id'
-              dsl_bastion = instance_double(
+              @dsl_bastion = instance_double(
                 'Formatron::DSL::Formatron::VPC::Subnet::Instance'
               )
               @dsl_security_group = instance_double(
@@ -29,7 +29,8 @@ class Formatron
                 '::Instance::SecurityGroup'
               )
               allow(@dsl_security_group).to receive(:open_tcp_port)
-              allow(dsl_bastion).to receive(
+              allow(@dsl_bastion).to receive(:os)
+              allow(@dsl_bastion).to receive(
                 :security_group
               ) do |&block|
                 block.call @dsl_security_group
@@ -43,7 +44,7 @@ class Formatron
                 '::Subnet::Instance'
               ).as_stubbed_const
               allow(template_instance_class).to receive(:new).with(
-                instance: dsl_bastion,
+                instance: @dsl_bastion,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -58,7 +59,7 @@ class Formatron
                 target: target
               ) { @template_instance }
               @template_bastion = Bastion.new(
-                bastion: dsl_bastion,
+                bastion: @dsl_bastion,
                 key_pair: key_pair,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
@@ -72,6 +73,12 @@ class Formatron
                 name: name,
                 target: target
               )
+            end
+
+            it 'should set the os to ubuntu' do
+              expect(@dsl_bastion).to have_received(
+                :os
+              ).with 'ubuntu'
             end
 
             it 'should open port for SSH' do

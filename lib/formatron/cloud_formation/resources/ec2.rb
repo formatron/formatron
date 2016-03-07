@@ -274,9 +274,6 @@ class Formatron
         # rubocop:disable Metrics/ParameterLists
         # rubocop:disable Metrics/AbcSize
         def self.instance(
-          scripts: nil,
-          script_variables: nil,
-          files: nil,
           instance_profile:,
           availability_zone:,
           instance_type:,
@@ -286,37 +283,52 @@ class Formatron
           wait_condition_handle:,
           security_group:,
           logical_id:,
-          source_dest_check:
+          source_dest_check:,
+          os:
         )
-          files ||= {}
-          scripts.each_index do |index|
-            files["/tmp/formatron/script-#{index}.sh"] = {
-              content: scripts[index],
-              mode: '000755',
-              owner: 'root',
-              group: 'root'
-            }
-          end unless scripts.nil?
-          script_variables_content =
-            script_variables.reduce([]) do |content, (key, value)|
-              content.concat(["#{key}=", value, "\n"])
-            end unless script_variables.nil?
-          files['/tmp/formatron/script-variables'] = {
-            content: Template.join(*script_variables_content),
-            mode: '000644',
-            owner: 'root',
-            group: 'root'
-          } unless script_variables_content.nil?
+          if os.eql? 'windows'
+            user_data = Template.base_64(
+              Template.join(
+                # rubocop:disable Metrics/LineLength
+                "<script>\n",
+                'cfn-init.exe -v -s ', Template.ref('AWS::StackName'),
+                " -r #{logical_id}",
+                ' --region ', Template.ref('AWS::Region'), "\n",
+
+                'cfn-signal.exe -e %ERRORLEVEL% ', Template.base_64(Template.ref(wait_condition_handle)), "\n",
+
+                '</script>'
+              # rubocop:enable Metrics/LineLength
+              )
+            )
+          else
+            user_data = Template.base_64(
+              Template.join(
+                # rubocop:disable Metrics/LineLength
+                "#!/bin/bash -v\n",
+                "function error_exit\n",
+                "{\n",
+                "  cfn-signal -e 1 -r \"$1\" '", Template.ref(wait_condition_handle), "'\n",
+                "  exit 1\n",
+                "}\n",
+                "apt-get -y update\n",
+                "apt-get -y install python-setuptools\n",
+                "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                "export PATH=$PATH:/opt/aws/bin\n",
+                'cfn-init --region ', Template.ref('AWS::Region'),
+                '    -v -s ', Template.ref('AWS::StackName'), " -r #{logical_id} ",
+                " || error_exit 'Failed to run cfn-init'\n",
+                "for file in /tmp/formatron/script-*.sh; do\n",
+                "  $file || error_exit \"failed to run Formatron setup script: $file\"\n",
+                "done\n",
+                "# If all went well, signal success\n",
+                "cfn-signal -e $? -r 'Formatron instance configuration complete' '", Template.ref(wait_condition_handle), "'\n"
+              # rubocop:enable Metrics/LineLength
+              )
+            )
+          end
           {
             Type: 'AWS::EC2::Instance',
-            Metadata: {
-              Comment1: 'Create setup scripts',
-              'AWS::CloudFormation::Init' => {
-                config: {
-                  files: files
-                }
-              }
-            },
             Properties: {
               IamInstanceProfile: Template.ref(instance_profile),
               AvailabilityZone: Template.join(
@@ -326,7 +338,7 @@ class Formatron
               ImageId: Template.find_in_map(
                 Template::REGION_MAP,
                 Template.ref('AWS::Region'),
-                'ami'
+                os
               ),
               SourceDestCheck: source_dest_check,
               InstanceType: instance_type,
@@ -337,36 +349,13 @@ class Formatron
                 Key: 'Name',
                 Value: name
               }],
-              UserData: Template.base_64(
-                Template.join(
-                  # rubocop:disable Metrics/LineLength
-                  "#!/bin/bash -v\n",
-                  "function error_exit\n",
-                  "{\n",
-                  "  cfn-signal -e 1 -r \"$1\" '", Template.ref(wait_condition_handle), "'\n",
-                  "  exit 1\n",
-                  "}\n",
-                  "apt-get -y update\n",
-                  "apt-get -y install python-setuptools\n",
-                  "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
-                  "export PATH=$PATH:/opt/aws/bin\n",
-                  'cfn-init --region ', Template.ref('AWS::Region'),
-                  '    -v -s ', Template.ref('AWS::StackName'), " -r #{logical_id} ",
-                  " || error_exit 'Failed to run cfn-init'\n",
-                  "for file in /tmp/formatron/script-*.sh; do\n",
-                  "  $file || error_exit \"failed to run Formatron setup script: $file\"\n",
-                  "done\n",
-                  "# If all went well, signal success\n",
-                  "cfn-signal -e $? -r 'Formatron instance configuration complete' '", Template.ref(wait_condition_handle), "'\n"
-                # rubocop:enable Metrics/LineLength
-                )
-              )
+              UserData: user_data
             }
           }
         end
-        # rubocop:enable Metrics/AbcSize
         # rubocop:enable Metrics/ParameterLists
         # rubocop:enable Metrics/MethodLength
+        # rubocop:enable Metrics/AbcSize
       end
       # rubocop:enable Metrics/ModuleLength
     end

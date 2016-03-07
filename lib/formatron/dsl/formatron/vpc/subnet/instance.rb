@@ -21,6 +21,7 @@ class Formatron
             dsl_array :private_alias
             dsl_property :source_dest_check
             dsl_property :instance_type
+            dsl_property :os
             dsl_block :chef, 'Chef'
             dsl_block :policy, 'Policy'
             dsl_block :security_group, 'SecurityGroup'

@@ -70,6 +70,7 @@ class Formatron
               @organization_short_name = organization.short_name
               @organization_full_name = organization.full_name
               _set_default_instance_type
+              _set_os
               _add_ssl_cert_policy
               _add_keys_policy
               _add_open_ports
@@ -98,6 +99,12 @@ class Formatron
               @chef_server.instance_type(
                 't2.medium'
               ) if @chef_server.instance_type.nil?
+            end
+
+            def _set_os
+              @chef_server.os(
+                'ubuntu'
+              )
             end
 
             def _add_ssl_cert_policy
@@ -190,6 +197,7 @@ class Formatron
 
             private(
               :_set_default_instance_type,
+              :_set_os,
               :_add_ssl_cert_policy,
               :_add_keys_policy,
               :_add_open_ports,

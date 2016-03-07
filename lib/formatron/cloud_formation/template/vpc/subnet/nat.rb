@@ -34,6 +34,7 @@ class Formatron
               @instance_id = "#{Instance::INSTANCE_PREFIX}#{guid}"
               @route_table_id = "#{ROUTE_TABLE_PREFIX}#{guid}"
               @route_id = "#{ROUTE_PREFIX}#{guid}"
+              _set_os
               _add_setup_script
               _set_source_dest_check
               @instance = Instance.new(
@@ -54,6 +55,12 @@ class Formatron
             end
             # rubocop:enable Metrics/ParameterLists
             # rubocop:enable Metrics/MethodLength
+
+            def _set_os
+              @nat.os(
+                'ubuntu'
+              )
+            end
 
             def _add_setup_script
               @nat.setup do |setup|
@@ -82,6 +89,7 @@ class Formatron
             end
 
             private(
+              :_set_os,
               :_set_source_dest_check,
               :_add_setup_script,
               :_add_route_table

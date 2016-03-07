@@ -419,32 +419,6 @@ class Formatron
 
         describe '::instance' do
           it 'should return an Instance resource' do
-            hostname_sh = 'hostname_sh'
-            nat_sh = 'nat_sh'
-            script_variables = {
-              variable1: 'value1',
-              variable2: 'value2'
-            }
-            script_variables_content = {
-              'Fn::Join' => [
-                '', [
-                  'variable1=',
-                  'value1',
-                  "\n",
-                  'variable2=',
-                  'value2',
-                  "\n"
-                ]
-              ]
-            }
-            scripts = [
-              hostname_sh,
-              nat_sh
-            ]
-            file = 'file'
-            files = {
-              file: file
-            }
             instance_profile = 'instance_profile'
             availability_zone = 'availability_zone'
             instance_type = 'instance_type'
@@ -455,11 +429,9 @@ class Formatron
             security_group = 'security_group'
             logical_id = 'logical_id'
             source_dest_check = 'source_dest_check'
+            os = 'os'
             expect(
               EC2.instance(
-                scripts: scripts,
-                script_variables: script_variables,
-                files: files,
                 instance_profile: instance_profile,
                 availability_zone: availability_zone,
                 instance_type: instance_type,
@@ -469,38 +441,11 @@ class Formatron
                 wait_condition_handle: wait_condition_handle,
                 security_group: security_group,
                 logical_id: logical_id,
-                source_dest_check: source_dest_check
+                source_dest_check: source_dest_check,
+                os: os
               )
             ).to eql(
               Type: 'AWS::EC2::Instance',
-              Metadata: {
-                Comment1: 'Create setup scripts',
-                'AWS::CloudFormation::Init' => {
-                  config: {
-                    files: {
-                      '/tmp/formatron/script-variables' => {
-                        content: script_variables_content,
-                        mode: '000644',
-                        owner: 'root',
-                        group: 'root'
-                      },
-                      '/tmp/formatron/script-0.sh' => {
-                        content: hostname_sh,
-                        mode: '000755',
-                        owner: 'root',
-                        group: 'root'
-                      },
-                      '/tmp/formatron/script-1.sh' => {
-                        content: nat_sh,
-                        mode: '000755',
-                        owner: 'root',
-                        group: 'root'
-                      },
-                      file: file
-                    }
-                  }
-                }
-              },
               Properties: {
                 IamInstanceProfile: { Ref: instance_profile },
                 AvailabilityZone: {
@@ -515,7 +460,7 @@ class Formatron
                   'Fn::FindInMap' => [
                     'regionMap',
                     { Ref: 'AWS::Region' },
-                    'ami'
+                    os
                   ]
                 },
                 SourceDestCheck: source_dest_check,
@@ -557,6 +502,84 @@ class Formatron
                 }
               }
             )
+          end
+
+          context 'when os is windows' do
+            # rubocop:disable Metrics/LineLength
+            it 'should return an Instance resource with user data for windows' do
+              instance_profile = 'instance_profile'
+              availability_zone = 'availability_zone'
+              instance_type = 'instance_type'
+              key_name = 'key_name'
+              subnet = 'subnet'
+              name = 'name'
+              wait_condition_handle = 'wait_condition_handle'
+              security_group = 'security_group'
+              logical_id = 'logical_id'
+              source_dest_check = 'source_dest_check'
+              os = 'windows'
+              expect(
+                EC2.instance(
+                  instance_profile: instance_profile,
+                  availability_zone: availability_zone,
+                  instance_type: instance_type,
+                  key_name: key_name,
+                  subnet: subnet,
+                  name: name,
+                  wait_condition_handle: wait_condition_handle,
+                  security_group: security_group,
+                  logical_id: logical_id,
+                  source_dest_check: source_dest_check,
+                  os: os
+                )
+              ).to eql(
+                Type: 'AWS::EC2::Instance',
+                Properties: {
+                  IamInstanceProfile: { Ref: instance_profile },
+                  AvailabilityZone: {
+                    'Fn::Join' => [
+                      '', [
+                        { Ref: 'AWS::Region' },
+                        availability_zone
+                      ]
+                    ]
+                  },
+                  ImageId: {
+                    'Fn::FindInMap' => [
+                      'regionMap',
+                      { Ref: 'AWS::Region' },
+                      os
+                    ]
+                  },
+                  SourceDestCheck: source_dest_check,
+                  InstanceType: instance_type,
+                  KeyName: key_name,
+                  SubnetId: { Ref: subnet },
+                  SecurityGroupIds: [{ Ref: security_group }],
+                  Tags: [{
+                    Key: 'Name',
+                    Value: name
+                  }],
+                  UserData: {
+                    'Fn::Base64' => {
+                      'Fn::Join' => [
+                        '', [
+                          "<script>\n",
+                          'cfn-init.exe -v -s ', { Ref: 'AWS::StackName' },
+                          " -r #{logical_id}",
+                          ' --region ', { Ref: 'AWS::Region' }, "\n",
+
+                          'cfn-signal.exe -e %ERRORLEVEL% ', { 'Fn::Base64' => { Ref: wait_condition_handle } }, "\n",
+
+                          '</script>'
+                        ]
+                      ]
+                    }
+                  }
+                }
+              )
+            end
+            # rubocop:enable Metrics/LineLength
           end
         end
       end
