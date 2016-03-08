@@ -20,40 +20,80 @@ class Formatron
               # rubocop:disable Metrics/MethodLength
               # rubocop:disable Metrics/AbcSize
               def merge(instance:)
-                files = {
-                  '/tmp/formatron/script-0.sh' => {
-                    content: Scripts.hostname(
-                      sub_domain: @sub_domain,
-                      hosted_zone_name: @hosted_zone_name
-                    ),
-                    mode: '000755',
-                    owner: 'root',
-                    group: 'root'
-                  }
-                }
-                @scripts.each_index do |index|
-                  files["/tmp/formatron/script-#{index + 1}.sh"] = {
-                    content: @scripts[index],
-                    mode: '000755',
-                    owner: 'root',
-                    group: 'root'
-                  }
-                end unless @scripts.nil?
-                variables = []
+                env = {}
                 @variables.each do |key, value|
-                  variables.concat(["#{key}=", value.value, "\n"])
+                  env[key] = value.value
                 end unless @variables.nil?
-                files['/tmp/formatron/script-variables'] = {
-                  content: Template.join(*variables),
-                  mode: '000644',
-                  owner: 'root',
-                  group: 'root'
-                } unless variables.length == 0
+                if @os.eql? 'windows'
+                  script_key = 'script-0'
+                  script = "C:\\formatron\\#{script_key}.bat"
+                  files = {
+                    "#{script}" => {
+                      content: Scripts.windows_common(
+                        sub_domain: @sub_domain,
+                        hosted_zone_name: @hosted_zone_name
+                      )
+                    }
+                  }
+                  commands = {
+                    "#{script_key}" => {
+                      command: script,
+                      env: env,
+                      waitAfterCompletion: 'forever'
+                    }
+                  }
+                  @scripts.each_index do |index|
+                    script_key = "script-#{index + 1}"
+                    script = "C:\\formatron\\#{script_key}.bat"
+                    files[script] = {
+                      content: @scripts[index]
+                    }
+                    commands[script_key] = {
+                      command: script,
+                      env: env
+                    }
+                  end unless @scripts.nil?
+                else
+                  script_key = 'script-0'
+                  script = "/tmp/formatron/#{script_key}.sh"
+                  files = {
+                    "#{script}" => {
+                      content: Scripts.linux_common(
+                        sub_domain: @sub_domain,
+                        hosted_zone_name: @hosted_zone_name
+                      ),
+                      mode: '000755',
+                      owner: 'root',
+                      group: 'root'
+                    }
+                  }
+                  commands = {
+                    "#{script_key}" => {
+                      command: script,
+                      env: env
+                    }
+                  }
+                  @scripts.each_index do |index|
+                    script_key = "script-#{index + 1}"
+                    script = "/tmp/formatron/#{script_key}.sh"
+                    files[script] = {
+                      content: @scripts[index],
+                      mode: '000755',
+                      owner: 'root',
+                      group: 'root'
+                    }
+                    commands[script_key] = {
+                      command: script,
+                      env: env
+                    }
+                  end unless @scripts.nil?
+                end
                 instance[:Metadata] = {
                   Comment1: 'Create setup scripts',
                   'AWS::CloudFormation::Init' => {
                     config: {
-                      files: files
+                      files: files,
+                      commands: commands
                     }
                   }
                 }

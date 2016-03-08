@@ -306,22 +306,12 @@ class Formatron
               Template.join(
                 # rubocop:disable Metrics/LineLength
                 "#!/bin/bash -v\n",
-                "function error_exit\n",
-                "{\n",
-                "  cfn-signal -e 1 -r \"$1\" '", Template.ref(wait_condition_handle), "'\n",
-                "  exit 1\n",
-                "}\n",
                 "apt-get -y update\n",
                 "apt-get -y install python-setuptools\n",
                 "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
                 "export PATH=$PATH:/opt/aws/bin\n",
                 'cfn-init --region ', Template.ref('AWS::Region'),
-                '    -v -s ', Template.ref('AWS::StackName'), " -r #{logical_id} ",
-                " || error_exit 'Failed to run cfn-init'\n",
-                "for file in /tmp/formatron/script-*.sh; do\n",
-                "  $file || error_exit \"failed to run Formatron setup script: $file\"\n",
-                "done\n",
-                "# If all went well, signal success\n",
+                '    -v -s ', Template.ref('AWS::StackName'), " -r #{logical_id}\n",
                 "cfn-signal -e $? -r 'Formatron instance configuration complete' '", Template.ref(wait_condition_handle), "'\n"
               # rubocop:enable Metrics/LineLength
               )

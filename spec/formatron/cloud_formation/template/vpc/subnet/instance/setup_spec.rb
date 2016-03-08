@@ -6,7 +6,6 @@ class Formatron
     class Template
       class VPC
         class Subnet
-          # namespacing for tests
           # rubocop:disable Metrics/ClassLength
           class Instance
             describe Setup do
@@ -21,16 +20,13 @@ class Formatron
                   )
                   dsl_variables = {}
                   @dsl_scripts = []
-                  @variables = []
+                  @env = {}
                   (0..9).each do |index|
                     script = "script#{index}"
                     @dsl_scripts.push script
                     value = "value#{index}"
                     key = "key#{index}"
-                    @variables.push(
-                      value: value,
-                      key: key
-                    )
+                    @env[key] = value
                     dsl_variable = instance_double(
                       'Formatron::DSL::Formatron::VPC::Subnet' \
                       '::Instance::Setup::Variable'
@@ -59,7 +55,12 @@ class Formatron
                         group: 'root'
                       }
                     }
-                    variables_file_content = []
+                    @commands = {
+                      'script-0' => {
+                        command: '/tmp/formatron/script-0.sh',
+                        env: @env
+                      }
+                    }
                     (0..9).each do |index|
                       @files["/tmp/formatron/script-#{index + 1}.sh"] = {
                         content: @dsl_scripts[index],
@@ -67,19 +68,11 @@ class Formatron
                         owner: 'root',
                         group: 'root'
                       }
-                      variable = @variables[index]
-                      variables_file_content.concat([
-                        "#{variable[:key]}=",
-                        variable[:value],
-                        "\n"
-                      ])
+                      @commands["script-#{index + 1}"] = {
+                        command: "/tmp/formatron/script-#{index + 1}.sh",
+                        env: @env
+                      }
                     end
-                    @files['/tmp/formatron/script-variables'] = {
-                      content: { 'Fn::Join' => ['', variables_file_content] },
-                      mode: '000644',
-                      owner: 'root',
-                      group: 'root'
-                    }
                     scripts_class = class_double(
                       'Formatron::CloudFormation::Scripts'
                     ).as_stubbed_const
@@ -103,7 +96,8 @@ class Formatron
                         Comment1: 'Create setup scripts',
                         'AWS::CloudFormation::Init' => {
                           config: {
-                            files: @files
+                            files: @files,
+                            commands: @commands
                           }
                         }
                       }
@@ -119,21 +113,24 @@ class Formatron
                         content: @setup_script
                       }
                     }
-                    variables_file_content = []
+                    # note that we wait forever for completion of the first
+                    # script because it causes a reboot
+                    @commands = {
+                      'script-0' => {
+                        command: 'C:\formatron\script-0.bat',
+                        env: @env,
+                        waitAfterCompletion: 'forever'
+                      }
+                    }
                     (0..9).each do |index|
                       @files["C:\\formatron\\script-#{index + 1}.bat"] = {
                         content: @dsl_scripts[index]
                       }
-                      variable = @variables[index]
-                      variables_file_content.concat([
-                        "#{variable[:key]}=",
-                        variable[:value],
-                        "\n"
-                      ])
+                      @commands["script-#{index + 1}"] = {
+                        command: "C:\\formatron\\script-#{index + 1}.bat",
+                        env: @env
+                      }
                     end
-                    @files['C:\formatron\script-variables.bat'] = {
-                      content: { 'Fn::Join' => ['', variables_file_content] }
-                    }
                     scripts_class = class_double(
                       'Formatron::CloudFormation::Scripts'
                     ).as_stubbed_const
@@ -157,7 +154,8 @@ class Formatron
                         Comment1: 'Create setup scripts',
                         'AWS::CloudFormation::Init' => {
                           config: {
-                            files: @files
+                            files: @files,
+                            commands: @commands
                           }
                         }
                       }

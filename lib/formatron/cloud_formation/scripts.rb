@@ -1,8 +1,9 @@
 class Formatron
   module CloudFormation
     # Generates scripts for setting up instances with CloudFormation init
+    # rubocop:disable Metrics/ModuleLength
     module Scripts
-      def self.hostname(sub_domain:, hosted_zone_name:)
+      def self.linux_common(sub_domain:, hosted_zone_name:)
         # rubocop:disable Metrics/LineLength
         <<-EOH.gsub(/^ {10}/, '')
           #/bin/bash -v
@@ -16,6 +17,24 @@ class Formatron
         EOH
         # rubocop:enable Metrics/LineLength
       end
+
+      # rubocop:disable Metrics/MethodLength
+      def self.windows_common(sub_domain:, hosted_zone_name:)
+        puts sub_domain
+        puts hosted_zone_name
+        # rubocop:disable Metrics/LineLength
+        <<-EOH.gsub(/^ {10}/, '')
+          REG ADD HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName /v ComputerName /t REG_SZ /d #{sub_domain} /f
+          REG ADD HKLM\\SYSTEM\\CurrentControlSet\\services\\Tcpip\\Parameters /v Domain /t REG_SZ /d #{hosted_zone_name} /f
+          winrm quickconfig -q
+          winrm set winrm/config/winrs @{MaxMemoryPerShellMB="1024"}
+          winrm set winrm/config @{MaxTimeoutms="1800000"}
+          netsh advfirewall firewall set rule name="remote administration" dir=in action=allow protocol=TCP remoteip=any localport=5985
+          shutdown.exe /r /t 00
+        EOH
+        # rubocop:enable Metrics/LineLength
+      end
+      # rubocop:enable Metrics/MethodLength
 
       # rubocop:disable Metrics/MethodLength
       def self.nat(cidr:)
@@ -66,8 +85,9 @@ class Formatron
           set -e
 
           export HOME=/root
-
-          source /tmp/formatron/script-variables
+          export PATH=$PATH:/usr/local/sbin/
+          export PATH=$PATH:/usr/sbin/
+          export PATH=$PATH:/sbin
 
           apt-get -y update
           apt-get -y install wget ntp cron git libfreetype6 libpng3 python-pip
@@ -134,5 +154,6 @@ class Formatron
       # rubocop:enable Metrics/ParameterLists
       # rubocop:enable Metrics/MethodLength
     end
+    # rubocop:enable Metrics/ModuleLength
   end
 end

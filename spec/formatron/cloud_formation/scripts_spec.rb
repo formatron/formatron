@@ -6,12 +6,12 @@ class Formatron
   # rubocop:disable Metrics/ModuleLength
   module CloudFormation
     describe Scripts do
-      describe '::hostname' do
+      describe '::linux_common' do
         it 'should return a script that sets the hostname, etc' do
           sub_domain = 'sub_domain'
           hosted_zone_name = 'hosted_zone_name'
           expect(
-            Scripts.hostname(
+            Scripts.linux_common(
               sub_domain: sub_domain,
               hosted_zone_name: hosted_zone_name
             )
@@ -25,6 +25,29 @@ class Formatron
             hostname $SHORTNAME
             echo $PUBLIC_DNS | tee /etc/hostname
             echo "$PRIVATE_IPV4 $PUBLIC_DNS $SHORTNAME" >> /etc/hosts
+          EOH
+          # rubocop:enable Metrics/LineLength
+        end
+      end
+
+      describe '::windows_common' do
+        it 'should return a script that sets the hostname and sets up winrm' do
+          sub_domain = 'sub_domain'
+          hosted_zone_name = 'hosted_zone_name'
+          expect(
+            Scripts.windows_common(
+              sub_domain: sub_domain,
+              hosted_zone_name: hosted_zone_name
+            )
+          # rubocop:disable Metrics/LineLength
+          ).to eql <<-EOH.gsub(/^ {12}/, '')
+            REG ADD HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName /v ComputerName /t REG_SZ /d #{sub_domain} /f
+            REG ADD HKLM\\SYSTEM\\CurrentControlSet\\services\\Tcpip\\Parameters /v Domain /t REG_SZ /d #{hosted_zone_name} /f
+            winrm quickconfig -q
+            winrm set winrm/config/winrs @{MaxMemoryPerShellMB="1024"}
+            winrm set winrm/config @{MaxTimeoutms="1800000"}
+            netsh advfirewall firewall set rule name="remote administration" dir=in action=allow protocol=TCP remoteip=any localport=5985
+            shutdown.exe /r /t 00
           EOH
           # rubocop:enable Metrics/LineLength
         end
@@ -96,8 +119,9 @@ class Formatron
             set -e
 
             export HOME=/root
-
-            source /tmp/formatron/script-variables
+            export PATH=$PATH:/usr/local/sbin/
+            export PATH=$PATH:/usr/sbin/
+            export PATH=$PATH:/sbin
 
             apt-get -y update
             apt-get -y install wget ntp cron git libfreetype6 libpng3 python-pip
