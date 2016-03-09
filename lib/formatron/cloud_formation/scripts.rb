@@ -18,21 +18,32 @@ class Formatron
         # rubocop:enable Metrics/LineLength
       end
 
-      # rubocop:disable Metrics/MethodLength
       def self.windows_common(sub_domain:, hosted_zone_name:)
-        puts sub_domain
-        puts hosted_zone_name
         # rubocop:disable Metrics/LineLength
         <<-EOH.gsub(/^ {10}/, '')
           REG ADD HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName /v ComputerName /t REG_SZ /d #{sub_domain} /f
           REG ADD HKLM\\SYSTEM\\CurrentControlSet\\services\\Tcpip\\Parameters /v Domain /t REG_SZ /d #{hosted_zone_name} /f
-          winrm quickconfig -q
-          winrm set winrm/config/winrs @{MaxMemoryPerShellMB="1024"}
-          winrm set winrm/config @{MaxTimeoutms="1800000"}
-          netsh advfirewall firewall set rule name="remote administration" dir=in action=allow protocol=TCP remoteip=any localport=5985
           shutdown.exe /r /t 00
         EOH
         # rubocop:enable Metrics/LineLength
+      end
+
+      # rubocop:disable Metrics/MethodLength
+      def self.windows_signal(wait_condition_handle:)
+        {
+          'Fn::Base64' => {
+            'Fn::Join' => [
+              '', [
+                'cfn-signal.exe -e 0 ',
+                {
+                  'Fn::Base64' => {
+                    Ref: wait_condition_handle
+                  }
+                }
+              ]
+            ]
+          }
+        }
       end
       # rubocop:enable Metrics/MethodLength
 

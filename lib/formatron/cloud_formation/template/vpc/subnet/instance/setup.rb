@@ -7,15 +7,25 @@ class Formatron
         class Subnet
           class Instance
             # Adds setup scripts to an instance
+            # rubocop:disable Metrics/ClassLength
             class Setup
-              def initialize(setup:, sub_domain:, hosted_zone_name:, os:)
+              # rubocop:disable Metrics/MethodLength
+              def initialize(
+                setup:,
+                sub_domain:,
+                hosted_zone_name:,
+                os:,
+                wait_condition_handle:
+              )
                 @setup = setup
+                @wait_condition_handle = wait_condition_handle
                 @sub_domain = sub_domain
                 @hosted_zone_name = hosted_zone_name
                 @scripts = @setup.script unless @setup.nil?
                 @variables = @setup.variable unless @setup.nil?
                 @os = os
               end
+              # rubocop:enable Metrics/MethodLength
 
               # rubocop:disable Metrics/MethodLength
               # rubocop:disable Metrics/AbcSize
@@ -53,6 +63,18 @@ class Formatron
                       env: env
                     }
                   end unless @scripts.nil?
+                  signal_script_index = @scripts.nil? ? 1 : @scripts.length + 1
+                  script_key = "script-#{signal_script_index}"
+                  script = "C:\\formatron\\#{script_key}.bat"
+                  files[script] = {
+                    content: Scripts.windows_signal(
+                      wait_condition_handle: @wait_condition_handle
+                    )
+                  }
+                  commands[script_key] = {
+                    command: script,
+                    env: env
+                  }
                 else
                   script_key = 'script-0'
                   script = "/tmp/formatron/#{script_key}.sh"
@@ -101,6 +123,7 @@ class Formatron
               # rubocop:enable Metrics/AbcSize
               # rubocop:enable Metrics/MethodLength
             end
+            # rubocop:enable Metrics/ClassLength
           end
         end
       end

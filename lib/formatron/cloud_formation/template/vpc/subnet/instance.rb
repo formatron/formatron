@@ -109,6 +109,7 @@ class Formatron
               )
               policy.merge resources: resources
               security_group = SecurityGroup.new(
+                os: @os,
                 security_group: @security_group,
                 instance_guid: @guid,
                 vpc_guid: @vpc_guid,
@@ -134,7 +135,8 @@ class Formatron
                 setup: @setup,
                 sub_domain: @sub_domain,
                 hosted_zone_name: @hosted_zone_name,
-                os: @os
+                os: @os,
+                wait_condition_handle: @wait_condition_handle_id
               )
               setup.merge instance: instance
               block_devices = BlockDevices.new(

@@ -11,6 +11,7 @@ class Formatron
             describe Setup do
               describe '#merge' do
                 before :each do
+                  @wait_condition_handle = 'wait_condition_handle'
                   @setup_script = 'setup_script'
                   @sub_domain = 'sub_domain'
                   @hosted_zone_name = 'hosted_zone_name'
@@ -81,6 +82,7 @@ class Formatron
                       hosted_zone_name: @hosted_zone_name
                     ) { @setup_script }
                     template_setup = Setup.new(
+                      wait_condition_handle: @wait_condition_handle,
                       setup: @dsl_setup,
                       sub_domain: @sub_domain,
                       hosted_zone_name: @hosted_zone_name,
@@ -107,10 +109,14 @@ class Formatron
 
                 context 'when os is windows' do
                   before :each do
+                    signal_script = 'signal_script'
                     os = 'windows'
                     @files = {
                       'C:\formatron\script-0.bat' => {
                         content: @setup_script
+                      },
+                      'C:\formatron\script-11.bat' => {
+                        content: signal_script
                       }
                     }
                     # note that we wait forever for completion of the first
@@ -120,6 +126,10 @@ class Formatron
                         command: 'C:\formatron\script-0.bat',
                         env: @env,
                         waitAfterCompletion: 'forever'
+                      },
+                      'script-11' => {
+                        command: 'C:\formatron\script-11.bat',
+                        env: @env
                       }
                     }
                     (0..9).each do |index|
@@ -138,7 +148,11 @@ class Formatron
                       sub_domain: @sub_domain,
                       hosted_zone_name: @hosted_zone_name
                     ) { @setup_script }
+                    allow(scripts_class).to receive(:windows_signal).with(
+                      wait_condition_handle: @wait_condition_handle
+                    ) { signal_script }
                     template_setup = Setup.new(
+                      wait_condition_handle: @wait_condition_handle,
                       setup: @dsl_setup,
                       sub_domain: @sub_domain,
                       hosted_zone_name: @hosted_zone_name,

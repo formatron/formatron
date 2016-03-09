@@ -558,9 +558,6 @@ class Formatron
                           'cfn-init.exe -v -s ', { Ref: 'AWS::StackName' },
                           " -r #{logical_id}",
                           ' --region ', { Ref: 'AWS::Region' }, "\n",
-
-                          'cfn-signal.exe -e %ERRORLEVEL% ', { 'Fn::Base64' => { Ref: wait_condition_handle } }, "\n",
-
                           '</script>'
                         ]
                       ]

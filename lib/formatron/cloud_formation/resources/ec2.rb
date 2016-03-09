@@ -289,16 +289,11 @@ class Formatron
           if os.eql? 'windows'
             user_data = Template.base_64(
               Template.join(
-                # rubocop:disable Metrics/LineLength
                 "<script>\n",
                 'cfn-init.exe -v -s ', Template.ref('AWS::StackName'),
                 " -r #{logical_id}",
                 ' --region ', Template.ref('AWS::Region'), "\n",
-
-                'cfn-signal.exe -e %ERRORLEVEL% ', Template.base_64(Template.ref(wait_condition_handle)), "\n",
-
                 '</script>'
-              # rubocop:enable Metrics/LineLength
               )
             )
           else

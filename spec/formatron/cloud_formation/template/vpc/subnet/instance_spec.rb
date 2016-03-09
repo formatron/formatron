@@ -98,6 +98,7 @@ class Formatron
                   '::VPC::Subnet::Instance::SecurityGroup'
                 ).as_stubbed_const transfer_nested_constants: true
                 allow(template_security_group_class).to receive(:new).with(
+                  os: os,
                   security_group: dsl_security_group,
                   instance_guid: guid,
                   vpc_guid: vpc_guid,
@@ -134,7 +135,8 @@ class Formatron
                   setup: dsl_setup,
                   sub_domain: sub_domain,
                   hosted_zone_name: hosted_zone_name,
-                  os: os
+                  os: os,
+                  wait_condition_handle: @wait_condition_handle_id
                 ) { template_setup }
                 allow(dsl_instance).to receive(
                   :setup

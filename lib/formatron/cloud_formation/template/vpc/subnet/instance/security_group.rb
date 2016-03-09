@@ -7,16 +7,19 @@ class Formatron
         class Subnet
           class Instance
             # generates CloudFormation security group resource
+            # rubocop:disable Metrics/ClassLength
             class SecurityGroup
               SECURITY_GROUP_PREFIX = 'securityGroup'
 
               # rubocop:disable Metrics/MethodLength
               def initialize(
+                os:,
                 security_group:,
                 instance_guid:,
                 vpc_guid:,
                 vpc_cidr:
               )
+                @os = os
                 @security_group = security_group
                 @vpc_guid = vpc_guid
                 @cidr = vpc_cidr
@@ -32,7 +35,11 @@ class Formatron
 
               # rubocop:disable Metrics/MethodLength
               def merge(resources:)
-                ingress_rules = _base_ingress_rules
+                if @os.eql? 'windows'
+                  ingress_rules = _base_windows_ingress_rules
+                else
+                  ingress_rules = _base_ingress_rules
+                end
                 ingress_rules.concat(
                   @open_tcp_ports.collect do |port|
                     {
@@ -104,11 +111,44 @@ class Formatron
               end
               # rubocop:enable Metrics/MethodLength
 
+              # rubocop:disable Metrics/MethodLength
+              def _base_windows_ingress_rules
+                [{
+                  cidr: @cidr,
+                  protocol: 'tcp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'udp',
+                  from_port: '0',
+                  to_port: '65535'
+                }, {
+                  cidr: @cidr,
+                  protocol: 'icmp',
+                  from_port: '-1',
+                  to_port: '-1'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '3389',
+                  to_port: '3389'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '5985',
+                  to_port: '5985'
+                }]
+              end
+              # rubocop:enable Metrics/MethodLength
+
               private(
                 :_base_egress_rules,
-                :_base_ingress_rules
+                :_base_ingress_rules,
+                :_base_windows_ingress_rules
               )
             end
+            # rubocop:enable Metrics/ClassLength
           end
         end
       end
