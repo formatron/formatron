@@ -5,19 +5,18 @@ class Formatron
     # Download the Chef Server keys
     class Keys
       # rubocop:disable Metrics/ParameterLists
-      def initialize(aws:, bucket:, name:, target:, guid:, ec2_key:)
+      def initialize(directory:, aws:, bucket:, name:, target:, guid:, ec2_key:)
         @aws = aws
         @bucket = bucket
         @name = name
         @target = target
         @guid = guid
         @ec2_key = ec2_key
+        @directory = directory
       end
       # rubocop:enable Metrics/ParameterLists
 
-      # rubocop:disable Metrics/MethodLength
       def init
-        @directory = Dir.mktmpdir 'formatron-chef-server-keys-'
         S3::ChefServerKeys.get(
           aws: @aws,
           bucket: @bucket,
@@ -29,22 +28,19 @@ class Formatron
         File.write ec2_key, @ec2_key
         File.chmod 0600, ec2_key
       end
-      # rubocop:enable Metrics/MethodLength
 
       def user_key
         S3::ChefServerKeys.user_pem_path directory: @directory
       end
 
       def organization_key
-        S3::ChefServerKeys.organization_pem_path directory: @directory
+        S3::ChefServerKeys.organization_pem_path(
+          directory: @directory
+        )
       end
 
       def ec2_key
         File.join @directory, 'ec2_key'
-      end
-
-      def unlink
-        FileUtils.rm_rf @directory unless @directory.nil?
       end
     end
   end

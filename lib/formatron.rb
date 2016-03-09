@@ -17,12 +17,14 @@ require 'formatron/external'
 # rubocop:disable Metrics/ClassLength
 class Formatron
   FORMATRONFILE = 'Formatronfile'
+  WORKING_DIRECTORY = '.formatron'
 
   attr_reader :protected
   alias_method :protected?, :protected
 
   # rubocop:disable Metrics/MethodLength
   def initialize(credentials:, directory:, target:)
+    @working_directory = File.join directory, WORKING_DIRECTORY, target
     @target = target
     @aws = AWS.new credentials: credentials
     @config = Config.target(
@@ -91,6 +93,7 @@ class Formatron
     @chef_clients = {}
     @vpcs.each do |key, vpc|
       @chef_clients[key] = ChefClients.new(
+        directory: @working_directory,
         aws: @aws,
         bucket: @bucket,
         name: @name,
@@ -169,8 +172,6 @@ class Formatron
       sub_domain = instance.sub_domain
       _provision_instance chef, cookbook, sub_domain, guid, bastion
     end
-  ensure
-    chef_clients.unlink
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
@@ -319,7 +320,6 @@ class Formatron
     end
   end
 
-  # rubocop:disable Metrics/MethodLength
   def _destroy_chef_vpc_instances(key, instances)
     chef_clients = @chef_clients[key]
     chef_clients.init
@@ -330,10 +330,7 @@ class Formatron
       guid = instance.guid
       _destroy_chef_instance chef, guid
     end
-  ensure
-    chef_clients.unlink
   end
-  # rubocop:enable Metrics/MethodLength
 
   def _destroy_chef_instance(chef, guid)
     chef.destroy(

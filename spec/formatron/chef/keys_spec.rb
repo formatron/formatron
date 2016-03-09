@@ -25,11 +25,10 @@ class Formatron
         allow(@s3_chef_server_keys).to receive(
           :organization_pem_path
         ) { @organization_pem_path }
-        allow(Dir).to receive(:mktmpdir) { @directory }
         allow(File).to receive :write
         allow(File).to receive :chmod
-        allow(FileUtils).to receive :rm_rf
         @keys = Keys.new(
+          directory: @directory,
           aws: @aws,
           bucket: @bucket,
           name: @name,
@@ -41,14 +40,8 @@ class Formatron
       end
 
       describe '#init' do
-        it 'should create a temporary directory' do
-          expect(Dir).to have_received(:mktmpdir).once.with(
-            'formatron-chef-server-keys-'
-          )
-        end
-
         it 'should download the Chef Server ' \
-           'keys to a temporary directory' do
+           'keys to the chef server directory' do
           expect(@s3_chef_server_keys).to have_received(:get).once.with(
             aws: @aws,
             bucket: @bucket,
@@ -92,13 +85,6 @@ class Formatron
       describe '#ec2_key' do
         it 'should return the path to the EC2 key' do
           expect(@keys.ec2_key).to eql File.join @directory, 'ec2_key'
-        end
-      end
-
-      describe '#unlink' do
-        it 'should clean up the temporary files' do
-          @keys.unlink
-          expect(FileUtils).to have_received(:rm_rf).with @directory
         end
       end
     end

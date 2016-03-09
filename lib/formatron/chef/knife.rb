@@ -7,9 +7,15 @@ class Formatron
     # Wrapper for the knife cli
     # rubocop:disable Metrics/ClassLength
     class Knife
+      CONFIG_FILE = 'knife.rb'
+      DATABAG_SECRET_FILE = 'databag_secret'
+      DATABAG_DIRECTORY = 'databag'
+      DATABAG_ITEM_SUFFIX = '.json'
+
       # rubocop:disable Metrics/MethodLength
       # rubocop:disable Metrics/ParameterLists
       def initialize(
+        directory:,
         keys:,
         chef_server_url:,
         username:,
@@ -18,6 +24,9 @@ class Formatron
         databag_secret:,
         configuration:
       )
+        @knife_file = File.join directory, CONFIG_FILE
+        @databag_secret_file = File.join directory, DATABAG_SECRET_FILE
+        @databag_directory = File.join directory, DATABAG_DIRECTORY
         @keys = keys
         @chef_server_url = chef_server_url
         @username = username
@@ -31,8 +40,7 @@ class Formatron
 
       # rubocop:disable Metrics/MethodLength
       def init
-        @knife_file = Tempfile.new 'formatron-knife-'
-        @knife_file.write <<-EOH.gsub(/^ {10}/, '')
+        File.write @knife_file, <<-EOH.gsub(/^ {10}/, '')
           chef_server_url '#{@chef_server_url}'
           validation_client_name '#{@organization}-validator'
           validation_key '#{@keys.organization_key}'
@@ -41,28 +49,25 @@ class Formatron
           verify_api_cert #{@ssl_verify}
           ssl_verify_mode #{@ssl_verify ? ':verify_peer' : ':verify_none'}
         EOH
-        @knife_file.close
-        @databag_secret_file = Tempfile.new 'formatron-databag-secret-'
-        @databag_secret_file.write @databag_secret
-        @databag_secret_file.close
+        File.write @databag_secret_file, @databag_secret
+        FileUtils.mkdir_p @databag_directory
       end
       # rubocop:enable Metrics/MethodLength
 
       def deploy_databag(name:)
-        databag_file = Tempfile.new ['formatron-databag-', '.json']
-        databag_file.write @configuration.merge(id: name).to_json
-        databag_file.close
+        databag_file = File.join(
+          @databag_directory, "#{name}#{DATABAG_ITEM_SUFFIX}"
+        )
+        File.write databag_file, @configuration.merge(id: name).to_json
         _attempt_to_create_databag unless _databag_exists
         _attempt_to_create_databag_item(
           name: name,
           databag_file: databag_file
         )
-      ensure
-        databag_file.unlink unless databag_file.nil?
       end
 
       def _databag_exists
-        Util::Shell.exec "knife data bag show formatron -c #{@knife_file.path}"
+        Util::Shell.exec "knife data bag show formatron -c #{@knife_file}"
       end
 
       def _attempt_to_create_databag
@@ -70,9 +75,7 @@ class Formatron
       end
 
       def _create_databag
-        # rubocop:disable Metrics/LineLength
-        Util::Shell.exec "knife data bag create formatron -c #{@knife_file.path}"
-        # rubocop:enable Metrics/LineLength
+        Util::Shell.exec "knife data bag create formatron -c #{@knife_file}"
       end
 
       def _attempt_to_create_databag_item(name:, databag_file:)
@@ -83,7 +86,7 @@ class Formatron
 
       def _create_databag_item(databag_file:)
         # rubocop:disable Metrics/LineLength
-        Util::Shell.exec "knife data bag from file formatron #{databag_file.path} --secret-file #{@databag_secret_file.path} -c #{@knife_file.path}"
+        Util::Shell.exec "knife data bag from file formatron #{databag_file} --secret-file #{@databag_secret_file} -c #{@knife_file}"
         # rubocop:enable Metrics/LineLength
       end
 
@@ -95,7 +98,7 @@ class Formatron
 
       def _environment_exists(environment)
         # rubocop:disable Metrics/LineLength
-        Util::Shell.exec "knife environment show #{environment} -c #{@knife_file.path}"
+        Util::Shell.exec "knife environment show #{environment} -c #{@knife_file}"
         # rubocop:enable Metrics/LineLength
       end
 
@@ -107,7 +110,7 @@ class Formatron
 
       def _create_environment(environment)
         # rubocop:disable Metrics/LineLength
-        Util::Shell.exec "knife environment create #{environment} -c #{@knife_file.path} -d '#{environment} environment created by formatron'"
+        Util::Shell.exec "knife environment create #{environment} -c #{@knife_file} -d '#{environment} environment created by formatron'"
         # rubocop:enable Metrics/LineLength
       end
 
@@ -118,7 +121,7 @@ class Formatron
         hostname:
       )
         # rubocop:disable Metrics/LineLength
-        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file.path}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file.path}"
+        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file}"
         command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
         fail "failed to bootstrap instance: #{guid}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
@@ -126,38 +129,33 @@ class Formatron
 
       def delete_databag(name:)
         # rubocop:disable Metrics/LineLength
-        command = "knife data bag delete formatron #{name} -y -c #{@knife_file.path}"
+        command = "knife data bag delete formatron #{name} -y -c #{@knife_file}"
         fail "failed to delete data bag item: #{name}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
       def delete_node(node:)
-        command = "knife node delete #{node} -y -c #{@knife_file.path}"
+        command = "knife node delete #{node} -y -c #{@knife_file}"
         fail "failed to delete node: #{node}" unless Util::Shell.exec command
       end
 
       def delete_client(client:)
         # rubocop:disable Metrics/LineLength
-        command = "knife client delete #{client} -y -c #{@knife_file.path}"
+        command = "knife client delete #{client} -y -c #{@knife_file}"
         fail "failed to delete client: #{client}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
       def delete_environment(environment:)
         # rubocop:disable Metrics/LineLength
-        command = "knife environment delete #{environment} -y -c #{@knife_file.path}"
+        command = "knife environment delete #{environment} -y -c #{@knife_file}"
         fail "failed to delete environment: #{environment}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
 
       def node_exists?(guid:)
-        command = "knife node show #{guid} -c #{@knife_file.path}"
+        command = "knife node show #{guid} -c #{@knife_file}"
         Util::Shell.exec command
-      end
-
-      def unlink
-        @knife_file.unlink unless @knife_file.nil?
-        @databag_secret_file.unlink unless @databag_secret_file.nil?
       end
 
       private(

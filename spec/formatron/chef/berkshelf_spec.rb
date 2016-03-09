@@ -6,21 +6,17 @@ class Formatron
   class Chef
     describe Berkshelf do
       before(:each) do
-        @config = 'config'
-        @tempfile = instance_double('Tempfile')
-        allow(@tempfile).to receive(:write)
-        allow(@tempfile).to receive(:close)
-        allow(@tempfile).to receive(:unlink)
-        allow(@tempfile).to receive(:path) { @config }
-        @tempfile_class = class_double('Tempfile').as_stubbed_const
-        allow(@tempfile_class).to receive(:new) { @tempfile }
+        @directory = 'directory'
+        @config = File.join @directory, 'berkshelf.json'
         @keys = instance_double 'Formatron::Chef::Keys'
         @chef_server_url = 'chef_server_url'
         @username = 'username'
         @user_key = 'user_key'
         allow(@keys).to receive(:user_key) { @user_key }
+        allow(File).to receive :write
         @ssl_verify = 'ssl_verify'
         @berkshelf = Berkshelf.new(
+          directory: @directory,
           keys: @keys,
           chef_server_url: @chef_server_url,
           username: @username,
@@ -31,10 +27,8 @@ class Formatron
 
       describe '#init' do
         it 'should create a config file' do
-          expect(@tempfile_class).to have_received(:new).once.with(
-            'formatron-berkshelf-'
-          )
-          expect(@tempfile).to have_received(:write).once.with(
+          expect(File).to have_received(:write).once.with(
+            @config,
             <<-EOH.gsub(/^ {14}/, '')
               {
                 "chef": {
@@ -48,17 +42,6 @@ class Formatron
               }
             EOH
           )
-          expect(@tempfile).to have_received :close
-        end
-      end
-
-      describe '#unlink' do
-        before(:each) do
-          @berkshelf.unlink
-        end
-
-        it 'should delete the Berkshelf config file' do
-          expect(@tempfile).to have_received(:unlink).with(no_args).once
         end
       end
 

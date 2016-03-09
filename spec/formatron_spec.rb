@@ -9,6 +9,7 @@ describe Formatron do
     @target = 'target'
     @config = 'config'
     @file = File.join @directory, 'Formatronfile'
+    @working_directory = File.join @directory, '.formatron', @target
     @cloud_formation_template = 'cloud_formation_template'
     @hosted_zone_name = 'hosted_zone_name'
     @config_key = 'config_key'
@@ -121,6 +122,7 @@ describe Formatron do
           sub_domain = "chef_server_sub_domain#{chef_server_index}"
           guid = "chef_server_guid#{chef_server_index}"
           allow(@chef_class).to receive(:new).with(
+            directory: @working_directory,
             aws: @aws,
             bucket: @bucket,
             name: @name,
@@ -138,7 +140,6 @@ describe Formatron do
             databag_secret: @databag_secret
           ) { chef }
           allow(chef).to receive :init
-          allow(chef).to receive :unlink
           allow(chef).to receive :provision
           allow(chef).to receive :destroy
           chef_server_key = "chef_server#{chef_server_index}"
@@ -367,6 +368,7 @@ describe Formatron do
         (0..2).each do |chef_server_index|
           chef_server_index = "#{subnet_index}_#{chef_server_index}"
           expect(@chef_class).to have_received(:new).once.with(
+            directory: @working_directory,
             aws: @aws,
             bucket: @bucket,
             name: @name,

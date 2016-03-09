@@ -6,40 +6,49 @@ require 'formatron/chef/knife'
 GUID = 'guid'
 ENVIRONMENT_CHECK_COMMAND = 'knife environment ' \
                             "show #{GUID} " \
-                            '-c knife_file'
+                            '-c directory/knife.rb'
 ENVIRONMENT_CREATE_COMMAND = 'knife environment create ' \
                              "#{GUID} -c " \
-                             "knife_file -d '#{GUID} environment " \
+                             "directory/knife.rb -d '#{GUID} environment " \
                              "created by formatron'"
 BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     '--sudo -x ubuntu -i ec2_key -E ' \
                     "#{GUID} -r cookbook -N #{GUID} " \
-                    '-c knife_file --secret-file secret_file'
+                    '-c directory/knife.rb ' \
+                    '--secret-file directory/databag_secret'
 BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i ec2_key -E ' \
                                  "#{GUID} -r cookbook " \
                                  "-N #{GUID} " \
-                                 '-c knife_file --secret-file secret_file ' \
+                                 '-c directory/knife.rb ' \
+                                 '--secret-file directory/databag_secret ' \
                                  '-G ubuntu@bastion'
-DELETE_NODE_COMMAND = "knife node delete #{GUID} -y -c knife_file"
-DELETE_CLIENT_COMMAND = "knife client delete #{GUID} -y -c knife_file"
+DELETE_NODE_COMMAND = "knife node delete #{GUID} -y -c directory/knife.rb"
+DELETE_CLIENT_COMMAND = "knife client delete #{GUID} -y -c directory/knife.rb"
 DELETE_ENVIRONMENT_COMMAND = "knife environment delete #{GUID} -y -c " \
-                             'knife_file'
+                             'directory/knife.rb'
 DELETE_DATA_BAG_COMMAND = 'knife data bag delete formatron name ' \
-                          '-y -c knife_file'
-CHECK_DATA_BAG_COMMAND = 'knife data bag show formatron -c knife_file'
-CREATE_DATA_BAG_COMMAND = 'knife data bag create formatron -c knife_file'
+                          '-y -c directory/knife.rb'
+CHECK_DATA_BAG_COMMAND = 'knife data bag show formatron -c directory/knife.rb'
+CREATE_DATA_BAG_COMMAND = 'knife data bag create formatron ' \
+                          '-c directory/knife.rb'
 CREATE_DATA_BAG_ITEM_COMMAND = 'knife data bag from file formatron ' \
-                               'databag_file --secret-file secret_file ' \
-                               '-c knife_file'
-SHOW_NODE_COMMAND = "knife node show #{GUID} -c knife_file"
+                               'directory/databag/name.json --secret-file ' \
+                               'directory/databag_secret ' \
+                               '-c directory/knife.rb'
+SHOW_NODE_COMMAND = "knife node show #{GUID} -c directory/knife.rb"
 
 class Formatron
   # rubocop:disable Metrics/ClassLength
   class Chef
     describe Knife do
       before(:each) do
+        @directory = 'directory'
+        @config_file = File.join @directory, 'knife.rb'
+        @databag_secret_file = File.join @directory, 'databag_secret'
+        @databag_directory = File.join @directory, 'databag'
         @name = 'name'
+        @databag_file = File.join @databag_directory, "#{@name}.json"
         @configuration = {
           'configuration' => 'configuration'
         }
@@ -54,42 +63,14 @@ class Formatron
         @organization_key = 'organization_key'
         allow(@keys).to receive(:organization_key) { @organization_key }
         allow(@keys).to receive(:ec2_key) { @ec2_key }
-        @knife_tempfile = instance_double('Tempfile')
-        allow(@knife_tempfile).to receive(:write)
-        allow(@knife_tempfile).to receive(:close)
-        allow(@knife_tempfile).to receive(:unlink)
-        allow(@knife_tempfile).to receive(:path) do
-          'knife_file'
-        end
-        @databag_secret_tempfile = instance_double('Tempfile')
-        allow(@databag_secret_tempfile).to receive(:write)
-        allow(@databag_secret_tempfile).to receive(:close)
-        allow(@databag_secret_tempfile).to receive(:unlink)
-        allow(@databag_secret_tempfile).to receive(:path) do
-          'secret_file'
-        end
-        @databag_tempfile = instance_double('Tempfile')
-        allow(@databag_tempfile).to receive(:write)
-        allow(@databag_tempfile).to receive(:close)
-        allow(@databag_tempfile).to receive(:unlink)
-        allow(@databag_tempfile).to receive(:path) do
-          'databag_file'
-        end
-        @tempfile_class = class_double('Tempfile').as_stubbed_const
-        allow(@tempfile_class).to receive(:new).with(
-          'formatron-knife-'
-        ) { @knife_tempfile }
-        allow(@tempfile_class).to receive(:new).with(
-          'formatron-databag-secret-'
-        ) { @databag_secret_tempfile }
-        allow(@tempfile_class).to receive(:new).with(
-          ['formatron-databag-', '.json']
-        ) { @databag_tempfile }
+        allow(File).to receive(:write)
+        allow(FileUtils).to receive(:mkdir_p)
       end
 
       context 'when verifying SSL certs' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -101,9 +82,10 @@ class Formatron
           @knife.init
         end
 
-        it 'should create a temporary file for the knife ' \
+        it 'should create a file for the knife ' \
            'config setting the verify mode to :verify_peer' do
-          expect(@knife_tempfile).to have_received(:write).with(
+          expect(File).to have_received(:write).with(
+            @config_file,
             <<-EOH.gsub(/^ {14}/, '')
               chef_server_url '#{@chef_server_url}'
               validation_client_name '#{@organization}-validator'
@@ -114,23 +96,26 @@ class Formatron
               ssl_verify_mode :verify_peer
             EOH
           ).once
-          expect(@knife_tempfile).to have_received(:close).with(no_args).once
         end
 
-        it 'should create a temporary file for the databag ' \
+        it 'should create a file for the databag ' \
            'encryption secret' do
-          expect(@databag_secret_tempfile).to have_received(
+          expect(File).to have_received(
             :write
-          ).with @databag_secret
-          expect(@databag_secret_tempfile).to have_received(
-            :close
-          ).with no_args
+          ).with @databag_secret_file, @databag_secret
+        end
+
+        it 'should create a directory for the databag items' do
+          expect(FileUtils).to have_received(
+            :mkdir_p
+          ).with @databag_directory
         end
       end
 
       context 'when not verifying SSL certs' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -142,9 +127,10 @@ class Formatron
           @knife.init
         end
 
-        it 'should create a temporary file for the knife ' \
+        it 'should create a file for the knife ' \
            'config setting the verify mode to :verify_none' do
-          expect(@knife_tempfile).to have_received(:write).with(
+          expect(File).to have_received(:write).with(
+            @config_file,
             <<-EOH.gsub(/^\ {14}/, '')
               chef_server_url '#{@chef_server_url}'
               validation_client_name '#{@organization}-validator'
@@ -155,49 +141,26 @@ class Formatron
               ssl_verify_mode :verify_none
             EOH
           ).once
-          expect(@knife_tempfile).to have_received(:close).with(no_args).once
         end
 
-        it 'should create a temporary file for the databag ' \
+        it 'should create a file for the databag ' \
            'encryption secret' do
-          expect(@databag_secret_tempfile).to have_received(
+          expect(File).to have_received(
             :write
-          ).with @databag_secret
-          expect(@databag_secret_tempfile).to have_received(
-            :close
-          ).with no_args
-        end
-      end
-
-      describe '#unlink' do
-        before(:each) do
-          @knife = Knife.new(
-            keys: @keys,
-            chef_server_url: @chef_server_url,
-            username: @username,
-            organization: @organization,
-            ssl_verify: false,
-            databag_secret: @databag_secret,
-            configuration: @configuration
-          )
-          @knife.init
-          @knife.unlink
+          ).with @databag_secret_file, @databag_secret
         end
 
-        it 'should delete the knife config file' do
-          expect(@knife_tempfile).to have_received(:unlink).with(no_args).once
-        end
-
-        it 'should delete the databag secret file' do
-          expect(@databag_secret_tempfile).to have_received(
-            :unlink
-          ).with no_args
+        it 'should create a directory for the databag items' do
+          expect(FileUtils).to have_received(
+            :mkdir_p
+          ).with @databag_directory
         end
       end
 
       describe '#deploy_databag' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -207,15 +170,10 @@ class Formatron
             configuration: @configuration
           )
           @knife.init
-          expect(@databag_tempfile).to receive(
-            :write
-          ).with @configuration.merge(id: @name).to_json
-          expect(@databag_tempfile).to receive(
-            :close
-          ).with no_args
-          expect(@databag_tempfile).to receive(
-            :unlink
-          ).with no_args
+          expect(File).to receive(:write).with(
+            @databag_file,
+            @configuration.merge(id: @name).to_json
+          )
         end
 
         context 'when the data bag already exists' do
@@ -324,6 +282,7 @@ class Formatron
       describe '#create_environment' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -408,6 +367,7 @@ class Formatron
       describe '#bootstrap' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -489,6 +449,7 @@ class Formatron
       describe '#delete_databag' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -539,6 +500,7 @@ class Formatron
       describe '#delete_node' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -593,6 +555,7 @@ class Formatron
       describe '#delete_client' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -647,6 +610,7 @@ class Formatron
       describe '#delete_environment' do
         before(:each) do
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,
@@ -704,6 +668,7 @@ class Formatron
             'Formatron::Util::Shell'
           ).as_stubbed_const
           @knife = Knife.new(
+            directory: @directory,
             keys: @keys,
             chef_server_url: @chef_server_url,
             username: @username,

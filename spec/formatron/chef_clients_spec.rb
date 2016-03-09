@@ -4,6 +4,7 @@ require 'formatron/chef_clients'
 class Formatron
   describe ChefClients do
     before :each do
+      @directory = 'directory'
       @aws = 'aws'
       @bucket = 'bucket'
       @name = 'name'
@@ -55,8 +56,8 @@ class Formatron
           'Formatron::Chef'
         )
         allow(chef_client).to receive :init
-        allow(chef_client).to receive :unlink
         allow(chef_class).to receive(:new).with(
+          directory: @directory,
           aws: @aws,
           bucket: @bucket,
           name: @name,
@@ -100,8 +101,8 @@ class Formatron
           'Formatron::Chef'
         )
         allow(chef_client).to receive :init
-        allow(chef_client).to receive :unlink
         allow(chef_class).to receive(:new).with(
+          directory: @directory,
           aws: @aws,
           bucket: @bucket,
           name: @name,
@@ -136,6 +137,7 @@ class Formatron
           @vpc
         ) { @chef_servers }
         @chef_clients = ChefClients.new(
+          directory: @directory,
           aws: @aws,
           bucket: @bucket,
           name: @name,
@@ -154,15 +156,6 @@ class Formatron
           @chef_clients.init
           @chef_client.values.each do |chef_client|
             expect(chef_client).to have_received :init
-          end
-        end
-      end
-
-      describe '#unlink' do
-        it 'should unlink the chef clients' do
-          @chef_clients.unlink
-          @chef_client.values.each do |chef_client|
-            expect(chef_client).to have_received :unlink
           end
         end
       end
@@ -193,6 +186,7 @@ class Formatron
           @vpc
         ) { @chef_servers }
         @chef_clients = ChefClients.new(
+          directory: @directory,
           aws: @aws,
           bucket: @bucket,
           name: @name,

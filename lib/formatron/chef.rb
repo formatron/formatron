@@ -11,7 +11,9 @@ class Formatron
   class Chef
     # rubocop:disable Metrics/MethodLength
     # rubocop:disable Metrics/ParameterLists
+    # rubocop:disable Metrics/AbcSize
     def initialize(
+      directory:,
       aws:,
       bucket:,
       name:,
@@ -28,6 +30,7 @@ class Formatron
       configuration:,
       databag_secret:
     )
+      @working_directory = File.join directory, guid
       @aws = aws
       @name = name
       @target = target
@@ -38,6 +41,7 @@ class Formatron
       @bastions = bastions
       chef_server_url = _chef_server_url
       @keys = Keys.new(
+        directory: @working_directory,
         aws: @aws,
         bucket: bucket,
         name: server_stack,
@@ -46,6 +50,7 @@ class Formatron
         ec2_key: ec2_key
       )
       @knife = Knife.new(
+        directory: @working_directory,
         keys: @keys,
         chef_server_url: chef_server_url,
         username: username,
@@ -55,6 +60,7 @@ class Formatron
         configuration: configuration
       )
       @berkshelf = Berkshelf.new(
+        directory: @working_directory,
         keys: @keys,
         chef_server_url: chef_server_url,
         username: username,
@@ -64,6 +70,7 @@ class Formatron
         keys: @keys
       )
     end
+    # rubocop:enable Metrics/AbcSize
     # rubocop:enable Metrics/ParameterLists
     # rubocop:enable Metrics/MethodLength
 
@@ -73,6 +80,7 @@ class Formatron
         name: @server_stack,
         target: @target
       )
+      FileUtils.mkdir_p @working_directory
       @keys.init
       @knife.init
       @berkshelf.init
@@ -213,12 +221,6 @@ class Formatron
       @knife.delete_environment environment: guid
     end
     # rubocop:enable Metrics/MethodLength
-
-    def unlink
-      @keys.unlink
-      @knife.unlink
-      @berkshelf.unlink
-    end
 
     def _chef_server_url
       "https://#{@chef_sub_domain}.#{@hosted_zone_name}" \

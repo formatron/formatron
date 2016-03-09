@@ -7,7 +7,7 @@ class Formatron
       # CLI command for credentials generator
       module Credentials
         def self.dot_credentials
-          File.join '.formatron', 'credentials.json'
+          File.join Formatron::WORKING_DIRECTORY, 'credentials.json'
         end
 
         def self.global_credentials

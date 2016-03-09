@@ -16,7 +16,9 @@ class Formatron
       @server_stack = 'server_stack'
       @hosted_zone_name = 'hosted_zone_name'
       @cookbook_name = 'cookbook'
-      @cookbook = "directory/cookbooks/#{@cookbook_name}"
+      @directory = 'directory'
+      @working_directory = File.join @directory, @guid
+      @cookbook = "#{@directory}/cookbooks/#{@cookbook_name}"
       @sub_domain = 'sub_domain'
       @hostname = "#{@sub_domain}.#{@hosted_zone_name}"
       @bastions = {
@@ -43,7 +45,6 @@ class Formatron
       ).as_stubbed_const
       @keys = instance_double 'Formatron::Chef::Keys'
       allow(@keys_class).to receive(:new) { @keys }
-      allow(@keys).to receive :unlink
       allow(@keys).to receive :init
       @berkshelf_class = class_double(
         'Formatron::Chef::Berkshelf'
@@ -53,7 +54,6 @@ class Formatron
         @berkshelf
       end
       allow(@berkshelf).to receive(:upload)
-      allow(@berkshelf).to receive :unlink
       allow(@berkshelf).to receive :init
       @knife_class = class_double(
         'Formatron::Chef::Knife'
@@ -67,7 +67,6 @@ class Formatron
       allow(@knife).to receive(:delete_node)
       allow(@knife).to receive(:delete_client)
       allow(@knife).to receive(:delete_environment)
-      allow(@knife).to receive :unlink
       allow(@knife).to receive :init
       @ssh_class = class_double(
         'Formatron::Chef::SSH'
@@ -75,7 +74,9 @@ class Formatron
       @ssh = instance_double 'Formatron::Chef::SSH'
       allow(@ssh_class).to receive(:new) { @ssh }
       allow(@ssh).to receive :run_chef_client
+      allow(FileUtils).to receive :mkdir_p
       @chef = Chef.new(
+        directory: @directory,
         aws: @aws,
         bucket: @bucket,
         name: @name,
@@ -96,6 +97,7 @@ class Formatron
 
     it 'should create a keys instance' do
       expect(@keys_class).to have_received(:new).once.with(
+        directory: @working_directory,
         aws: @aws,
         bucket: @bucket,
         name: @server_stack,
@@ -107,6 +109,7 @@ class Formatron
 
     it 'should create a knife instance' do
       expect(@knife_class).to have_received(:new).once.with(
+        directory: @working_directory,
         keys: @keys,
         chef_server_url: @chef_server_url,
         username: @username,
@@ -119,6 +122,7 @@ class Formatron
 
     it 'should create a berkshelf instance' do
       expect(@berkshelf_class).to have_received(:new).once.with(
+        directory: @working_directory,
         keys: @keys,
         chef_server_url: @chef_server_url,
         username: @username,
@@ -161,6 +165,12 @@ class Formatron
       end
 
       describe '#init' do
+        it 'should create the working directory for keys, etc' do
+          expect(FileUtils).to have_received(:mkdir_p).once.with(
+            @working_directory
+          )
+        end
+
         it 'should download the chef keys' do
           expect(@keys).to have_received :init
         end
@@ -342,24 +352,6 @@ class Formatron
           expect(@knife).to have_received(:delete_environment).once.with(
             environment: @instance_guid
           )
-        end
-      end
-
-      describe 'unlink' do
-        before :each do
-          @chef.unlink
-        end
-
-        it 'should clean up temporary keys' do
-          expect(@keys).to have_received :unlink
-        end
-
-        it 'should clean up temporary knife config' do
-          expect(@knife).to have_received :unlink
-        end
-
-        it 'should clean up temporary Berkshelf config' do
-          expect(@berkshelf).to have_received :unlink
         end
       end
     end

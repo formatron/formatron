@@ -5,6 +5,7 @@ class Formatron
     # rubocop:disable Metrics/AbcSize
     # rubocop:disable Metrics/MethodLength
     def initialize(
+      directory:,
       aws:,
       bucket:,
       name:,
@@ -27,6 +28,7 @@ class Formatron
       bastions = Hash[bastions.map { |k, v| [k, v.sub_domain] }]
       chef_servers.each do |key, chef_server|
         @chef_clients[key] = Chef.new(
+          directory: directory,
           aws: aws,
           bucket: bucket,
           name: name,
@@ -56,10 +58,6 @@ class Formatron
 
     def init
       @chef_clients.values.each(&:init)
-    end
-
-    def unlink
-      @chef_clients.values.each(&:unlink)
     end
   end
 end
