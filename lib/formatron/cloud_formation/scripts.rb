@@ -31,18 +31,16 @@ class Formatron
       # rubocop:disable Metrics/MethodLength
       def self.windows_signal(wait_condition_handle:)
         {
-          'Fn::Base64' => {
-            'Fn::Join' => [
-              '', [
-                'cfn-signal.exe -e 0 ',
-                {
-                  'Fn::Base64' => {
-                    Ref: wait_condition_handle
-                  }
+          'Fn::Join' => [
+            '', [
+              'cfn-signal.exe -e 0 ',
+              {
+                'Fn::Base64' => {
+                  Ref: wait_condition_handle
                 }
-              ]
+              }
             ]
-          }
+          ]
         }
       end
       # rubocop:enable Metrics/MethodLength
