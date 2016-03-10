@@ -23,6 +23,8 @@ class Formatron
           external:,
           hosted_zone_name:,
           key_pair:,
+          administrator_name:,
+          administrator_password:,
           kms_key:,
           hosted_zone_id:,
           bucket:,
@@ -33,6 +35,8 @@ class Formatron
           @external = external
           @hosted_zone_name = hosted_zone_name
           @key_pair = key_pair
+          @administrator_name = administrator_name
+          @administrator_password = administrator_password
           @kms_key = kms_key
           @hosted_zone_id = hosted_zone_id
           @bucket = bucket
@@ -72,6 +76,8 @@ class Formatron
               vpc_guid: @guid,
               vpc_cidr: @cidr,
               key_pair: @key_pair,
+              administrator_name: @administrator_name,
+              administrator_password: @administrator_password,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
               nats: Util::VPC.instances(:nat, @vpc),
@@ -104,6 +110,8 @@ class Formatron
               vpc_guid: @guid,
               vpc_cidr: @cidr,
               key_pair: @key_pair,
+              administrator_name: @administrator_name,
+              administrator_password: @administrator_password,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
               nats: Util::VPC.instances(:nat, @external, @vpc),

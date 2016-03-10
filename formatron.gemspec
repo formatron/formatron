@@ -50,5 +50,6 @@ EOH
   spec.add_runtime_dependency 'deep_merge', '~> 1.0'
   spec.add_runtime_dependency 'berkshelf', '~> 4.0'
   spec.add_runtime_dependency 'chef', '~> 12.5'
+  spec.add_runtime_dependency 'knife-windows', '~> 1.3'
   spec.add_runtime_dependency 'net-ssh', '~> 2.9'
 end

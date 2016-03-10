@@ -430,12 +430,16 @@ class Formatron
             logical_id = 'logical_id'
             source_dest_check = 'source_dest_check'
             os = 'os'
+            administrator_name = 'administrator_name'
+            administrator_password = 'administrator_password'
             expect(
               EC2.instance(
                 instance_profile: instance_profile,
                 availability_zone: availability_zone,
                 instance_type: instance_type,
                 key_name: key_name,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 subnet: subnet,
                 name: name,
                 wait_condition_handle: wait_condition_handle,
@@ -508,12 +512,23 @@ class Formatron
               logical_id = 'logical_id'
               source_dest_check = 'source_dest_check'
               os = 'windows'
+              administrator_name = 'administrator_name'
+              administrator_password = 'administrator_password'
+              administrator_script = 'administrator_script'
+              allow(Formatron::CloudFormation::Scripts).to receive(
+                :windows_administrator
+              ).with(
+                name: administrator_name,
+                password: administrator_password
+              ) { administrator_script }
               expect(
                 EC2.instance(
                   instance_profile: instance_profile,
                   availability_zone: availability_zone,
                   instance_type: instance_type,
                   key_name: key_name,
+                  administrator_name: administrator_name,
+                  administrator_password: administrator_password,
                   subnet: subnet,
                   name: name,
                   wait_condition_handle: wait_condition_handle,
@@ -557,6 +572,7 @@ class Formatron
                           "<powershell>\n",
                           "try\n",
                           "{\n",
+                          administrator_script,
                           'winrm quickconfig -q', "\n",
                           "winrm set winrm/config/winrs '@{MaxMemoryPerShellMB=\"1024\"}'", "\n",
                           "winrm set winrm/config '@{MaxTimeoutms=\"1800000\"}'", "\n",

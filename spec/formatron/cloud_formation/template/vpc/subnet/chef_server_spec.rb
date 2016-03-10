@@ -18,6 +18,8 @@ class Formatron
               target = 'target'
               @guid = 'guid'
               key_pair = 'key_pair'
+              administrator_name = 'administrator_name'
+              administrator_password = 'administrator_password'
               availability_zone = 'availability_zone'
               subnet_guid = 'subnet_guid'
               hosted_zone_name = 'hosted_zone_name'
@@ -201,6 +203,8 @@ class Formatron
               allow(template_instance_class).to receive(:new).with(
                 instance: @dsl_chef_server,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,
@@ -216,6 +220,8 @@ class Formatron
               @template_chef_server = ChefServer.new(
                 chef_server: @dsl_chef_server,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,

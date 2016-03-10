@@ -7,6 +7,7 @@ class Formatron
   describe Chef do
     before :each do
       stub_const 'Formatron::LOG', Logger.new('/dev/null')
+      @os = 'os'
       @aws = instance_double 'Formatron::AWS'
       @guid = 'guid'
       @instance_guid = 'instance_guid'
@@ -197,6 +198,7 @@ class Formatron
           it 'should error' do
             expect do
               @chef.provision(
+                os: @os,
                 sub_domain: @sub_domain,
                 guid: @instance_guid,
                 cookbook: @cookbook,
@@ -215,6 +217,7 @@ class Formatron
                 target: @target
               )
               @chef.provision(
+                os: @os,
                 sub_domain: @sub_domain,
                 guid: @instance_guid,
                 cookbook: @cookbook,
@@ -253,6 +256,7 @@ class Formatron
 
             it 'should bootstrap the instance' do
               expect(@knife).to have_received(:bootstrap).once.with(
+                os: @os,
                 bastion_hostname: @bastion_hostname,
                 guid: @instance_guid,
                 cookbook: @cookbook_name,
@@ -312,6 +316,7 @@ class Formatron
 
               it 'should bootstrap the instance' do
                 expect(@knife).to have_received(:bootstrap).once.with(
+                  os: @os,
                   bastion_hostname: @bastion_hostname,
                   guid: @instance_guid,
                   cookbook: @cookbook_name,

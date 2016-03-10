@@ -11,6 +11,8 @@ class Formatron
             describe '#merge' do
               before :each do
                 key_pair = 'key_pair'
+                administrator_name = 'administrator_name'
+                administrator_password = 'administrator_password'
                 guid = 'guid'
                 vpc_guid = 'vpc_guid'
                 vpc_cidr = 'vpc_cidr'
@@ -186,6 +188,8 @@ class Formatron
                   availability_zone: availability_zone,
                   instance_type: instance_type,
                   key_name: key_pair,
+                  administrator_name: administrator_name,
+                  administrator_password: administrator_password,
                   subnet: subnet_id,
                   name: "#{sub_domain}.#{hosted_zone_name}",
                   wait_condition_handle: @wait_condition_handle_id,
@@ -311,6 +315,8 @@ class Formatron
                 template_instance = Instance.new(
                   instance: dsl_instance,
                   key_pair: key_pair,
+                  administrator_name: administrator_name,
+                  administrator_password: administrator_password,
                   availability_zone: availability_zone,
                   subnet_guid: subnet_guid,
                   hosted_zone_name: hosted_zone_name,

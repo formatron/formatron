@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'formatron/cloud_formation/template'
 
 class Formatron
-  # namespacing tests
+  # rubocop:disable Metrics/ModuleLength
   module CloudFormation
     describe Template do
       include TemplateTest
@@ -12,6 +12,8 @@ class Formatron
         @dsl_instances = {}
         hosted_zone_name = 'hosted_zone_name'
         key_pair = 'key_pair'
+        administrator_name = 'administrator_name'
+        administrator_password = 'administrator_password'
         kms_key = 'kms_key'
         hosted_zone_id = 'hosted_zone_id'
         bucket = 'bucket'
@@ -24,6 +26,8 @@ class Formatron
             {
               hosted_zone_name: hosted_zone_name,
               key_pair: key_pair,
+              administrator_name: administrator_name,
+              administrator_password: administrator_password,
               kms_key: kms_key,
               hosted_zone_id: hosted_zone_id,
               bucket: bucket,
@@ -70,6 +74,8 @@ class Formatron
           formatron: formatron,
           hosted_zone_name: hosted_zone_name,
           key_pair: key_pair,
+          administrator_name: administrator_name,
+          administrator_password: administrator_password,
           kms_key: kms_key,
           hosted_zone_id: hosted_zone_id,
           target: target,
@@ -108,4 +114,5 @@ class Formatron
       end
     end
   end
+  # rubocop:enable Metrics/ModuleLength
 end

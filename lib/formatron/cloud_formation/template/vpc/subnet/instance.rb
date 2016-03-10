@@ -33,6 +33,8 @@ class Formatron
             def initialize(
               instance:,
               key_pair:,
+              administrator_name:,
+              administrator_password:,
               availability_zone:,
               subnet_guid:,
               hosted_zone_name:,
@@ -64,6 +66,8 @@ class Formatron
               @instance_type = @instance.instance_type || 't2.micro'
               @os = @instance.os || 'ubuntu'
               @key_pair = key_pair
+              @administrator_name = administrator_name
+              @administrator_password = administrator_password
               @subnet_guid = subnet_guid
               @subnet_id = "#{Subnet::SUBNET_PREFIX}#{@subnet_guid}"
               @sub_domain = @instance.sub_domain
@@ -123,6 +127,8 @@ class Formatron
                 availability_zone: @availability_zone,
                 instance_type: @instance_type,
                 key_name: @key_pair,
+                administrator_name: @administrator_name,
+                administrator_password: @administrator_password,
                 subnet: @subnet_id,
                 name: "#{@sub_domain}.#{@hosted_zone_name}",
                 wait_condition_handle: @wait_condition_handle_id,

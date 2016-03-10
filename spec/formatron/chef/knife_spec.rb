@@ -16,6 +16,11 @@ BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     "#{GUID} -r cookbook -N #{GUID} " \
                     '-c directory/knife.rb ' \
                     '--secret-file directory/databag_secret'
+BOOTSTRAP_COMMAND_WITH_WINDOWS = 'knife bootstrap windows winrm hostname ' \
+                    '-E ' \
+                    "#{GUID} -r cookbook -N #{GUID} " \
+                    '-c directory/knife.rb ' \
+                    '--secret-file directory/databag_secret'
 BOOTSTRAP_COMMAND_WITH_BASTION = 'knife bootstrap hostname ' \
                                  '--sudo -x ubuntu -i ec2_key -E ' \
                                  "#{GUID} -r cookbook " \
@@ -366,6 +371,7 @@ class Formatron
 
       describe '#bootstrap' do
         before(:each) do
+          @os = 'os'
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
@@ -377,6 +383,54 @@ class Formatron
             configuration: @configuration
           )
           @knife.init
+        end
+
+        context 'when the host is windows' do
+          before(:each) do
+            @os = 'windows'
+            @shell = class_double(
+              'Formatron::Util::Shell'
+            ).as_stubbed_const
+            allow(@shell).to receive(:exec).with(
+              BOOTSTRAP_COMMAND_WITH_WINDOWS
+            ) { true }
+          end
+
+          it 'should bootstrap the host directly' do
+            @knife.bootstrap(
+              os: @os,
+              guid: GUID,
+              bastion_hostname: 'bastion',
+              cookbook: 'cookbook',
+              hostname: 'hostname'
+            )
+            expect(@shell).to have_received(:exec).once
+          end
+
+          context 'when the bootstrap command fails' do
+            before(:each) do
+              @shell = class_double(
+                'Formatron::Util::Shell'
+              ).as_stubbed_const
+              allow(@shell).to receive(:exec).with(
+                BOOTSTRAP_COMMAND_WITH_WINDOWS
+              ) { false }
+            end
+
+            it 'should fail' do
+              expect do
+                @knife.bootstrap(
+                  os: @os,
+                  guid: GUID,
+                  bastion_hostname: 'bastion',
+                  cookbook: 'cookbook',
+                  hostname: 'hostname'
+                )
+              end.to raise_error(
+                "failed to bootstrap instance: #{GUID}"
+              )
+            end
+          end
         end
 
         context 'when the host is the bastion' do
@@ -391,6 +445,7 @@ class Formatron
 
           it 'should bootstrap the host directly' do
             @knife.bootstrap(
+              os: @os,
               guid: GUID,
               bastion_hostname: 'hostname',
               cookbook: 'cookbook',
@@ -412,6 +467,7 @@ class Formatron
 
           it 'should bootstrap the host directly' do
             @knife.bootstrap(
+              os: @os,
               guid: GUID,
               bastion_hostname: 'bastion',
               cookbook: 'cookbook',
@@ -434,6 +490,7 @@ class Formatron
           it 'should fail' do
             expect do
               @knife.bootstrap(
+                os: @os,
                 guid: GUID,
                 bastion_hostname: 'bastion',
                 cookbook: 'cookbook',

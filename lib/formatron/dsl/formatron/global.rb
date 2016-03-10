@@ -18,6 +18,7 @@ class Formatron
         dsl_property :kms_key
         dsl_property :databag_secret
         dsl_block :ec2, 'EC2'
+        dsl_block :windows, 'Windows'
 
         def hosted_zone_id(value = nil)
           unless value.nil?

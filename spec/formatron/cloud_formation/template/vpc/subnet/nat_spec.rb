@@ -14,6 +14,8 @@ class Formatron
               name = 'name'
               target = 'target'
               key_pair = 'key_pair'
+              administrator_name = 'administrator_name'
+              administrator_password = 'administrator_password'
               availability_zone = 'availability_zone'
               subnet_guid = 'subnet_guid'
               hosted_zone_name = 'hosted_zone_name'
@@ -58,6 +60,8 @@ class Formatron
               allow(template_instance_class).to receive(:new).with(
                 instance: @dsl_nat,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,
@@ -73,6 +77,8 @@ class Formatron
               @template_nat = NAT.new(
                 nat: @dsl_nat,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,

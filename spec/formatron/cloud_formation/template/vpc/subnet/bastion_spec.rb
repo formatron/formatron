@@ -5,7 +5,7 @@ class Formatron
   module CloudFormation
     class Template
       class VPC
-        # namespacing for tests
+        # rubocop:disable Metrics/ClassLength
         class Subnet
           describe Bastion do
             before :each do
@@ -13,6 +13,8 @@ class Formatron
               name = 'name'
               target = 'target'
               key_pair = 'key_pair'
+              administrator_name = 'administrator_name'
+              administrator_password = 'administrator_password'
               availability_zone = 'availability_zone'
               subnet_guid = 'subnet_guid'
               hosted_zone_name = 'hosted_zone_name'
@@ -46,6 +48,8 @@ class Formatron
               allow(template_instance_class).to receive(:new).with(
                 instance: @dsl_bastion,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,
@@ -61,6 +65,8 @@ class Formatron
               @template_bastion = Bastion.new(
                 bastion: @dsl_bastion,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,
@@ -107,6 +113,7 @@ class Formatron
             end
           end
         end
+        # rubocop:enable Metrics/ClassLength
       end
     end
   end

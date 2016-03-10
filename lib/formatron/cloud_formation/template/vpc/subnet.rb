@@ -25,6 +25,8 @@ class Formatron
             vpc_guid:,
             vpc_cidr:,
             key_pair:,
+            administrator_name:,
+            administrator_password:,
             hosted_zone_name:,
             kms_key:,
             nats:,
@@ -41,6 +43,8 @@ class Formatron
             @cidr = @subnet.cidr
             @acl = @subnet.acl
             @key_pair = key_pair
+            @administrator_name = administrator_name
+            @administrator_password = administrator_password
             @hosted_zone_name = hosted_zone_name
             @kms_key = kms_key
             @nats = nats
@@ -78,6 +82,8 @@ class Formatron
                 args = {
                   symbol => instance,
                   key_pair: @key_pair,
+                  administrator_name: @administrator_name,
+                  administrator_password: @administrator_password,
                   availability_zone: @availability_zone,
                   subnet_guid: @guid,
                   hosted_zone_name: @hosted_zone_name,
@@ -116,6 +122,8 @@ class Formatron
                 args = {
                   symbol => instance,
                   key_pair: @key_pair,
+                  administrator_name: @administrator_name,
+                  administrator_password: @administrator_password,
                   availability_zone: @availability_zone,
                   subnet_guid: @guid,
                   hosted_zone_name: @hosted_zone_name,

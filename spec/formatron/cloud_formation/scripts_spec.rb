@@ -71,6 +71,56 @@ class Formatron
         end
       end
 
+      describe '::windows_administrator' do
+        it 'should return a script that sets the local ' \
+           'administrator user name and password' do
+          name = 'name'
+          password = 'password'
+          # rubocop:disable Metrics/LineLength
+          expect(
+            Scripts.windows_administrator(
+              name: name,
+              password: password
+            )
+          ).to eql <<-EOH.gsub(/^ {12}/, '')
+            $newAdminName = '#{name}'
+            $adminPassword = '#{password}'
+
+            # disable password policy
+            secedit /export /cfg c:\\secpol.cfg
+            (gc C:\\secpol.cfg).replace("PasswordComplexity = 1", "PasswordComplexity = 0") | Out-File C:\\secpol.cfg
+            secedit /configure /db c:\\windows\\security\\local.sdb /cfg c:\\secpol.cfg /areas SECURITYPOLICY
+            rm -force c:\\secpol.cfg -confirm:$false
+
+            # find the local administrator user
+            $computerName = $env:COMPUTERNAME
+            $computer = [ADSI] "WinNT://$computerName,Computer"
+            foreach ( $childObject in $computer.Children ) {
+              # Skip objects that are not users.
+              if ( $childObject.Class -ne "User" ) {
+                continue
+              }
+              $type = "System.Security.Principal.SecurityIdentifier"
+              $childObjectSID = new-object $type($childObject.objectSid[0],0)
+              if ( $childObjectSID.Value.EndsWith("-500") ) {
+                $adminName = $childObject.Name[0]
+
+                # set the new password
+                $adminUser = [ADSI] "WinNT://$computerName/$adminName,User"
+                $adminUser.SetPassword($adminPassword)
+
+                # set the new name
+                $user = Get-WMIObject Win32_UserAccount -Filter "Name='$adminName'"
+                $result = $user.Rename($newAdminName)
+
+                break
+              }
+            }
+          EOH
+          # rubocop:enable Metrics/LineLength
+        end
+      end
+
       describe '::nat' do
         it 'should return a script that sets up a NAT' do
           cidr = 'cidr'

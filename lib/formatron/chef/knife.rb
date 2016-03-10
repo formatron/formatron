@@ -115,11 +115,13 @@ class Formatron
       end
 
       def bootstrap(
+        os:,
         guid:,
         bastion_hostname:,
         cookbook:,
         hostname:
       )
+        puts os
         # rubocop:disable Metrics/LineLength
         command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file}"
         command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname

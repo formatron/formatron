@@ -29,6 +29,48 @@ class Formatron
       end
 
       # rubocop:disable Metrics/MethodLength
+      def self.windows_administrator(name:, password:)
+        # rubocop:disable Metrics/LineLength
+        <<-EOH.gsub(/^ {10}/, '')
+          $newAdminName = '#{name}'
+          $adminPassword = '#{password}'
+
+          # disable password policy
+          secedit /export /cfg c:\\secpol.cfg
+          (gc C:\\secpol.cfg).replace("PasswordComplexity = 1", "PasswordComplexity = 0") | Out-File C:\\secpol.cfg
+          secedit /configure /db c:\\windows\\security\\local.sdb /cfg c:\\secpol.cfg /areas SECURITYPOLICY
+          rm -force c:\\secpol.cfg -confirm:$false
+
+          # find the local administrator user
+          $computerName = $env:COMPUTERNAME
+          $computer = [ADSI] "WinNT://$computerName,Computer"
+          foreach ( $childObject in $computer.Children ) {
+            # Skip objects that are not users.
+            if ( $childObject.Class -ne "User" ) {
+              continue
+            }
+            $type = "System.Security.Principal.SecurityIdentifier"
+            $childObjectSID = new-object $type($childObject.objectSid[0],0)
+            if ( $childObjectSID.Value.EndsWith("-500") ) {
+              $adminName = $childObject.Name[0]
+
+              # set the new password
+              $adminUser = [ADSI] "WinNT://$computerName/$adminName,User"
+              $adminUser.SetPassword($adminPassword)
+
+              # set the new name
+              $user = Get-WMIObject Win32_UserAccount -Filter "Name='$adminName'"
+              $result = $user.Rename($newAdminName)
+
+              break
+            }
+          }
+        EOH
+        # rubocop:enable Metrics/LineLength
+      end
+      # rubocop:enable Metrics/MethodLength
+
+      # rubocop:disable Metrics/MethodLength
       def self.windows_signal(wait_condition_handle:)
         {
           'Fn::Join' => [

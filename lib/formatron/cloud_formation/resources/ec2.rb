@@ -1,4 +1,5 @@
 require_relative '../template'
+require_relative '../scripts'
 
 class Formatron
   module CloudFormation
@@ -278,6 +279,8 @@ class Formatron
           availability_zone:,
           instance_type:,
           key_name:,
+          administrator_name:,
+          administrator_password:,
           subnet:,
           name:,
           wait_condition_handle:,
@@ -293,6 +296,10 @@ class Formatron
                 "<powershell>\n",
                 "try\n",
                 "{\n",
+                Scripts.windows_administrator(
+                  name: administrator_name,
+                  password: administrator_password
+                ),
                 'winrm quickconfig -q', "\n",
                 "winrm set winrm/config/winrs '@{MaxMemoryPerShellMB=\"1024\"}'", "\n",
                 "winrm set winrm/config '@{MaxTimeoutms=\"1800000\"}'", "\n",

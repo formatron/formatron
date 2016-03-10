@@ -89,6 +89,7 @@ class Formatron
     # rubocop:disable Metrics/MethodLength
     # rubocop:disable Metrics/AbcSize
     def provision(
+      os:,
       sub_domain:,
       guid:,
       cookbook:,
@@ -121,6 +122,7 @@ class Formatron
       @berkshelf.upload environment: guid, cookbook: cookbook
       if @knife.node_exists? guid: guid
         _reprovision_node(
+          os: os,
           bastion_hostname: bastion_hostname,
           guid: guid,
           cookbook_name: cookbook_name,
@@ -128,6 +130,7 @@ class Formatron
         )
       else
         _bootstrap_node(
+          os: os,
           bastion_hostname: bastion_hostname,
           guid: guid,
           cookbook_name: cookbook_name,
@@ -140,11 +143,13 @@ class Formatron
 
     # rubocop:disable Metrics/MethodLength
     def _reprovision_node(
+      os:,
       bastion_hostname:,
       guid:,
       cookbook_name:,
       hostname:
     )
+      puts os
       if @ssh.bootstrapped?(
         bastion_hostname: bastion_hostname,
         hostname: hostname
@@ -170,6 +175,7 @@ class Formatron
         end
         @knife.delete_client client: guid
         _bootstrap_node(
+          os: os,
           bastion_hostname: bastion_hostname,
           guid: guid,
           cookbook_name: cookbook_name,
@@ -181,6 +187,7 @@ class Formatron
 
     # rubocop:disable Metrics/MethodLength
     def _bootstrap_node(
+      os:,
       bastion_hostname:,
       guid:,
       cookbook_name:,
@@ -190,6 +197,7 @@ class Formatron
         "Bootstrap node #{guid}"
       end
       @knife.bootstrap(
+        os: os,
         bastion_hostname: bastion_hostname,
         guid: guid,
         cookbook: cookbook_name,

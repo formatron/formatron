@@ -61,9 +61,17 @@ class Formatron
     external_global = external_formatron.global
     global = @formatron.global || external_global
     external_ec2 = external_global.ec2
+    external_windows = external_global.windows
     ec2 = global.ec2 || external_ec2
     key_pair = ec2.key_pair || external_ec2.key_pair
     @ec2_key = ec2.private_key || external_ec2.private_key
+    windows = global.windows || external_windows
+    administrator_name =
+      windows.administrator_name ||
+      external_windows.administrator_name
+    administrator_password =
+      windows.administrator_password ||
+      external_windows.administrator_password
     @protected = global.protect || external_global.protect
     @kms_key = global.kms_key || external_global.kms_key
     @databag_secret = global.databag_secret || external_global.databag_secret
@@ -75,6 +83,8 @@ class Formatron
       formatron: @formatron,
       hosted_zone_name: @hosted_zone_name,
       key_pair: key_pair,
+      administrator_name: administrator_name,
+      administrator_password: administrator_password,
       kms_key: @kms_key,
       hosted_zone_id: hosted_zone_id,
       target: @target,
@@ -163,6 +173,7 @@ class Formatron
     chef_clients.init
     instances.values.each do |instance|
       guid = instance.guid
+      os = instance.os
       next unless guid_filter.nil? || guid_filter.eql?(guid)
       dsl_chef = instance.chef
       next if dsl_chef.cookbook.nil?
@@ -170,20 +181,23 @@ class Formatron
       cookbook = dsl_chef.cookbook
       bastion = dsl_chef.bastion
       sub_domain = instance.sub_domain
-      _provision_instance chef, cookbook, sub_domain, guid, bastion
+      _provision_instance chef, cookbook, sub_domain, guid, bastion, os
     end
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
 
-  def _provision_instance(chef, cookbook, sub_domain, guid, bastion)
+  # rubocop:disable Metrics/ParameterLists
+  def _provision_instance(chef, cookbook, sub_domain, guid, bastion, os)
     chef.provision(
+      os: os,
       sub_domain: sub_domain,
       guid: guid,
       cookbook: cookbook,
       bastion: bastion
     )
   end
+  # rubocop:enable Metrics/ParameterLists
 
   def destroy
     _destroy_chef_instances

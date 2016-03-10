@@ -21,6 +21,10 @@ class Formatron
               'ec2' => {
                 'key_pair' => 'key_pair',
                 'private_key' => 'private_key'
+              },
+              'windows' => {
+                'administrator_name' => 'administrator_name',
+                'administrator_password' => 'administrator_password'
               }
             },
             'vpcs' => {

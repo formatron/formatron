@@ -20,6 +20,8 @@ class Formatron
             def initialize(
               chef_server:,
               key_pair:,
+              administrator_name:,
+              administrator_password:,
               availability_zone:,
               subnet_guid:,
               hosted_zone_name:,
@@ -78,6 +80,8 @@ class Formatron
               @instance = Instance.new(
                 instance: @chef_server,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,

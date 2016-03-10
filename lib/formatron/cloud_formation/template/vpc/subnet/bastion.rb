@@ -12,6 +12,8 @@ class Formatron
             def initialize(
               bastion:,
               key_pair:,
+              administrator_name:,
+              administrator_password:,
               availability_zone:,
               subnet_guid:,
               hosted_zone_name:,
@@ -30,6 +32,8 @@ class Formatron
               @instance = Instance.new(
                 instance: bastion,
                 key_pair: key_pair,
+                administrator_name: administrator_name,
+                administrator_password: administrator_password,
                 availability_zone: availability_zone,
                 subnet_guid: subnet_guid,
                 hosted_zone_name: hosted_zone_name,

@@ -35,6 +35,15 @@ class Formatron
               new_ec2['private_key']
             ) unless new_ec2['private_key'].nil?
           end unless new_ec2.nil?
+          new_windows = new_global['windows']
+          global.windows do |windows|
+            windows.administrator_name(
+              new_windows['administrator_name']
+            ) unless new_windows['administrator_name'].nil?
+            windows.administrator_password(
+              new_windows['administrator_password']
+            ) unless new_windows['administrator_password'].nil?
+          end unless new_windows.nil?
         end unless new_global.nil?
         new_vpcs = configuration['vpcs']
         new_vpcs.each do |vpc_key, new_vpc|
@@ -115,6 +124,16 @@ class Formatron
               ec2.key_pair unless ec2.key_pair.nil?
             configuration_ec2['private_key'] =
               ec2.private_key unless ec2.private_key.nil?
+          end
+          windows = global.windows
+          unless windows.nil?
+            configuration_windows = configuration_global['windows'] = {}
+            configuration_windows['administrator_name'] =
+              windows.administrator_name unless windows.administrator_name.nil?
+            # rubocop:disable Metrics/LineLength
+            configuration_windows['administrator_password'] =
+              windows.administrator_password unless windows.administrator_password.nil?
+            # rubocop:enable Metrics/LineLength
           end
         end
         vpcs.each do |vpc_key, vpc|

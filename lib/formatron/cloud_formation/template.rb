@@ -15,6 +15,8 @@ class Formatron
         external:,
         hosted_zone_name:,
         key_pair:,
+        administrator_name:,
+        administrator_password:,
         kms_key:,
         hosted_zone_id:,
         target:
@@ -25,6 +27,8 @@ class Formatron
         @external_outputs = external.outputs
         @hosted_zone_name = hosted_zone_name
         @key_pair = key_pair
+        @administrator_name = administrator_name
+        @administrator_password = administrator_password
         @kms_key = kms_key
         @hosted_zone_id = hosted_zone_id
         @bucket = formatron.bucket
@@ -45,6 +49,8 @@ class Formatron
             external: @external_formatron.vpc[key],
             hosted_zone_name: @hosted_zone_name,
             key_pair: @key_pair,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             kms_key: @kms_key,
             hosted_zone_id: @hosted_zone_id,
             bucket: @bucket,

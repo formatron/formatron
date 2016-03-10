@@ -21,6 +21,8 @@ class Formatron
           @private_hosted_zone_id = "hostedZone#{@guid}"
           @cidr = 'cidr'
           @key_pair = 'key_pair'
+          @administrator_name = 'administrator_name'
+          @administrator_password = 'administrator_password'
           @hosted_zone_name = 'hosted_zone_name'
           @kms_key = 'kms_key'
           @nats = 'nats'
@@ -36,6 +38,8 @@ class Formatron
                 vpc_guid: @guid,
                 vpc_cidr: @cidr,
                 key_pair: @key_pair,
+                administrator_name: @administrator_name,
+                administrator_password: @administrator_password,
                 hosted_zone_name: @hosted_zone_name,
                 kms_key: @kms_key,
                 nats: @nats,
@@ -63,6 +67,8 @@ class Formatron
             external: @external_vpc,
             hosted_zone_name: @hosted_zone_name,
             key_pair: @key_pair,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             kms_key: @kms_key,
             hosted_zone_id: @hosted_zone_id,
             bucket: @bucket,
@@ -84,6 +90,8 @@ class Formatron
                   vpc_guid: @guid,
                   vpc_cidr: @cidr,
                   key_pair: @key_pair,
+                  administrator_name: @administrator_name,
+                  administrator_password: @administrator_password,
                   hosted_zone_name: @hosted_zone_name,
                   kms_key: @kms_key,
                   nats: @nats,

@@ -15,6 +15,8 @@ class Formatron
             @target = 'target'
             @subnet_guid = 'subnet_guid'
             @key_pair = 'key_pair'
+            @administrator_name = 'administrator_name'
+            @administrator_password = 'administrator_password'
             @availability_zone = 'availability_zone'
             @hosted_zone_name = 'hosted_zone_name'
             @vpc_guid = 'vpc_guid'
@@ -39,6 +41,8 @@ class Formatron
               args = lambda do |_|
                 {
                   key_pair: @key_pair,
+                  administrator_name: @administrator_name,
+                  administrator_password: @administrator_password,
                   availability_zone: @availability_zone,
                   subnet_guid: @subnet_guid,
                   hosted_zone_name: @hosted_zone_name,
@@ -116,6 +120,8 @@ class Formatron
               vpc_guid: @vpc_guid,
               vpc_cidr: @vpc_cidr,
               key_pair: @key_pair,
+              administrator_name: @administrator_name,
+              administrator_password: @administrator_password,
               hosted_zone_name: @hosted_zone_name,
               kms_key: @kms_key,
               nats: [],
@@ -206,6 +212,8 @@ class Formatron
                     args = lambda do |_|
                       {
                         key_pair: @key_pair,
+                        administrator_name: @administrator_name,
+                        administrator_password: @administrator_password,
                         availability_zone: @availability_zone,
                         subnet_guid: @subnet_guid,
                         hosted_zone_name: @hosted_zone_name,
@@ -263,6 +271,8 @@ class Formatron
                     vpc_guid: @vpc_guid,
                     vpc_cidr: @vpc_cidr,
                     key_pair: @key_pair,
+                    administrator_name: @administrator_name,
+                    administrator_password: @administrator_password,
                     hosted_zone_name: @hosted_zone_name,
                     kms_key: @kms_key,
                     nats: nats,

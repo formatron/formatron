@@ -22,6 +22,7 @@ class Formatron
         dsl_property :kms_key
         dsl_property :databag_secret
         dsl_block :ec2, 'EC2'
+        dsl_block :windows, 'Windows'
 
         describe '#hosted_zone_id' do
           before :each do

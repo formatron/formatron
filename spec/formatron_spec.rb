@@ -42,6 +42,10 @@ describe Formatron do
       'Formatron::DSL::Formatron::Global:EC2'
     )
     allow(@external_global).to receive(:ec2) { @external_ec2 }
+    @external_windows = instance_double(
+      'Formatron::DSL::Formatron::Global:Windows'
+    )
+    allow(@external_global).to receive(:windows) { @external_windows }
     external_outputs = instance_double 'Formatron::External::Outputs'
     allow(@external).to receive(:outputs) { external_outputs }
     @external_outputs_hash = 'external_outputs_hash'
@@ -90,6 +94,17 @@ describe Formatron do
     allow(ec2).to receive(:key_pair).with(no_args) { @key_pair }
     @ec2_key = 'ec2_key'
     allow(ec2).to receive(:private_key).with(no_args) { @ec2_key }
+
+    windows = instance_double 'Formatron::DSL::Formatron::Global::Windows'
+    allow(global).to receive(:windows).with(no_args) { windows }
+    @administrator_name = 'administrator_name'
+    allow(windows).to receive(
+      :administrator_name
+    ).with(no_args) { @administrator_name }
+    @administrator_password = 'administrator_password'
+    allow(windows).to receive(
+      :administrator_password
+    ).with(no_args) { @administrator_password }
 
     vpcs = {}
     @chef_class = class_double(
@@ -173,6 +188,9 @@ describe Formatron do
           allow(chef_server).to receive(:guid).with(
             no_args
           ) { guid }
+          allow(chef_server).to receive(:os).with(
+            no_args
+          ) { 'os' }
           allow(chef_server).to receive(:ssl_cert).with(
             no_args
           ) { "chef_server_ssl_cert#{chef_server_index}" }
@@ -222,6 +240,9 @@ describe Formatron do
           allow(bastion).to receive(:guid).with(
             no_args
           ) { "bastion_guid#{bastion_index}" }
+          allow(bastion).to receive(:os).with(
+            no_args
+          ) { 'os' }
           bastion_sub_domains[bastion_key] = bastion_sub_domain
         end
         allow(subnet).to receive(:bastion).with(no_args) { bastions }
@@ -253,6 +274,9 @@ describe Formatron do
           allow(nat).to receive(:guid).with(
             no_args
           ) { "nat_guid#{nat_index}" }
+          allow(nat).to receive(:os).with(
+            no_args
+          ) { 'os' }
         end
         allow(subnet).to receive(:nat).with(no_args) { nats }
         instances = {}
@@ -283,6 +307,9 @@ describe Formatron do
           allow(instance).to receive(:guid).with(
             no_args
           ) { "instance_guid#{instance_index}" }
+          allow(instance).to receive(:os).with(
+            no_args
+          ) { 'windows' }
         end
         allow(subnet).to receive(:instance).with(no_args) { instances }
       end
@@ -302,6 +329,8 @@ describe Formatron do
       formatron: @dsl_formatron,
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
+      administrator_name: @administrator_name,
+      administrator_password: @administrator_password,
       kms_key: @kms_key,
       hosted_zone_id: @hosted_zone_id,
       target: @target,
@@ -405,6 +434,8 @@ describe Formatron do
       formatron: @dsl_formatron,
       hosted_zone_name: @hosted_zone_name,
       key_pair: @key_pair,
+      administrator_name: @administrator_name,
+      administrator_password: @administrator_password,
       kms_key: @kms_key,
       hosted_zone_id: @hosted_zone_id,
       target: @target,
@@ -531,6 +562,7 @@ describe Formatron do
         chef = subnet_chef_clients[0]
         expect(chef).to have_received(:provision).once
         expect(chef).to have_received(:provision).with(
+          os: 'windows',
           sub_domain: 'instance_sub_domain0_0_0',
           guid: 'instance_guid0_0_0',
           cookbook: 'instance_cookbook0_0_0',
@@ -556,24 +588,28 @@ describe Formatron do
               chef = subnet_chef_clients[chef_server_index]
               chef_server_index = "#{subnet_index}_#{chef_server_index}"
               expect(chef).to have_received(:provision).once.with(
+                os: 'os',
                 sub_domain: "chef_server_sub_domain#{chef_server_index}",
                 guid: "chef_server_guid#{chef_server_index}",
                 cookbook: "chef_server_cookbook#{chef_server_index}",
                 bastion: "bastion#{chef_server_index}"
               )
               expect(chef).to have_received(:provision).once.with(
+                os: 'os',
                 sub_domain: "bastion_sub_domain#{chef_server_index}",
                 guid: "bastion_guid#{chef_server_index}",
                 cookbook: "bastion_cookbook#{chef_server_index}",
                 bastion: "bastion#{chef_server_index}"
               )
               expect(chef).to have_received(:provision).once.with(
+                os: 'os',
                 sub_domain: "nat_sub_domain#{chef_server_index}",
                 guid: "nat_guid#{chef_server_index}",
                 cookbook: "nat_cookbook#{chef_server_index}",
                 bastion: "bastion#{chef_server_index}"
               )
               expect(chef).to have_received(:provision).once.with(
+                os: 'windows',
                 sub_domain: "instance_sub_domain#{chef_server_index}",
                 guid: "instance_guid#{chef_server_index}",
                 cookbook: "instance_cookbook#{chef_server_index}",
