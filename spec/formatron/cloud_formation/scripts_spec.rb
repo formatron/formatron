@@ -41,7 +41,7 @@ class Formatron
             )
           # rubocop:disable Metrics/LineLength
           ).to eql <<-EOH.gsub(/^ {12}/, '')
-            REG ADD HKLM\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName /v ComputerName /t REG_SZ /d #{sub_domain} /f
+            wmic computersystem where name="%COMPUTERNAME%" call rename name="#{sub_domain}"
             REG ADD HKLM\\SYSTEM\\CurrentControlSet\\services\\Tcpip\\Parameters /v Domain /t REG_SZ /d #{hosted_zone_name} /f
             shutdown.exe /r /t 00
           EOH

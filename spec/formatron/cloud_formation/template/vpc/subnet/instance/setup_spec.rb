@@ -112,7 +112,7 @@ class Formatron
                     signal_script = 'signal_script'
                     os = 'windows'
                     @files = {
-                      'C:\formatron\script-0.bat' => {
+                      'C:\formatron\script-10.bat' => {
                         content: @setup_script
                       },
                       'C:\formatron\script-11.bat' => {
@@ -122,8 +122,8 @@ class Formatron
                     # note that we wait forever for completion of the first
                     # script because it causes a reboot
                     @commands = {
-                      'script-0' => {
-                        command: 'C:\formatron\script-0.bat',
+                      'script-10' => {
+                        command: 'C:\formatron\script-10.bat',
                         env: @env,
                         waitAfterCompletion: 'forever'
                       },
@@ -133,11 +133,11 @@ class Formatron
                       }
                     }
                     (0..9).each do |index|
-                      @files["C:\\formatron\\script-#{index + 1}.bat"] = {
+                      @files["C:\\formatron\\script-#{index}.bat"] = {
                         content: @dsl_scripts[index]
                       }
-                      @commands["script-#{index + 1}"] = {
-                        command: "C:\\formatron\\script-#{index + 1}.bat",
+                      @commands["script-#{index}"] = {
+                        command: "C:\\formatron\\script-#{index}.bat",
                         env: @env
                       }
                     end

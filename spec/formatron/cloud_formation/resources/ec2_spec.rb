@@ -554,11 +554,33 @@ class Formatron
                     'Fn::Base64' => {
                       'Fn::Join' => [
                         '', [
-                          "<script>\n",
+                          "<powershell>\n",
+                          "try\n",
+                          "{\n",
+                          'winrm quickconfig -q', "\n",
+                          "winrm set winrm/config/winrs '@{MaxMemoryPerShellMB=\"1024\"}'", "\n",
+                          "winrm set winrm/config '@{MaxTimeoutms=\"1800000\"}'", "\n",
+                          "winrm set winrm/config/service '@{AllowUnencrypted=\"true\"}'", "\n",
+                          "winrm set winrm/config/service/auth '@{Basic=\"true\"}'", "\n",
+                          'netsh advfirewall firewall add rule name="WinRM 5985" protocol=TCP dir=in localport=5985 action=allow', "\n",
+                          'netsh advfirewall firewall add rule name="WinRM 5986" protocol=TCP dir=in localport=5986 action=allow', "\n",
+                          'Stop-Service winrm', "\n",
+                          'Set-Service winrm -startuptype "automatic"', "\n",
+                          'Start-Service winrm', "\n",
                           'cfn-init.exe -v -s ', { Ref: 'AWS::StackName' },
                           " -r #{logical_id}",
                           ' --region ', { Ref: 'AWS::Region' }, "\n",
-                          '</script>'
+                          "}\n",
+                          "catch\n",
+                          "{\n",
+                          'cfn-signal.exe -e 1 ',
+                          {
+                            'Fn::Base64' => {
+                              Ref: wait_condition_handle
+                            }
+                          }, "\n",
+                          "}\n",
+                          '</powershell>'
                         ]
                       ]
                     }

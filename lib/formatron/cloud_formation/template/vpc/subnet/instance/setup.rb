@@ -37,23 +37,10 @@ class Formatron
                 if @os.eql? 'windows'
                   script_key = 'script-0'
                   script = "C:\\formatron\\#{script_key}.bat"
-                  files = {
-                    "#{script}" => {
-                      content: Scripts.windows_common(
-                        sub_domain: @sub_domain,
-                        hosted_zone_name: @hosted_zone_name
-                      )
-                    }
-                  }
-                  commands = {
-                    "#{script_key}" => {
-                      command: script,
-                      env: env,
-                      waitAfterCompletion: 'forever'
-                    }
-                  }
+                  files = {}
+                  commands = {}
                   @scripts.each_index do |index|
-                    script_key = "script-#{index + 1}"
+                    script_key = "script-#{index}"
                     script = "C:\\formatron\\#{script_key}.bat"
                     files[script] = {
                       content: @scripts[index]
@@ -63,7 +50,21 @@ class Formatron
                       env: env
                     }
                   end unless @scripts.nil?
-                  signal_script_index = @scripts.nil? ? 1 : @scripts.length + 1
+                  setup_script_index = @scripts.nil? ? 0 : @scripts.length
+                  signal_script_index = setup_script_index + 1
+                  script_key = "script-#{setup_script_index}"
+                  script = "C:\\formatron\\#{script_key}.bat"
+                  files[script] = {
+                    content: Scripts.windows_common(
+                      sub_domain: @sub_domain,
+                      hosted_zone_name: @hosted_zone_name
+                    )
+                  }
+                  commands[script_key] = {
+                    command: script,
+                    env: env,
+                    waitAfterCompletion: 'forever'
+                  }
                   script_key = "script-#{signal_script_index}"
                   script = "C:\\formatron\\#{script_key}.bat"
                   files[script] = {

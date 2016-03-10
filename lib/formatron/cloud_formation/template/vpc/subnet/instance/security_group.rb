@@ -138,6 +138,11 @@ class Formatron
                   protocol: 'tcp',
                   from_port: '5985',
                   to_port: '5985'
+                }, {
+                  cidr: '0.0.0.0/0',
+                  protocol: 'tcp',
+                  from_port: '5986',
+                  to_port: '5986'
                 }]
               end
               # rubocop:enable Metrics/MethodLength
