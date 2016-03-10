@@ -77,6 +77,12 @@ class Formatron
       @ssh = instance_double 'Formatron::Chef::SSH'
       allow(@ssh_class).to receive(:new) { @ssh }
       allow(@ssh).to receive :run_chef_client
+      @winrm_class = class_double(
+        'Formatron::Chef::WinRM'
+      ).as_stubbed_const
+      @winrm = instance_double 'Formatron::Chef::WinRM'
+      allow(@winrm_class).to receive(:new) { @winrm }
+      allow(@winrm).to receive :run_chef_client
       allow(FileUtils).to receive :mkdir_p
       @chef = Chef.new(
         directory: @directory,
@@ -278,56 +284,114 @@ class Formatron
               ) { true }
             end
 
-            context 'when the node has really been bootstrapped' do
+            context 'when the os is windows' do
               before :each do
-                allow(@ssh).to receive(:bootstrapped?).with(
-                  bastion_hostname: @bastion_hostname,
-                  hostname: @hostname
-                ) { true }
-                allow(@ssh).to receive :run_chef_client
+                @os = 'windows'
               end
 
-              include_context 'provision'
+              context 'when the node has really been bootstrapped' do
+                before :each do
+                  allow(@winrm).to receive(:bootstrapped?).with(
+                    hostname: @hostname
+                  ) { true }
+                  allow(@winrm).to receive :run_chef_client
+                end
 
-              it 'should run the chef client on the instance' do
-                expect(@ssh).to have_received(:run_chef_client).once.with(
-                  bastion_hostname: @bastion_hostname,
-                  hostname: @hostname
-                )
+                include_context 'provision'
+
+                it 'should run the chef client on the instance' do
+                  expect(@winrm).to have_received(:run_chef_client).once.with(
+                    hostname: @hostname
+                  )
+                end
+              end
+
+              context 'when the node has not been bootstrapped ' \
+                      '(eg. it has been recreated)' do
+                before :each do
+                  allow(@winrm).to receive(:bootstrapped?).with(
+                    hostname: @hostname
+                  ) { false }
+                end
+
+                include_context 'provision'
+
+                it 'should delete the node' do
+                  expect(@knife).to have_received(:delete_node).once.with(
+                    node: @instance_guid
+                  )
+                end
+
+                it 'should delete the client' do
+                  expect(@knife).to have_received(:delete_client).once.with(
+                    client: @instance_guid
+                  )
+                end
+
+                it 'should bootstrap the instance' do
+                  expect(@knife).to have_received(:bootstrap).once.with(
+                    os: @os,
+                    bastion_hostname: @bastion_hostname,
+                    guid: @instance_guid,
+                    cookbook: @cookbook_name,
+                    hostname: @hostname
+                  )
+                end
               end
             end
 
-            context 'when the node has not been bootstrapped ' \
-                    '(eg. it has been recreated)' do
-              before :each do
-                allow(@ssh).to receive(:bootstrapped?).with(
-                  bastion_hostname: @bastion_hostname,
-                  hostname: @hostname
-                ) { false }
+            context 'when the os is linux' do
+              context 'when the node has really been bootstrapped' do
+                before :each do
+                  allow(@ssh).to receive(:bootstrapped?).with(
+                    bastion_hostname: @bastion_hostname,
+                    hostname: @hostname
+                  ) { true }
+                  allow(@ssh).to receive :run_chef_client
+                end
+
+                include_context 'provision'
+
+                it 'should run the chef client on the instance' do
+                  expect(@ssh).to have_received(:run_chef_client).once.with(
+                    bastion_hostname: @bastion_hostname,
+                    hostname: @hostname
+                  )
+                end
               end
 
-              include_context 'provision'
+              context 'when the node has not been bootstrapped ' \
+                      '(eg. it has been recreated)' do
+                before :each do
+                  allow(@ssh).to receive(:bootstrapped?).with(
+                    bastion_hostname: @bastion_hostname,
+                    hostname: @hostname
+                  ) { false }
+                end
 
-              it 'should delete the node' do
-                expect(@knife).to have_received(:delete_node).once.with(
-                  node: @instance_guid
-                )
-              end
+                include_context 'provision'
 
-              it 'should delete the client' do
-                expect(@knife).to have_received(:delete_client).once.with(
-                  client: @instance_guid
-                )
-              end
+                it 'should delete the node' do
+                  expect(@knife).to have_received(:delete_node).once.with(
+                    node: @instance_guid
+                  )
+                end
 
-              it 'should bootstrap the instance' do
-                expect(@knife).to have_received(:bootstrap).once.with(
-                  os: @os,
-                  bastion_hostname: @bastion_hostname,
-                  guid: @instance_guid,
-                  cookbook: @cookbook_name,
-                  hostname: @hostname
-                )
+                it 'should delete the client' do
+                  expect(@knife).to have_received(:delete_client).once.with(
+                    client: @instance_guid
+                  )
+                end
+
+                it 'should bootstrap the instance' do
+                  expect(@knife).to have_received(:bootstrap).once.with(
+                    os: @os,
+                    bastion_hostname: @bastion_hostname,
+                    guid: @instance_guid,
+                    cookbook: @cookbook_name,
+                    hostname: @hostname
+                  )
+                end
               end
             end
           end

@@ -4,6 +4,7 @@ require_relative 'chef/keys'
 require_relative 'chef/berkshelf'
 require_relative 'chef/knife'
 require_relative 'chef/ssh'
+require_relative 'chef/winrm'
 
 class Formatron
   # manage the instance provisioning with Chef
@@ -72,6 +73,10 @@ class Formatron
       )
       @ssh = SSH.new(
         keys: @keys
+      )
+      @winrm = WinRM.new(
+        administrator_name: administrator_name,
+        administrator_password: administrator_password
       )
     end
     # rubocop:enable Metrics/AbcSize
@@ -153,14 +158,16 @@ class Formatron
       cookbook_name:,
       hostname:
     )
-      if @ssh.bootstrapped?(
+      if _bootstrapped?(
+        os: os,
         bastion_hostname: bastion_hostname,
         hostname: hostname
       )
         Formatron::LOG.info do
           "Run chef-client on existing node #{guid}"
         end
-        @ssh.run_chef_client(
+        _run_chef_client(
+          os: os,
           bastion_hostname: bastion_hostname,
           hostname: hostname
         )
@@ -187,6 +194,28 @@ class Formatron
       end
     end
     # rubocop:enable Metrics/MethodLength
+
+    def _bootstrapped?(os:, bastion_hostname:, hostname:)
+      if os.eql? 'windows'
+        @winrm.bootstrapped? hostname: hostname
+      else
+        @ssh.bootstrapped?(
+          bastion_hostname: bastion_hostname,
+          hostname: hostname
+        )
+      end
+    end
+
+    def _run_chef_client(os:, bastion_hostname:, hostname:)
+      if os.eql? 'windows'
+        @winrm.run_chef_client hostname: hostname
+      else
+        @ssh.run_chef_client(
+          bastion_hostname: bastion_hostname,
+          hostname: hostname
+        )
+      end
+    end
 
     # rubocop:disable Metrics/MethodLength
     def _bootstrap_node(
@@ -246,7 +275,9 @@ class Formatron
       :_chef_server_url,
       :_hostname,
       :_bootstrap_node,
-      :_reprovision_node
+      :_reprovision_node,
+      :_bootstrapped?,
+      :_run_chef_client
     )
   end
   # rubocop:enable Metrics/ClassLength

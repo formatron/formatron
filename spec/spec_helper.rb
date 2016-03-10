@@ -3,9 +3,6 @@ $LOAD_PATH.unshift File.expand_path('../../support', __FILE__)
 require 'simplecov'
 require 'pry'
 require 'fakefs/spec_helpers'
-require 'codacy-coverage'
-
-Codacy::Reporter.start
 
 require 'cloudformation_describe_stacks_response'
 require 'cloudformation_stack_events_responses'
