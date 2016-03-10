@@ -20,7 +20,10 @@ class Formatron
       end
 
       describe '#run_chef_client' do
-        command = 'sudo chef-client'
+        # use the first-boot.json to ensure the runlist is correct
+        # if the node fails to converge the first time (in which case
+        # the server will show an empty run list for the node)
+        command = 'sudo chef-client -j /etc/chef/first-boot.json'
 
         context 'when the ssh command fails' do
           before :each do

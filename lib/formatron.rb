@@ -165,7 +165,7 @@ class Formatron
       guid = instance.guid
       next unless guid_filter.nil? || guid_filter.eql?(guid)
       dsl_chef = instance.chef
-      next if dsl_chef.nil?
+      next if dsl_chef.cookbook.nil?
       chef = chef_clients.get dsl_chef.server
       cookbook = dsl_chef.cookbook
       bastion = dsl_chef.bastion
@@ -325,7 +325,7 @@ class Formatron
     chef_clients.init
     instances.values.each do |instance|
       dsl_chef = instance.chef
-      next if dsl_chef.nil?
+      next if dsl_chef.cookbook.nil?
       chef = chef_clients.get dsl_chef.server
       guid = instance.guid
       _destroy_chef_instance chef, guid
