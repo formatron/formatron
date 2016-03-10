@@ -17,6 +17,8 @@ class Formatron
       def initialize(
         directory:,
         keys:,
+        administrator_name:,
+        administrator_password:,
         chef_server_url:,
         username:,
         organization:,
@@ -28,6 +30,8 @@ class Formatron
         @databag_secret_file = File.join directory, DATABAG_SECRET_FILE
         @databag_directory = File.join directory, DATABAG_DIRECTORY
         @keys = keys
+        @administrator_name = administrator_name
+        @administrator_password = administrator_password
         @chef_server_url = chef_server_url
         @username = username
         @organization = organization
@@ -114,6 +118,7 @@ class Formatron
         # rubocop:enable Metrics/LineLength
       end
 
+      # rubocop:disable Metrics/MethodLength
       def bootstrap(
         os:,
         guid:,
@@ -121,13 +126,17 @@ class Formatron
         cookbook:,
         hostname:
       )
-        puts os
         # rubocop:disable Metrics/LineLength
-        command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file}"
-        command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
+        if os.eql? 'windows'
+          command = "knife bootstrap windows winrm #{hostname} -x #{@administrator_name} -P '#{@administrator_password}' -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file} --secret-file #{@databag_secret_file}"
+        else
+          command = "knife bootstrap #{hostname} --sudo -x ubuntu -i #{@keys.ec2_key} -E #{guid} -r #{cookbook} -N #{guid} -c #{@knife_file}#{@ssl_verify ? '' : ' --node-ssl-verify-mode none'} --secret-file #{@databag_secret_file}"
+          command = "#{command} -G ubuntu@#{bastion_hostname}" unless bastion_hostname.eql? hostname
+        end
         fail "failed to bootstrap instance: #{guid}" unless Util::Shell.exec command
         # rubocop:enable Metrics/LineLength
       end
+      # rubocop:enable Metrics/MethodLength
 
       def delete_databag(name:)
         # rubocop:disable Metrics/LineLength

@@ -17,7 +17,7 @@ BOOTSTRAP_COMMAND = 'knife bootstrap hostname ' \
                     '-c directory/knife.rb ' \
                     '--secret-file directory/databag_secret'
 BOOTSTRAP_COMMAND_WITH_WINDOWS = 'knife bootstrap windows winrm hostname ' \
-                    '-E ' \
+                    "-x administrator_name -P 'administrator_password' -E " \
                     "#{GUID} -r cookbook -N #{GUID} " \
                     '-c directory/knife.rb ' \
                     '--secret-file directory/databag_secret'
@@ -59,6 +59,8 @@ class Formatron
         }
         @keys = instance_double 'Formatron::Chef::Keys'
         @chef_server_url = 'chef_server_url'
+        @administrator_name = 'administrator_name'
+        @administrator_password = 'administrator_password'
         @username = 'username'
         @user_key = 'user_key'
         @ec2_key = 'ec2_key'
@@ -77,6 +79,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -122,6 +126,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -167,6 +173,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -289,6 +297,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -375,6 +385,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -508,6 +520,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -559,6 +573,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -614,6 +630,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -669,6 +687,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,
@@ -727,6 +747,8 @@ class Formatron
           @knife = Knife.new(
             directory: @directory,
             keys: @keys,
+            administrator_name: @administrator_name,
+            administrator_password: @administrator_password,
             chef_server_url: @chef_server_url,
             username: @username,
             organization: @organization,

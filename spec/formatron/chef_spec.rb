@@ -36,6 +36,8 @@ class Formatron
       @username = 'username'
       @ssl_verify = 'ssl_verify'
       @ec2_key = 'ec2_key'
+      @administrator_name = 'administrator_name'
+      @administrator_password = 'administrator_password'
       @chef_server_url = "https://#{@chef_sub_domain}.#{@hosted_zone_name}" \
                          "/organizations/#{@organization}"
       @cloud_formation = class_double(
@@ -87,6 +89,8 @@ class Formatron
         ssl_verify: @ssl_verify,
         chef_sub_domain: @chef_sub_domain,
         ec2_key: @ec2_key,
+        administrator_name: @administrator_name,
+        administrator_password: @administrator_password,
         bastions: @bastions,
         hosted_zone_name: @hosted_zone_name,
         server_stack: @server_stack,
@@ -112,6 +116,8 @@ class Formatron
       expect(@knife_class).to have_received(:new).once.with(
         directory: @working_directory,
         keys: @keys,
+        administrator_name: @administrator_name,
+        administrator_password: @administrator_password,
         chef_server_url: @chef_server_url,
         username: @username,
         organization: @organization,

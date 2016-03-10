@@ -19,6 +19,8 @@ class Formatron
       name:,
       target:,
       ec2_key:,
+      administrator_name:,
+      administrator_password:,
       username:,
       organization:,
       ssl_verify:,
@@ -52,6 +54,8 @@ class Formatron
       @knife = Knife.new(
         directory: @working_directory,
         keys: @keys,
+        administrator_name: administrator_name,
+        administrator_password: administrator_password,
         chef_server_url: chef_server_url,
         username: username,
         organization: organization,
@@ -149,7 +153,6 @@ class Formatron
       cookbook_name:,
       hostname:
     )
-      puts os
       if @ssh.bootstrapped?(
         bastion_hostname: bastion_hostname,
         hostname: hostname

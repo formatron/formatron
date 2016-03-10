@@ -66,10 +66,10 @@ class Formatron
     key_pair = ec2.key_pair || external_ec2.key_pair
     @ec2_key = ec2.private_key || external_ec2.private_key
     windows = global.windows || external_windows
-    administrator_name =
+    @administrator_name =
       windows.administrator_name ||
       external_windows.administrator_name
-    administrator_password =
+    @administrator_password =
       windows.administrator_password ||
       external_windows.administrator_password
     @protected = global.protect || external_global.protect
@@ -83,8 +83,8 @@ class Formatron
       formatron: @formatron,
       hosted_zone_name: @hosted_zone_name,
       key_pair: key_pair,
-      administrator_name: administrator_name,
-      administrator_password: administrator_password,
+      administrator_name: @administrator_name,
+      administrator_password: @administrator_password,
       kms_key: @kms_key,
       hosted_zone_id: hosted_zone_id,
       target: @target,
@@ -109,6 +109,8 @@ class Formatron
         name: @name,
         target: @target,
         ec2_key: @ec2_key,
+        administrator_name: @administrator_name,
+        administrator_password: @administrator_password,
         hosted_zone_name: @hosted_zone_name,
         vpc: vpc,
         external: @external_vpcs[key],

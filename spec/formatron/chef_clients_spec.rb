@@ -12,6 +12,8 @@ class Formatron
       @databag_secret = 'databag_secret'
       @target = 'target'
       @ec2_key = 'ec2_key'
+      @administrator_name = 'administrator_name'
+      @administrator_password = 'administrator_password'
       @hosted_zone_name = 'hosted_zone_name'
       (@bastions, bastion_sub_domains) =
         (0..9).each_with_object([{}, {}]) do |i, (b, bs)|
@@ -67,6 +69,8 @@ class Formatron
           ssl_verify: ssl_verify,
           chef_sub_domain: sub_domain,
           ec2_key: @ec2_key,
+          administrator_name: @administrator_name,
+          administrator_password: @administrator_password,
           bastions: bastion_sub_domains,
           hosted_zone_name: @hosted_zone_name,
           server_stack: @name,
@@ -112,6 +116,8 @@ class Formatron
           ssl_verify: ssl_verify,
           chef_sub_domain: sub_domain,
           ec2_key: @ec2_key,
+          administrator_name: @administrator_name,
+          administrator_password: @administrator_password,
           bastions: bastion_sub_domains,
           hosted_zone_name: @hosted_zone_name,
           server_stack: stack_name,
@@ -143,6 +149,8 @@ class Formatron
           name: @name,
           target: @target,
           ec2_key: @ec2_key,
+          administrator_name: @administrator_name,
+          administrator_password: @administrator_password,
           hosted_zone_name: @hosted_zone_name,
           vpc: @vpc,
           external: external,
@@ -192,6 +200,8 @@ class Formatron
           name: @name,
           target: @target,
           ec2_key: @ec2_key,
+          administrator_name: @administrator_name,
+          administrator_password: @administrator_password,
           hosted_zone_name: @hosted_zone_name,
           vpc: @vpc,
           external: nil,

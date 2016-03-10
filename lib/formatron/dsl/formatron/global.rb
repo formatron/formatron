@@ -1,5 +1,6 @@
 require 'formatron/util/dsl'
 require_relative 'global/ec2'
+require_relative 'global/windows'
 
 class Formatron
   class DSL
