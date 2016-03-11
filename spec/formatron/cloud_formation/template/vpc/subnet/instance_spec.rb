@@ -23,6 +23,7 @@ class Formatron
                 name = 'name'
                 target = 'target'
                 os = 'os'
+                ami = 'ami'
                 dsl_instance = instance_double(
                   'Formatron::DSL::Formatron::VPC::Subnet::Instance'
                 )
@@ -157,6 +158,9 @@ class Formatron
                 allow(dsl_instance).to receive(
                   :os
                 ) { os }
+                allow(dsl_instance).to receive(
+                  :ami
+                ) { ami }
                 template_block_devices = instance_double(
                   'Formatron::CloudFormation::Template' \
                   '::VPC::Subnet::Instance::BlockDevices'
@@ -196,7 +200,8 @@ class Formatron
                   security_group: @security_group_id,
                   logical_id: @instance_id,
                   source_dest_check: source_dest_check,
-                  os: os
+                  os: os,
+                  ami: ami
                 ) do
                   {
                     instance: @instance,

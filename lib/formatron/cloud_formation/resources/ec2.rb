@@ -287,8 +287,14 @@ class Formatron
           security_group:,
           logical_id:,
           source_dest_check:,
-          os:
+          os:,
+          ami:
         )
+          ami = Template.find_in_map(
+            Template::REGION_MAP,
+            Template.ref('AWS::Region'),
+            os
+          ) if ami.nil?
           if os.eql? 'windows'
             user_data = Template.base_64(
               Template.join(
@@ -347,11 +353,7 @@ class Formatron
                 Template.ref('AWS::Region'),
                 availability_zone
               ),
-              ImageId: Template.find_in_map(
-                Template::REGION_MAP,
-                Template.ref('AWS::Region'),
-                os
-              ),
+              ImageId: ami,
               SourceDestCheck: source_dest_check,
               InstanceType: instance_type,
               KeyName: key_name,

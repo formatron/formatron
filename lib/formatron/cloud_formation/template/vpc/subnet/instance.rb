@@ -65,6 +65,7 @@ class Formatron
               @availability_zone = availability_zone
               @instance_type = @instance.instance_type || 't2.micro'
               @os = @instance.os || 'ubuntu'
+              @ami = @instance.ami
               @key_pair = key_pair
               @administrator_name = administrator_name
               @administrator_password = administrator_password
@@ -135,7 +136,8 @@ class Formatron
                 security_group: @security_group_id,
                 logical_id: @instance_id,
                 source_dest_check: @source_dest_check,
-                os: @os
+                os: @os,
+                ami: @ami
               )
               setup = Setup.new(
                 setup: @setup,

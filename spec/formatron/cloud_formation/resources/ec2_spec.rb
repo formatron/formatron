@@ -430,6 +430,7 @@ class Formatron
             logical_id = 'logical_id'
             source_dest_check = 'source_dest_check'
             os = 'os'
+            ami = nil
             administrator_name = 'administrator_name'
             administrator_password = 'administrator_password'
             expect(
@@ -446,7 +447,8 @@ class Formatron
                 security_group: security_group,
                 logical_id: logical_id,
                 source_dest_check: source_dest_check,
-                os: os
+                os: os,
+                ami: ami
               )
             ).to eql(
               Type: 'AWS::EC2::Instance',
@@ -498,6 +500,84 @@ class Formatron
             )
           end
 
+          context 'when an AMI ID is given' do
+            it 'should return an Instance resource' do
+              instance_profile = 'instance_profile'
+              availability_zone = 'availability_zone'
+              instance_type = 'instance_type'
+              key_name = 'key_name'
+              subnet = 'subnet'
+              name = 'name'
+              wait_condition_handle = 'wait_condition_handle'
+              security_group = 'security_group'
+              logical_id = 'logical_id'
+              source_dest_check = 'source_dest_check'
+              os = 'os'
+              ami = 'ami'
+              administrator_name = 'administrator_name'
+              administrator_password = 'administrator_password'
+              expect(
+                EC2.instance(
+                  instance_profile: instance_profile,
+                  availability_zone: availability_zone,
+                  instance_type: instance_type,
+                  key_name: key_name,
+                  administrator_name: administrator_name,
+                  administrator_password: administrator_password,
+                  subnet: subnet,
+                  name: name,
+                  wait_condition_handle: wait_condition_handle,
+                  security_group: security_group,
+                  logical_id: logical_id,
+                  source_dest_check: source_dest_check,
+                  os: os,
+                  ami: ami
+                )
+              ).to eql(
+                Type: 'AWS::EC2::Instance',
+                Properties: {
+                  IamInstanceProfile: { Ref: instance_profile },
+                  AvailabilityZone: {
+                    'Fn::Join' => [
+                      '', [
+                        { Ref: 'AWS::Region' },
+                        availability_zone
+                      ]
+                    ]
+                  },
+                  ImageId: ami,
+                  SourceDestCheck: source_dest_check,
+                  InstanceType: instance_type,
+                  KeyName: key_name,
+                  SubnetId: { Ref: subnet },
+                  SecurityGroupIds: [{ Ref: security_group }],
+                  Tags: [{
+                    Key: 'Name',
+                    Value: name
+                  }],
+                  UserData: {
+                    'Fn::Base64' => {
+                      'Fn::Join' => [
+                        '', [
+                          # rubocop:disable Metrics/LineLength
+                          "#!/bin/bash -v\n",
+                          "apt-get -y update\n",
+                          "apt-get -y install python-setuptools\n",
+                          "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                          "export PATH=$PATH:/opt/aws/bin\n",
+                          'cfn-init --region ', { Ref: 'AWS::Region' },
+                          '    -v -s ', { Ref: 'AWS::StackName' }, " -r #{logical_id}\n",
+                          "cfn-signal -e $? -r 'Formatron instance configuration complete' '", { Ref: wait_condition_handle }, "'\n"
+                          # rubocop:enable Metrics/LineLength
+                        ]
+                      ]
+                    }
+                  }
+                }
+              )
+            end
+          end
+
           context 'when os is windows' do
             # rubocop:disable Metrics/LineLength
             it 'should return an Instance resource with user data for windows' do
@@ -512,6 +592,7 @@ class Formatron
               logical_id = 'logical_id'
               source_dest_check = 'source_dest_check'
               os = 'windows'
+              ami = nil
               administrator_name = 'administrator_name'
               administrator_password = 'administrator_password'
               administrator_script = 'administrator_script'
@@ -535,7 +616,8 @@ class Formatron
                   security_group: security_group,
                   logical_id: logical_id,
                   source_dest_check: source_dest_check,
-                  os: os
+                  os: os,
+                  ami: ami
                 )
               ).to eql(
                 Type: 'AWS::EC2::Instance',
